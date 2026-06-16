@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.11] - 2026-06-17
+
+### Removed
+- README 移除「核心设计：分屏引擎抽象」章节（含 TypeScript 代码片段与 iframe 分屏页实现要点），整段都属于面向开发者的实现细节，与产品视角的 README 定位不符。
+
 ## [0.2.10] - 2026-06-17
 
 ### Changed
@@ -73,7 +78,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 新增 `lib/chrome/bookmarks.ts` 的 `getBookmark(id)` 包装。
 - 新增 `src/features/bookmarks/moved-out.ts` 模块。
 
-[Unreleased]: https://github.com/lingyired/newtab01/compare/v0.2.10...HEAD
+[Unreleased]: https://github.com/lingyired/newtab01/compare/v0.2.11...HEAD
+[0.2.11]: https://github.com/lingyired/newtab01/compare/v0.2.10...v0.2.11
 [0.2.10]: https://github.com/lingyired/newtab01/compare/v0.2.7...v0.2.10
 [0.2.7]: https://github.com/lingyired/newtab01/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/lingyired/newtab01/compare/v0.2.5...v0.2.6

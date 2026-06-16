@@ -57,44 +57,6 @@
 
 ---
 
-## 🧱 核心设计：分屏引擎抽象
-
-为未来 Chrome Window Placing API 等原生能力预留接入点。
-
-```ts
-// src/features/split-engine/types.ts
-export type SplitMode = '2h' | '2v' | '3grid' | '4grid';
-
-export interface SplitEngine {
-  readonly id: 'iframe' | 'native';
-  readonly displayName: string;
-  open(urls: string[], layout: SplitLayout): Promise<SplitHandle>;
-  close(handle: SplitHandle): Promise<void>;
-}
-
-// src/features/split-engine/manager.ts
-class SplitEngineManager {
-  register(engine: SplitEngine) { ... }
-  async open(urls: string[], layout: SplitLayout, prefer?: ...) { ... }
-}
-
-splitManager.register(new IframeSplitEngine());
-// 未来：splitManager.register(new NativeSplitEngine());
-```
-
-- **v1**：注册 `IframeSplitEngine`（打开新标签页 + `newtab.html?split=1` 内部 N 个 iframe）
-- **未来**：注册 `NativeSplitEngine`（基于 Window Placing API 或 `chrome.tabs` + `chrome.windows`）
-- **调用方**（folder-action、popup、search）不感知实现
-
-iframe 分屏页实现要点：
-- 通过 URL 参数 `?split=1` 切换分屏模式，URL 列表和 layout 通过 URL hash 传参
-- 校验：URL 数量、layout 兼容性、URL scheme（仅 http/https）
-- iframe 加 `sandbox="allow-scripts allow-same-origin allow-popups allow-forms"`（按需细化）
-- `loading="lazy"` + IntersectionObserver 懒加载
-- `declarativeNetRequest` 动态规则移除 `X-Frame-Options` 和 `Content-Security-Policy` 响应头
-
----
-
 ## 🛠 技术栈
 
 | 维度 | 选型 | 理由 |
