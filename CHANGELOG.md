@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.10] - 2026-06-17
+
+### Changed
+- README 重写「五大新增能力」章节：从技术视角改为产品视角，聚焦用户能做什么、体验如何，去掉 API 名称、参数阈值等实现细节。
+- 简介段落中能力名称与「五大新增能力」章节对齐（文件夹批量操作 / 拖拽布局 / 书签快速搜索 / Popup 分屏 / 主题与个性化）。
+
 ## [0.2.7] - 2026-06-16
 
 ### Changed
@@ -67,7 +73,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 新增 `lib/chrome/bookmarks.ts` 的 `getBookmark(id)` 包装。
 - 新增 `src/features/bookmarks/moved-out.ts` 模块。
 
-[Unreleased]: https://github.com/lingyired/newtab01/compare/v0.2.7...HEAD
+[Unreleased]: https://github.com/lingyired/newtab01/compare/v0.2.10...HEAD
+[0.2.10]: https://github.com/lingyired/newtab01/compare/v0.2.7...v0.2.10
 [0.2.7]: https://github.com/lingyired/newtab01/compare/v0.2.6...v0.2.7
 [0.2.6]: https://github.com/lingyired/newtab01/compare/v0.2.5...v0.2.6
 [0.2.5]: https://github.com/lingyired/newtab01/compare/v0.2.4...v0.2.5
