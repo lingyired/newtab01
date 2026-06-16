@@ -1,0 +1,98 @@
+// Column rendering — creates a column div and renders its folder list
+
+import type { BookmarkNode } from './types';
+import { getSubTreeStub, getChildren } from './special-folders';
+import { renderFolder } from './folder';
+import { renderLink } from './link';
+import { getColumnMenuItems, renderMenu } from './context-menu';
+import { getSetting } from '../../lib/storage/settings';
+import { getBookmarkSubTree, chromeBookmarkToNode } from '../../lib/chrome/bookmarks';
+import * as debug from '../../lib/debug';
+
+/** Render a single column at the given index into the target element */
+export async function renderColumn(index: number, target: HTMLElement, columns: string[][]): Promise<void> {
+  const ids = columns[index];
+  if (!ids || ids.length === 0) return;
+  debug.log('render', 'renderColumn', { index, ids, showRoot: !!getSetting('showRoot') });
+
+  // Single folder with showRoot=false: render children directly
+  if (ids.length === 1 && !getSetting('showRoot')) {
+    const node = await resolveNode(ids[0]!);
+    if (node) {
+      const children = await getChildren(node);
+      const ul = renderAllNodes(children);
+      target.appendChild(ul);
+      addColumnContextMenu(target, index);
+    }
+    return;
+  }
+
+  // Multiple folders or showRoot=true: render each folder
+  const nodes: BookmarkNode[] = [];
+  for (const id of ids) {
+    const node = await resolveNode(id);
+    if (node) nodes.push(node);
+  }
+
+  if (nodes.length > 0) {
+    const ul = renderAllNodes(nodes);
+    target.appendChild(ul);
+    addColumnContextMenu(target, index);
+  }
+}
+
+/** Render an array of bookmark nodes into a ul */
+export function renderAllNodes(nodes: BookmarkNode[]): HTMLUListElement {
+  const ul = document.createElement('ul');
+
+  if (nodes.length === 0) {
+    const emptyNode: BookmarkNode = { id: 'empty', title: '< Empty >', type: 'empty' };
+    renderNode(emptyNode, ul, 0);
+  } else {
+    for (const node of nodes) {
+      renderNode(node, ul, 0);
+    }
+  }
+
+  return ul;
+}
+
+/** Render a single bookmark node (folder or link) */
+function renderNode(node: BookmarkNode, target: HTMLElement, depth: number): void {
+  if (node.children) {
+    renderFolder(node, target, depth);
+  } else {
+    renderLink(node, target);
+  }
+}
+
+/** Resolve a node ID to a BookmarkNode (handles special + regular) */
+async function resolveNode(id: string): Promise<BookmarkNode | null> {
+  // Special folders
+  if (['top', 'apps', 'recent', 'closed', 'devices'].includes(id)) {
+    return getSubTreeStub(id);
+  }
+
+  // Regular bookmark folder
+  const result = await getBookmarkSubTree(id);
+  if (result && result[0]) {
+    return chromeBookmarkToNode(result[0]);
+  }
+
+  return null;
+}
+
+/** Add context menu handler for a column */
+function addColumnContextMenu(target: HTMLElement, index: number): void {
+  target.addEventListener('contextmenu', (e) => {
+    const eventTarget = e.target as HTMLElement;
+    if (eventTarget.tagName === 'A' || eventTarget.parentElement?.tagName === 'A') {
+      return;
+    }
+    const items = getColumnMenuItems(index);
+    if (items.length > 0) {
+      e.preventDefault();
+      renderMenu(items, e.pageX, e.pageY);
+    }
+  });
+}

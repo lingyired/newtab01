@@ -1,0 +1,18 @@
+- [x] `.trae/rules/project_rules.md` 已创建，包含从 CLAUDE.md 迁移的 AI 助手行为指令
+- [x] `.trae/rules/project_rules.md` 中 Frontend Skill 规则已精简，移除 marketing 页相关规则
+- [x] `.trae/rules/project_rules.md` 中组件选型表已精简为项目实际使用的组件
+- [x] CLAUDE.md 第 1 节编号连续：1.1 目标、1.2 非目标
+- [x] CLAUDE.md 第 2 节编号连续：2.1-2.5 无跳跃，2.2 为拖拽排序与布局管理
+- [x] CLAUDE.md 第 4 节子节编号为 4.1，不与第 5 节冲突
+- [x] CLAUDE.md 第 10 节不再引用不存在的 10.2
+- [x] CLAUDE.md Manifest V3 示例版本号与实际一致，包含 host_permissions
+- [x] CLAUDE.md 分屏相关描述使用 ?split=1 URL 参数方式
+- [x] CLAUDE.md 上下文矩阵已更新，移除 Split 独立入口行
+- [x] CLAUDE.md 技术栈表包含 zustand、react-hook-form、zod、dnd-kit 等实际依赖
+- [x] CLAUDE.md 1.2 非目标已补充
+- [x] CLAUDE.md 2.2 拖拽排序与布局管理已补充
+- [x] CLAUDE.md SplitEngine 接口参数类型一致
+- [x] CLAUDE.md popup 描述无矛盾
+- [x] CLAUDE.md framer-motion 用量描述一致
+- [x] CLAUDE.md "禁用 bg-blue-500"规则只在 9.2 出现一次
+- [x] CLAUDE.md 原第 8 节已替换为引用说明，指向 `.trae/rules/project_rules.md`

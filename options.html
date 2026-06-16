@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>newtab01 Options</title>
+  <link rel="stylesheet" href="/styles/globals.css" />
+  <link rel="stylesheet" href="/styles/options.css" />
+</head>
+<body>
+  <div id="root">
+    <div class="opt-layout">
+      <nav id="nav" class="opt-nav"></nav>
+      <main id="content" class="opt-content"></main>
+    </div>
+    <div class="opt-footer">
+      <button id="close-btn" type="button" class="opt-close-btn">Close</button>
+    </div>
+  </div>
+  <script type="module" src="/src/options/main.ts"></script>
+  <script>
+    document.getElementById('close-btn').addEventListener('click', function() {
+      chrome.tabs.update({ url: 'chrome://newtab' });
+    });
+  </script>
+</body>
+</html>

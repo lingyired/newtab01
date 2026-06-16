@@ -1,0 +1,17 @@
+[data-theme="rose"] {
+  --background: #fff1f2;
+  --foreground: #4c0519;
+  --primary: #e11d48;
+  --primary-foreground: #ffffff;
+  --muted: #fecdd3;
+  --muted-foreground: #9f1239;
+  --border: #fda4af;
+  --ring: #e11d48;
+
+  --newtab-bg: #ffe4e6;
+  --newtab-surface: #ffffff;
+  --newtab-text: #4c0519;
+  --newtab-highlight: #fecdd3;
+  --newtab-highlight-text: #4c0519;
+  --newtab-drop-indicator: #1d4ed8;
+}

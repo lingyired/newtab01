@@ -1,0 +1,11 @@
+/* Default light theme - inherits from :root */
+[data-theme="default"] {
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --newtab-bg: #f1f5f9;
+  --newtab-surface: #ffffff;
+  --newtab-text: #1a1a1a;
+  --newtab-highlight: #e4f4ff;
+  --newtab-highlight-text: #000;
+  --newtab-drop-indicator: #2563eb;
+}

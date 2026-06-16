@@ -1,0 +1,204 @@
+/* Options page specific styles */
+
+body {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.opt-layout {
+  display: flex;
+  flex: 1;
+}
+
+/* Left navigation */
+.opt-nav {
+  width: 10em;
+  background-color: var(--background);
+  border-right: 1px solid var(--border);
+  padding: 12px 0;
+  flex-shrink: 0;
+}
+
+.opt-nav-item {
+  display: block;
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 1.3rem;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.1s, color 0.1s;
+}
+
+.opt-nav-item:hover {
+  background-color: var(--muted);
+  color: var(--foreground);
+}
+
+.opt-nav-item--active {
+  background-color: var(--muted);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* Content area */
+.opt-content {
+  flex: 1;
+  background-color: var(--background);
+  padding: 20px 28px;
+  overflow-y: auto;
+}
+
+/* Tab content */
+.opt-tab-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Setting row */
+.opt-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+.opt-label {
+  width: 16em;
+  font-size: 1.3rem;
+  color: var(--foreground);
+  flex-shrink: 0;
+}
+
+.opt-input {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+}
+
+.opt-input input[type="number"],
+.opt-input input[type="text"],
+.opt-input select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-size: 1.2rem;
+  min-width: 120px;
+}
+
+.opt-input input[type="number"] {
+  width: 80px;
+  min-width: 80px;
+}
+
+.opt-input input[type="color"] {
+  width: 36px;
+  height: 28px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.opt-input input[type="file"] {
+  font-size: 1.1rem;
+}
+
+.opt-input input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--primary);
+}
+
+/* Revert button */
+.opt-revert {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  font-size: 1.2rem;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.1s, background-color 0.1s;
+}
+
+.opt-revert:hover {
+  color: var(--foreground);
+  background-color: var(--muted);
+}
+
+/* Textarea */
+.opt-textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: monospace;
+  font-size: 1.2rem;
+  resize: vertical;
+}
+
+/* Actions row */
+.opt-actions {
+  display: flex;
+  gap: 12px;
+  padding-top: 8px;
+}
+
+.opt-btn {
+  padding: 8px 16px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background-color: var(--background);
+  color: var(--foreground);
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.opt-btn:hover {
+  background-color: var(--muted);
+}
+
+/* Footer */
+.opt-footer {
+  padding: 12px 28px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.opt-close-btn {
+  padding: 8px 24px;
+  border: none;
+  border-radius: 6px;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 1.3rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.opt-close-btn:hover {
+  opacity: 0.9;
+}

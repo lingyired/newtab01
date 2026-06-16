@@ -1,0 +1,48 @@
+@import './themes/default.css';
+@import './themes/slate.css';
+@import './themes/rose.css';
+@import './themes/dark.css';
+
+:root {
+  /* Base semantic colors */
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --border: #e2e8f0;
+  --ring: #2563eb;
+
+  /* Newtab specific */
+  --newtab-bg: #f1f5f9;
+  --newtab-surface: #ffffff;
+  --newtab-text: var(--foreground);
+  --newtab-highlight: #e4f4ff;
+  --newtab-highlight-text: #000;
+  --newtab-drop-indicator: #2563eb;
+  --newtab-spacing: 10px;
+  --newtab-vmargin: 5%;
+  --newtab-column-width: auto;
+  --newtab-shadow-blur: 7px;
+  --newtab-highlight-round: 0.2em;
+  --newtab-fade-ms: 200ms;
+  --newtab-slide-ms: 200ms;
+
+  font-family: system-ui, -apple-system, sans-serif;
+  font-size: 62.5%;
+  line-height: 1;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  overflow-x: hidden;
+  background-color: var(--newtab-bg);
+  color: var(--newtab-text);
+}
+
+#root {
+  width: 100%;
+}
