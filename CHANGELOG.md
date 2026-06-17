@@ -5,6 +5,16 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.51] - 2026-06-18
+
+### Changed
+- **所有 box-shadow 统一用 `var(--shadow-xs)`**（用户反馈 "给他们的 shadow 都使用 shadow-xs 的效果，看起来是这样的 .shadow-xs { --tw-shadow: var(--shadow-xs); box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow); }"）：
+  - shadcn 的 `.shadow-xs` 完整定义里有 5 个 box-shadow 层组合（前 4 个 `--tw-*` 是 Tailwind 内部，初始值都是 `0 0 transparent`，加上不影响渲染；最后一个是真正的 `var(--shadow-xs)` 值）。我们没引入 Tailwind，所以用简化形式 `box-shadow: var(--shadow-xs)` 视觉效果等价。
+  - **`styles/newtab.css:103`** `#main a` `box-shadow: var(--shadow-sm)` → `var(--shadow-xs)`。
+  - **`styles/newtab.css:364`** `.search-input` `box-shadow: var(--shadow)` → `var(--shadow-xs)`。
+  - **`styles/newtab.css:376`** `.search-input:focus` `box-shadow: var(--shadow), 0 0 0 2px var(--ring)` → `var(--shadow-xs), 0 0 0 2px var(--ring)`。
+  - **`styles/themes/mx-brutalist.css:118,133`** link default + active `box-shadow: var(--shadow)` → `var(--shadow-xs)`。MX-Brutalist 主题下 `--shadow-xs` = `4px 4px 0px 0px hsl(0 0% 0% / 0.50)`，从 v0.2.50 的全不透明（1.00）变为半透明（0.50），符合 shadcn `.shadow-xs` 标准定义。Hover 状态仍用 `6px 6px 0 0 var(--shadow-color)`（独立计算的不跟随 --shadow-xs）。
+
 ## [0.2.50] - 2026-06-18
 
 ### Architecture

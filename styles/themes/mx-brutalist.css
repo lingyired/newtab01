@@ -110,7 +110,12 @@
   border: 3px solid var(--border);
   border-radius: var(--radius);
   background-color: var(--newtab-bg);
-  box-shadow: var(--shadow);
+  /* v0.2.51: use var(--shadow-xs) for consistency with the global
+   * "everything is .shadow-xs" rule. The theme's --shadow-xs is
+   * `4px 4px 0px 0px hsl(<shadow-color> / 0.50)` (0.50 opacity, per
+   * the tweakcn JSON). The full-opacity --shadow is reserved for
+   * explicit heavy-shadow use cases elsewhere if we add them. */
+  box-shadow: var(--shadow-xs);
 }
 
 :root[data-theme="mx-brutalist"] #main a:hover,
@@ -125,7 +130,7 @@
 :root[data-theme="mx-brutalist"] #main a:active,
 :root[data-theme="mx-brutalist-dark"] #main a:active {
   transform: translate(0, 0);
-  box-shadow: var(--shadow);
+  box-shadow: var(--shadow-xs);
 }
 
 /* Search input — apply the same brutalist 3px hard border + var(--shadow)
