@@ -75,15 +75,3 @@ export async function clearLocal(): Promise<void> {
     });
   });
 }
-
-/** Get settings from chrome.storage.sync with defaults */
-export async function getSyncSettings<T extends Record<string, unknown>>(defaults: T): Promise<T> {
-  const stored = await getSync<T>('settings');
-  return { ...defaults, ...stored };
-}
-
-/** Set partial settings in chrome.storage.sync */
-export async function setSyncSettings(partial: Record<string, unknown>): Promise<void> {
-  const current = await getSync<Record<string, unknown>>('settings');
-  await setSync('settings', { ...current, ...partial });
-}

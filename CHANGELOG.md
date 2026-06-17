@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.15] - 2026-06-17
+
+### Changed
+- **Settings 系统合一**：保留 canonical 存储 `src/lib/storage/settings.ts`，删除重复定义 `src/lib/settings.ts`（AppSettings/defaultSettings/themeList）。所有 chrome.storage.sync 设置现在都走统一的 `settings` 对象 + `getSettings/updateSetting` API。
+- **字段重命名对齐**（老 `AppSettings` → canonical `Settings`）：
+  `textColor` → `fontColor` · `showTopLevel` → `showTop` · `showSearchBar` → `showSearch` · `openInNewTab` (string union) → `newtab` (0/1/2) · `customCSS` → `css` · `highlightTextColor` → `highlightFontColor` · `fadeMs` → `fade` · `slideMs` → `slide` · `showOtherDevices` → `showDevices`。
+- 选项页 `src/options/app.ts` 重写：所有写入通过 `updateSetting(key, value)`，checkbox 在 0/1 ↔ boolean 间转换与 `newtab/settings-panel.ts` 保持一致；Import/Export 仍然工作（导出当前 `getSettings()` 快照，导入按字段 `updateSetting`）。
+- 删除 `src/lib/storage/index.ts` 中的死代码 helper：`getSyncSettings` / `setSyncSettings`（在 canonical settings store 接管后无人调用）。
+
+### Added
+- `Settings` interface 与默认值新增 `backgroundImage: string`（选项页 Background Image 输入项需要持久化 dataURL）。
+- `migrateLegacySettings()`：在 `initSettings()` 检测到无统一 `settings` 对象时，从老格式的逐 key chrome.storage.sync 项（`newtab01.theme` / `newtab01.textColor` / `newtab01.openInNewTab` / `newtab01.customCSS` / ...）合并到统一对象，写回后再 `removeSync` 删除 legacy keys。已存在统一对象时跳过，无 legacy keys 时也跳过。
+
+### Removed
+- `src/lib/settings.ts` 文件整体删除。
+
 ## [0.2.14] - 2026-06-17
 
 ### Fixed
@@ -92,7 +108,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 新增 `lib/chrome/bookmarks.ts` 的 `getBookmark(id)` 包装。
 - 新增 `src/features/bookmarks/moved-out.ts` 模块。
 
-[Unreleased]: https://github.com/lingyired/newtab01/compare/v0.2.14...HEAD
+[Unreleased]: https://github.com/lingyired/newtab01/compare/v0.2.15...HEAD
+[0.2.15]: https://github.com/lingyired/newtab01/compare/v0.2.14...v0.2.15
 [0.2.14]: https://github.com/lingyired/newtab01/compare/v0.2.13...v0.2.14
 [0.2.13]: https://github.com/lingyired/newtab01/compare/v0.2.12...v0.2.13
 [0.2.12]: https://github.com/lingyired/newtab01/compare/v0.2.11...v0.2.12
