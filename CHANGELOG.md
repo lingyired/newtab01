@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.47] - 2026-06-18
+
+### Fixed
+- **右上角齿轮按钮顶到视口边缘**（用户反馈 "那个 Settings 图标太靠右了，可以加点右边距"）：`#options_button` 是 `#topbar`（`position: relative; padding: 16px`）的绝对定位子元素，CSS 规范规定 `right` 相对父容器的 **padding edge**（不是 border edge），所以 `right: 16px` 与 topbar 的 `padding-right: 16px` 互相抵消，齿轮实际距视口右 0px。改为 `right: 0`，由 topbar 的 padding 提供视觉间距 —— 以后调整 topbar padding 齿轮会同步跟随。
+
 ## [0.2.46] - 2026-06-18
 
 ### Fixed
