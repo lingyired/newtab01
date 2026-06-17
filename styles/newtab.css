@@ -482,7 +482,7 @@
    * against the viewport (it disappeared off-screen on some widths).
    * Anchoring to a literal pixel value keeps the gear's right gutter
    * independent of any future topbar padding tweaks. */
-  right: 16px;
+  right: 24px;
   background: transparent;
   border: none;
   color: var(--newtab-text);

@@ -5,6 +5,13 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.49] - 2026-06-18
+
+### Changed
+- **齿轮按钮微调**（用户反馈 "setting 按钮在现在的基础上大一丢丢，然后再往左边一些，增大 right 值"）：
+  - `styles/newtab.css:485` `#options_button` `right: 16px` → `24px`（增大 right 值 → 齿轮往左挪 8px，离视口右边 24px 留白）。
+  - `src/newtab/topbar.ts:55` SVG `width/height: 16` → `18`（大一丢丢：齿轮图标从 16px 增到 18px，stroke-width=2 不动保持视觉粗细感）。
+
 ## [0.2.48] - 2026-06-18
 
 ### Fixed
