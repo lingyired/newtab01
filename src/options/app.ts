@@ -6,6 +6,7 @@
 import { getSettings, getSetting, updateSetting } from '../lib/storage/settings';
 import type { Settings } from '../features/bookmarks/types';
 import { applyTheme, listThemes } from '../features/themes/switcher';
+import { buildAIPrompt } from './ai-prompt';
 
 type OptionsTab = 'layout' | 'appearance' | 'features' | 'advanced';
 
@@ -265,6 +266,19 @@ function renderFeaturesTab(): HTMLElement {
 function renderAdvancedTab(): HTMLElement {
   const container = el('div', 'opt-tab-content');
 
+  // Generate-with-AI section: button + prompt modal
+  const aiRow = el('div', 'opt-actions');
+  const aiBtn = document.createElement('button');
+  aiBtn.type = 'button';
+  aiBtn.className = 'opt-btn';
+  aiBtn.textContent = 'Generate with AI';
+  aiBtn.title = 'Copy a prompt to use with an AI assistant for generating custom CSS';
+  aiBtn.addEventListener('click', () => {
+    openAIPromptModal();
+  });
+  aiRow.appendChild(aiBtn);
+  container.appendChild(aiRow);
+
   // Custom CSS textarea
   const cssTextarea = document.createElement('textarea');
   cssTextarea.id = 'opt-css';
@@ -327,6 +341,102 @@ function renderAdvancedTab(): HTMLElement {
   container.appendChild(actionsRow);
 
   return container;
+}
+
+
+/** Open a modal showing the AI prompt with a copy-to-clipboard action. */
+function openAIPromptModal(): void {
+  const prompt = buildAIPrompt();
+
+  const overlay = el('div', 'ai-modal-overlay');
+  overlay.setAttribute('role', 'dialog');
+  overlay.setAttribute('aria-modal', 'true');
+  overlay.setAttribute('aria-labelledby', 'ai-modal-title');
+
+  const modal = el('div', 'ai-modal');
+
+  const title = el('h2', 'ai-modal-title');
+  title.id = 'ai-modal-title';
+  title.textContent = 'Generate Custom CSS with AI';
+  modal.appendChild(title);
+
+  const hint = el('p', 'ai-modal-hint');
+  hint.textContent = 'Copy the prompt below, paste it into any AI assistant, then paste the generated CSS back into the Custom CSS field.';
+  modal.appendChild(hint);
+
+  const textarea = document.createElement('textarea');
+  textarea.className = 'ai-modal-textarea';
+  textarea.value = prompt;
+  textarea.readOnly = true;
+  textarea.setAttribute('spellcheck', 'false');
+  modal.appendChild(textarea);
+
+  const actions = el('div', 'ai-modal-actions');
+
+  const copyBtn = document.createElement('button');
+  copyBtn.type = 'button';
+  copyBtn.className = 'ai-modal-btn ai-modal-btn--primary';
+  copyBtn.textContent = 'Copy to Clipboard';
+  copyBtn.addEventListener('click', async () => {
+    const ok = await copyToClipboard(prompt);
+    copyBtn.textContent = ok ? 'Copied!' : 'Copy failed — opening prompt';
+    if (ok) {
+      window.setTimeout(() => {
+        copyBtn.textContent = 'Copy to Clipboard';
+      }, 1500);
+    }
+  });
+  actions.appendChild(copyBtn);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.type = 'button';
+  closeBtn.className = 'ai-modal-btn';
+  closeBtn.textContent = 'Close';
+  closeBtn.addEventListener('click', () => {
+    closeModal();
+  });
+  actions.appendChild(closeBtn);
+
+  modal.appendChild(actions);
+  overlay.appendChild(modal);
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      closeModal();
+    }
+  });
+
+  function onKey(e: KeyboardEvent): void {
+    if (e.key === 'Escape') {
+      closeModal();
+    }
+  }
+  document.addEventListener('keydown', onKey);
+
+  function closeModal(): void {
+    document.removeEventListener('keydown', onKey);
+    overlay.remove();
+  }
+
+  document.body.appendChild(overlay);
+  textarea.focus();
+  textarea.select();
+}
+
+/** Copy text to clipboard, falling back to a window.prompt dialog on failure. */
+async function copyToClipboard(text: string): Promise<boolean> {
+  if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // fall through to legacy fallback
+    }
+  }
+  // Legacy fallback for environments without a working Clipboard API
+  // (e.g. insecure contexts). The user can still copy manually.
+  window.prompt('Copy the prompt below', text);
+  return false;
 }
 
 // --- Main render ---
