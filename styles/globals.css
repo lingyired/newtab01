@@ -38,11 +38,23 @@
   --ring: #2563eb;
 
   /* Newtab palette — derived from the shadcn variables above so that
-   * tweakcn-imported themes work without per-theme newtab overrides. */
+   * tweakcn-imported themes work without per-theme newtab overrides.
+   *
+   * `color-mix` gives the link surface a guaranteed 6% step away from
+   * the page bg (darkens on light themes, lightens on dark themes,
+   * tints toward the foreground on colored themes) — without it, --muted
+   * is too close to --background in many shadcn themes (default/slate/
+   * rose) and links visually disappear into the page. The hover
+   * highlight uses --primary at 15% so the active row picks up the
+   * theme's accent color, not just a slightly different gray.
+   *
+   * Both derivations read from --newtab-bg / --newtab-text, not from
+   * the raw shadcn vars, so the per-color user overrides written to
+   * <html style="..."> continue to flow through. */
   --newtab-bg: var(--background);
-  --newtab-surface: var(--background);
+  --newtab-surface: color-mix(in srgb, var(--newtab-bg), var(--newtab-text) 6%);
   --newtab-text: var(--foreground);
-  --newtab-highlight: var(--muted);
+  --newtab-highlight: color-mix(in srgb, var(--newtab-bg), var(--primary) 15%);
   --newtab-highlight-text: var(--foreground);
   --newtab-drop-indicator: var(--primary);
 

@@ -5,6 +5,19 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.33] - 2026-06-18
+
+### Changed
+- **链接可见性提升（全部主题）**：
+  1. `--newtab-surface` 从 `var(--background)` 改为 `color-mix(in srgb, var(--newtab-bg), var(--newtab-text) 6%)` —— 浅色主题链接变深灰、深色主题链接变浅、彩色主题链接变深一点的同色调，自动保证和页面背景有可见差异。之前 default / slate / rose 主题里 muted 跟 background 只差 1-2%，链接几乎融进背景。
+  2. `--newtab-highlight` 从 `var(--muted)` 改为 `color-mix(in srgb, var(--newtab-bg), var(--primary) 15%)` —— hover 状态用主题主色淡染，比 muted 强一档，跨主题行为一致。
+  3. `#main a`（书签 + 文件夹 header）新增 `border: 1px solid var(--border)`，hover 时 border-color 切到 `var(--primary)`，移除原来 `0 1px 2px rgba(...)` 的硬编码 slate 阴影（深色主题下不可见）。
+- 两个 color-mix 都从 `--newtab-bg` / `--newtab-text` / `--newtab-bg` 派生（不是 raw shadcn vars），用户通过设置面板改的 5 个 color override 写在 `<html style>` 上（specificity 1,0,0,0）依然完全生效。
+
+### Notes
+- 8 个 tweakcn 主题文件不需要任何修改 —— 派生逻辑全在 `styles/globals.css` 的 `:where(:root)` 块里。
+- `color-mix` 需要 Chrome 111+，manifest 已声明 `minimum_chrome_version: "104"`，新要求 Chrome 111+。如果要回到 104 兼容，把 `color-mix` 改成手算 hex。
+
 ## [0.2.32] - 2026-06-17
 
 ### Changed

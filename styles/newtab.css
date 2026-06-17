@@ -46,11 +46,16 @@
   color: var(--newtab-text);
   padding: 0.45em 0.8em 0.45em 1.2em;
   background-color: var(--newtab-surface);
+  /* 1px border guarantees link visibility on every theme (the
+   * --newtab-surface color-mix is only a 6% step away from --newtab-bg,
+   * which is intentional for the Linear-style "calm surface hierarchy"
+   * but isn't enough on its own for some themes). --border is one of
+   * the 8 shadcn vars every tweakcn theme already defines. */
+  border: 1px solid var(--border);
   border-radius: 0.6em;
   cursor: pointer;
   white-space: nowrap;
-  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
-  transition-property: color, background-color, box-shadow, opacity;
+  transition-property: color, background-color, border-color, box-shadow, opacity;
   transition-duration: var(--newtab-fade-ms);
   transition-timing-function: ease-out;
 }
@@ -58,6 +63,7 @@
 #main a:hover {
   color: var(--newtab-highlight-text);
   background-color: var(--newtab-highlight);
+  border-color: var(--primary);
   box-shadow: 0 0 var(--newtab-shadow-blur) var(--newtab-highlight);
 }
 
