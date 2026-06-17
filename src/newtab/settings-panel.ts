@@ -2,7 +2,7 @@
 
 import { getSettings, getSetting, updateSetting, updateSettings } from '../lib/storage/settings';
 import type { Settings } from '../features/bookmarks/types';
-import { applyTheme, listThemes } from '../features/themes/switcher';
+import { applyTheme, listThemes, resolveCssColor } from '../features/themes/switcher';
 import { applySettingChange, applyUserColorOverride } from '../features/settings/apply';
 import * as debug from '../lib/debug';
 import { renderColumns } from '../features/bookmarks/board';
@@ -162,7 +162,11 @@ function refreshInputsFromSettings(): void {
     const input = document.getElementById(`sp-${key}`) as HTMLInputElement | null;
     if (!input || input.type !== 'color') continue;
     const sourceKey: keyof Settings = key === 'shadowColor' ? 'highlightColor' : key;
-    const next = String(getSetting(sourceKey) ?? '');
+    // `resolveCssColor` is a no-op for plain hex/rgb (the common case)
+    // and rescues us from a stored `var()`/`color-mix()` string — which
+    // <input type="color"> would otherwise reject with "does not conform
+    // to the required format '#rrggbb'".
+    const next = resolveCssColor(String(getSetting(sourceKey) ?? ''));
     if (input.value !== next) input.value = next;
   }
   // Theme select lives on the same tab as the color inputs; keep it in sync.
@@ -441,7 +445,13 @@ async function saveThemeChange(theme: string): Promise<void> {
   applyTheme(theme);
   if (typeof document === 'undefined') return;
   const root = document.documentElement;
-  const readVar = (name: string): string => root.style.getPropertyValue(name).trim();
+  // Resolve the values via the browser before reading them back. After
+  // `applyTheme` writes resolved hex/rgb() to inline style, this is a
+  // pass-through; but if anyone in the chain ever writes a `var()` or
+  // `color-mix()` expression here, this layer normalizes it to a string
+  // the <input type="color"> (and chrome.storage) will accept.
+  const readVar = (name: string): string =>
+    resolveCssColor(root.style.getPropertyValue(name).trim());
   const bundle: Partial<Settings> = {
     theme,
     backgroundColor: readVar('--newtab-bg'),
@@ -485,7 +495,15 @@ function createColorInput(key: keyof Settings): HTMLInputElement {
   const input = document.createElement('input');
   input.type = 'color';
   input.id = `sp-${key}`;
-  input.value = String(getSetting(key));
+  // `shadowColor` is a legacy field that shares a CSS variable with
+  // `highlightColor`; render the picker with the value that's actually
+  // on screen so the user sees what the panel is editing.
+  const sourceKey: keyof Settings = key === 'shadowColor' ? 'highlightColor' : key;
+  // Normalize through resolveCssColor: if a user upgraded from a pre-0.2.36
+  // build, their storage may still hold a `var()`/`color-mix()` string
+  // written by the old saveThemeChange. <input type="color"> rejects
+  // those, so resolve them at the read site.
+  input.value = resolveCssColor(String(getSetting(sourceKey) ?? ''));
   input.addEventListener('change', () => saveSetting(key));
   return input;
 }

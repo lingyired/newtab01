@@ -92,12 +92,20 @@ export function applyTheme(theme: string): void {
 
     // 3. Promote the resolved values to inline style (specificity 1,0,0,0)
     //    so subsequent `applyUserColorOverride` calls have a known target
-    //    to overwrite.
+    //    to overwrite. `resolveCssColor` is required here because
+    //    `getComputedStyle().getPropertyValue('--newtab-highlight')`
+    //    returns a CSS expression (e.g. `color-mix(in srgb, #fffcf5,
+    //    #008f47 15%)`) with var() refs substituted but the function
+    //    itself preserved — and `<input type="color">` rejects anything
+    //    that isn't `#rrggbb`. Without resolution, saveThemeChange would
+    //    write the expression straight into chrome.storage and the next
+    //    settings-panel render would fail the color input's format
+    //    validation.
     const styles = getComputedStyle(root);
-    const bg = styles.getPropertyValue('--newtab-bg').trim();
-    const text = styles.getPropertyValue('--newtab-text').trim();
-    const highlight = styles.getPropertyValue('--newtab-highlight').trim();
-    const highlightText = styles.getPropertyValue('--newtab-highlight-text').trim();
+    const bg = resolveCssColor(styles.getPropertyValue('--newtab-bg').trim());
+    const text = resolveCssColor(styles.getPropertyValue('--newtab-text').trim());
+    const highlight = resolveCssColor(styles.getPropertyValue('--newtab-highlight').trim());
+    const highlightText = resolveCssColor(styles.getPropertyValue('--newtab-highlight-text').trim());
     if (bg) root.style.setProperty('--newtab-bg', bg);
     if (text) root.style.setProperty('--newtab-text', text);
     if (highlight) root.style.setProperty('--newtab-highlight', highlight);
@@ -107,6 +115,39 @@ export function applyTheme(theme: string): void {
   for (const cb of listeners) {
     cb(theme);
   }
+}
+
+/**
+ * Resolve any CSS color expression (hex, rgb(), hsl(), oklch(),
+ * color-mix(), var()-bearing expressions, ...) to a concrete
+ * `rgb(r, g, b)` or `rgba(r, g, b, a)` string the browser has
+ * already evaluated. This is the only thing that satisfies
+ * `<input type="color">` (which requires exactly `#rrggbb`) and
+ * chrome.storage (which we'd rather keep as a real color string,
+ * not a CSS expression).
+ *
+ * Implementation: stamp the expression onto a throwaway element's
+ * `style.color` and let the browser do the resolution. `getComputedStyle`
+ * on the color property always returns a concrete rgb()/rgba() value,
+ * not the original expression.
+ *
+ * Fast path: a value that's already a simple `rgb()` / `rgba()` / hex
+ * is returned unchanged (the temp-DOM round-trip is ~0.1ms each but
+ * not free on every settings render).
+ */
+export function resolveCssColor(cssValue: string): string {
+  const v = cssValue.trim();
+  if (!v) return '';
+  if (/^#[0-9a-f]{3,8}$/i.test(v)) return v;
+  if (/^(rgb|rgba|hsl|hsla)\(/i.test(v)) return v;
+  if (typeof document === 'undefined') return v;
+  const probe = document.createElement('span');
+  probe.style.color = v;
+  probe.style.display = 'none';
+  document.body.appendChild(probe);
+  const resolved = getComputedStyle(probe).color;
+  document.body.removeChild(probe);
+  return resolved || v;
 }
 
 /**

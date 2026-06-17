@@ -5,6 +5,19 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.36] - 2026-06-18
+
+### Fixed
+- **颜色选择器在带 color-mix 派生的主题上报格式错误**（"The specified value 'color-mix(in srgb, #fffcf5, #008f47 15%)' does not conform to the required format '#rrggbb'"）。根因：`applyTheme` 用 `getComputedStyle().getPropertyValue('--newtab-highlight')` 读派生变量时，浏览器返回的是**保留 color-mix 表达式 + 替换内部 var() 引用**的字符串，不是最终 hex/rgb。`saveThemeChange` 把这个字符串原样写进 chrome.storage，下次 color input 渲染时 Chrome 拒绝接受。修法：
+  1. 新增 `resolveCssColor(cssValue)` 工具（`src/features/themes/switcher.ts`）—— 把 CSS 颜色表达式盖到一次性 `<span>` 的 `style.color` 上，让浏览器用 `getComputedStyle` 解析成 `rgb(...)` / `rgba(...)`。带 fast-path：已经是 hex/rgb/hsl 的直接返回。
+  2. `applyTheme` 写 inline style 之前先 `resolveCssColor`，确保 inline style 永远存的是真实颜色。
+  3. `saveThemeChange` 的 `readVar` 也包一层 `resolveCssColor`（写 inline 后再读，理论上是 pass-through，但作为防御层保留）。
+  4. `createColorInput` 和 `refreshInputsFromSettings` 在设置 input.value 之前也走 `resolveCssColor`，修复 0.2.36 之前的用户 storage 里残留的 `var()` / `color-mix()` 字符串（迁移：升级后第一次打开设置面板就被自动 normalize）。
+
+### Notes
+- 这一类 bug 在 v0.2.33 加了 `color-mix` 派生之后才出现。MX-Brutalist 是第一个会触发 `--newtab-highlight` 走 color-mix 路径的"亮色 + 高饱和 primary"主题，之前 default / slate / dark 等主题里 color-mix 算出来的值碰巧还能被 color input 接受（实际不是 —— 是用户没切换过主题所以 storage 里没有 bad value）。
+- 临时 `<span>` 性能：~0.1ms/次，每次设置面板 render 最多 5 次（5 个 color field），可以忽略。设置面板不是热路径。
+
 ## [0.2.35] - 2026-06-18
 
 ### Added
