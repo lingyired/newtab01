@@ -29,7 +29,17 @@ function rebuildDynamicStyles(): void {
   rules.push(`#main a { font-size: ${settings('fontSize') / 10}em; }`);
   rules.push(`#main a { font-weight: ${settings('fontWeight')}; }`);
 
-  // Colors
+  // Colors — driven by the active theme's CSS variables (--newtab-bg,
+  // --newtab-text, --newtab-highlight, --newtab-highlight-text) so a
+  // theme switch automatically retints the page. The fontColor /
+  // backgroundColor / highlightColor / highlightFontColor / shadowColor
+  // settings exist in the legacy Settings type but are not exposed in the
+  // settings panel UI (see CLAUDE.md § 9.7 for the canonical setting
+  // list). If we later want to let users override the theme palette, the
+  // override has to be applied via inline style on <html> (so the theme
+  // switch can wipe it) rather than as a <style> rule, otherwise the
+  // dynamic-styles block would always win the cascade and theme changes
+  // would have no visual effect.
   rules.push(`#main a { color: var(--newtab-text); }`);
   rules.push(`#main a:hover { color: var(--newtab-highlight-text); background-color: var(--newtab-highlight); }`);
 
@@ -107,7 +117,9 @@ function scale(value: number, mid: number, max: number, min: number = 0): number
  * existing dynamic-styles node in place rather than appending duplicates.
  */
 export function applySettingsToDOM(): void {
-  applyTheme(String(getSetting('theme')));
+  const theme = String(getSetting('theme'));
+  console.log('[newtab01:apply] applySettingsToDOM', { theme });
+  applyTheme(theme);
   rebuildDynamicStyles();
   rebuildUserCss();
 }
@@ -118,6 +130,7 @@ export function applySettingsToDOM(): void {
  * updates before the dynamic-styles block is regenerated.
  */
 export function applySettingChange<K extends keyof Settings>(key: K): void {
+  console.log('[newtab01:apply] applySettingChange', { key, value: getSetting(key) });
   if (key === 'theme') {
     applyTheme(String(getSetting('theme')));
   }
@@ -140,12 +153,20 @@ export function installSettingsChangeListener(): void {
   if (storageListenerInstalled) return;
   if (typeof chrome === 'undefined' || !chrome.storage?.onChanged) return;
   storageListenerInstalled = true;
+  // The chrome.storage.onChanged key is the literal key passed to
+  // chrome.storage.sync.set, which is STORAGE_PREFIX + SETTINGS_KEY
+  // = 'newtab01.settings' (see lib/storage/index.ts and settings.ts).
+  // Listening for the bare 'settings' key never matches.
+  const FULL_KEY = 'newtab01.settings';
+  console.log('[newtab01:apply] installSettingsChangeListener (listening for', FULL_KEY + ')');
   chrome.storage.onChanged.addListener((changes, areaName) => {
+    console.log('[newtab01:apply] storage.onChanged fired', { areaName, keys: Object.keys(changes) });
     if (areaName !== 'sync') return;
-    if (!changes['settings']) return;
-    // Re-read the unified settings object so getSetting() in this tab
-    // returns the value updated by another tab.
-    const newValue = changes['settings'].newValue as Settings | undefined;
+    if (!changes[FULL_KEY]) {
+      console.log('[newtab01:apply] storage.onChanged ignored: key mismatch, expected', FULL_KEY);
+      return;
+    }
+    const newValue = changes[FULL_KEY].newValue as Settings | undefined;
     if (newValue) {
       replaceSettings(newValue);
     }

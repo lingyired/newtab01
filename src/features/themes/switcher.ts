@@ -46,9 +46,15 @@ export function listThemes(): string[] {
  * No-op when called in a non-DOM environment (e.g. unit tests without jsdom).
  */
 export function applyTheme(theme: string): void {
+  let prev: string | null = null;
   if (typeof document !== 'undefined') {
+    prev = document.documentElement.getAttribute('data-theme');
     document.documentElement.setAttribute('data-theme', theme);
   }
+  // Direct console.log (not gated by debug module) so this is visible in
+  // the production build — this is the source of "theme change has no
+  // effect" reports and we need to confirm it actually fires.
+  console.log('[newtab01:theme] applyTheme', { from: prev, to: theme });
   for (const cb of listeners) {
     cb(theme);
   }

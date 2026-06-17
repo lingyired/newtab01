@@ -5,6 +5,19 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.24] - 2026-06-17
+
+### Fixed
+- **主题切换 + 每个主题看起来一样**：`styles/globals.css` 把 `:root` 写在 8 个 `@import` 之前，Vite 在打包时按 `@import` 展开顺序把 8 个 `[data-theme="…"]` 块放在 `:root` 之前；同一 specificity (0,0,1) 下后写的胜出，`:root` 在 cascade 末端覆盖了所有主题变量——切到 dark 主题时实际计算值还是 `:root` 里的 `--newtab-bg: #f1f5f9`，8 个主题看起来都一样。改用 `:where(:root)` (specificity 0) 包住 `:root` 的全部变量声明，让 `[data-theme="…"]` 块（0,1,0）始终胜出。
+- **`chrome.storage.onChanged` 跨 tab 同步永远不触发**：`src/features/settings/apply.ts:installSettingsChangeListener` 之前监听的是裸 key `'settings'`，但 `lib/storage/index.ts` 写入用 `STORAGE_PREFIX + key` = `'newtab01.settings'`。`onChanged` 的 key 跟写入的 key 一致，裸 key 永远不匹配 → 跨 tab 改主题/字体永远不传到其他 newtab。改为监听 `'newtab01.settings'`。
+
+### Added
+- 直接 `console.log`（不经过 `lib/debug` 的 `enabled` gate）输出到主题/设置流程的关键路径，方便用户在 production build 调试。日志格式：`[newtab01:theme] applyTheme`、`[newtab01:apply] applySettingsToDOM`、`[newtab01:apply] applySettingChange`、`[newtab01:apply] storage.onChanged fired`、`[newtab01:settings-panel] saveSetting`。修复稳定后可以替换回 `debug.log`。
+
+### Notes
+- **未实现**：`fontColor` / `backgroundColor` / `highlightColor` / `highlightFontColor` / `shadowColor` 这几个 Settings 字段仍然存在但不影响外观（dynamic-styles 用 `var(--newtab-bg)` 等主题变量）。CLAUDE.md § 9.7 列的必实现 setting 中不包含它们。如果后续要实现用户改背景色，需要用 inline style 在 `<html>` 上设 CSS 变量（specificity 1,0,0,0）+ 切主题时清空 inline style，否则 dynamic-styles 会永远赢 cascade 让主题切换失效。
+
+
 ## [0.2.23] - 2026-06-17
 
 ### Fixed

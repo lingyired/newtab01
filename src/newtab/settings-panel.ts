@@ -291,7 +291,10 @@ function saveSetting(key: keyof Settings): void {
     value = input.value;
   }
 
+  // Capture before/after for the debug log.
+  const before = getSetting(key);
   void updateSetting(key, value as Settings[keyof Settings]);
+  console.log('[newtab01:settings-panel] saveSetting', { key, before, after: getSetting(key) });
 
   // Re-apply this single setting to the DOM so font/theme/animation tweaks
   // take effect immediately, without waiting for chrome.storage.onChanged

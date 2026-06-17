@@ -7,7 +7,14 @@
 @import './themes/midnight.css';
 @import './themes/mocha.css';
 
-:root {
+/*
+ * Base CSS variables live in :where(:root) so their specificity is 0.
+ * This guarantees that the [data-theme="..."] blocks above (specificity
+ * 0,1,0) win the cascade — without this trick, the imported theme rules
+ * end up listed before :root in the bundled CSS and :root would override
+ * every theme because it appears later in the file.
+ */
+:where(:root) {
   /* Base semantic colors */
   --background: #ffffff;
   --foreground: #1a1a1a;
