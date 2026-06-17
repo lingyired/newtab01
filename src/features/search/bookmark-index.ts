@@ -2,8 +2,18 @@ import { getBookmarkTree, onBookmarkChanged, onBookmarkCreated, onBookmarkRemove
 import type { SearchItem } from './search-engine';
 import * as debug from '../../lib/debug';
 
+const ALARM_NAME = 'bookmark-index-rebuild';
+
+// chrome.alarms minimum granularity is 30 seconds in stable Chrome
+// (1 minute in earlier versions). The original setTimeout used 300ms,
+// but alarms can't fire that fast. We use 0.5 minutes (30s) as the
+// closest semantic match — same fire-once-after-debounce behavior,
+// just with a coarser floor. The "alarms" permission is already in
+// manifest.json.
+const REBUILD_DELAY_MINUTES = 0.5;
+
 let cachedItems: SearchItem[] | null = null;
-let rebuildTimer: ReturnType<typeof setTimeout> | null = null;
+let alarmListenerWired = false;
 
 function flattenBookmarkTree(nodes: chrome.bookmarks.BookmarkTreeNode[]): SearchItem[] {
   const items: SearchItem[] = [];
@@ -48,14 +58,25 @@ export async function rebuildIndex(): Promise<void> {
 }
 
 function scheduleRebuild(): void {
-  if (rebuildTimer) clearTimeout(rebuildTimer);
-  rebuildTimer = setTimeout(() => {
-    debug.log('index', 'scheduleRebuild: fired');
-    void rebuildIndex();
-  }, 300);
+  // Calling create() with an existing name replaces the previous alarm,
+  // so this naturally debounces consecutive bookmark events.
+  void chrome.alarms.create(ALARM_NAME, { delayInMinutes: REBUILD_DELAY_MINUTES });
+  debug.log('index', 'scheduleRebuild: alarm created', { delayInMinutes: REBUILD_DELAY_MINUTES });
+}
+
+function wireAlarmListener(): void {
+  if (alarmListenerWired) return;
+  alarmListenerWired = true;
+  chrome.alarms.onAlarm.addListener((alarm) => {
+    if (alarm.name === ALARM_NAME) {
+      debug.log('index', 'scheduleRebuild: alarm fired');
+      void rebuildIndex();
+    }
+  });
 }
 
 export function watchBookmarkChanges(): void {
+  wireAlarmListener();
   onBookmarkChanged((id, changeInfo) => {
     debug.log('index', 'bookmark changed', { id, changeInfo });
     scheduleRebuild();
