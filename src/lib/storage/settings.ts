@@ -62,6 +62,16 @@ export function getSetting<K extends keyof Settings>(key: K): Settings[K] {
   return currentSettings[key];
 }
 
+/**
+ * Replace the in-memory settings cache with a fresh object from storage.
+ * Used by the chrome.storage.onChanged listener to keep cross-tab edits
+ * (and same-tab edits fired through `setSync` callbacks) visible to the
+ * current tab without a full re-init.
+ */
+export function replaceSettings(next: Settings): void {
+  currentSettings = next;
+}
+
 /** Update a single setting and persist */
 export async function updateSetting<K extends keyof Settings>(key: K, value: Settings[K]): Promise<void> {
   const old = currentSettings[key];

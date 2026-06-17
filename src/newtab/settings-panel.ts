@@ -3,6 +3,7 @@
 import { getSettings, getSetting, updateSetting } from '../lib/storage/settings';
 import type { Settings } from '../features/bookmarks/types';
 import { listThemes } from '../features/themes/switcher';
+import { applySettingChange } from '../features/settings/apply';
 import * as debug from '../lib/debug';
 import { renderColumns } from '../features/bookmarks/board';
 
@@ -291,6 +292,12 @@ function saveSetting(key: keyof Settings): void {
   }
 
   void updateSetting(key, value as Settings[keyof Settings]);
+
+  // Re-apply this single setting to the DOM so font/theme/animation tweaks
+  // take effect immediately, without waiting for chrome.storage.onChanged
+  // to fire (which would still arrive later as a safety net). Settings that
+  // change which columns render need a re-render in addition.
+  applySettingChange(key);
 
   if (RERENDER_KEYS.has(key)) {
     void renderColumns();

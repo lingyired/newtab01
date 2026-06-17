@@ -5,6 +5,20 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.22] - 2026-06-17
+
+### Changed
+- **Settings 实时生效**：新增 `src/features/settings/apply.ts`，把 `applySettingsToDOM()` 从 `newtab/app.ts` 抽成可重复调用的导出函数（重建 `<style id="dynamic-styles">` 与 `<style id="user-css">` 节点，幂等替换不重复追加），并新增 `applySettingChange(key)` 单 key 局部更新与 `installSettingsChangeListener()` chrome.storage.onChanged 监听器。`newtab/app.ts:initApp` 启动时调一次 `applySettingsToDOM()`（含 `applyTheme` + dynamic-styles + user-css），`settings-panel.ts:saveSetting` 在 `updateSetting` 后调 `applySettingChange(key)`，主题、字体、字号、字重、文字/背景/高亮/阴影颜色、淡入淡出/滑动时长、间距、边距、宽度、水平位置等修改立即可见。`chrome.storage.onChanged` 监听让跨 tab / popup 改的设置也能实时同步到当前 newtab（背景回填 `currentSettings` 缓存，保证 `getSetting()` 拿到新值后再重生成样式）。
+- **移除 options 页面**：删 `options.html` 与 `src/options/` 整个目录（app.ts、main.ts、ai-prompt.ts）。`manifest.json` 移除 `options_ui` 字段（Chrome 不再自动注入 Options 菜单），`vite.config.ts` 的 `rollupOptions.input` 移除 `options: 'options.html'`。新增 `contextMenus` 权限，`src/background.ts` 在 `chrome.runtime.onInstalled` 时注册 `chrome.contextMenus.create({ id: 'newtab01-open-settings', title: '打开设置', contexts: ['action'] })`；`chrome.contextMenus.onClicked` 调 `chrome.tabs.create({ url: 'chrome://newtab#settings=1' })` 打开新标签页并自动展开浮动设置面板。`newtab/app.ts:initApp` 在 `window.location.hash === '#settings=1'` 时调 `openSettingsPanel()`（保留原有 `?options` query 兼容入口）。
+
+### Added
+- `src/lib/storage/settings.ts` 导出 `replaceSettings(next)`：用新对象整体替换内存中的 `currentSettings` 缓存，供 `chrome.storage.onChanged` 监听器回填跨 tab 设置变更。`updateSetting` 仍只更新单一 key + 写 sync，行为不变。
+
+### Fixed
+- 修改 `font` / `fontSize` / `fontColor` / 主题等设置后无需刷新页面即可看到效果（原来需要刷新才生效）。
+- 主题切换后跨 tab 实时同步（原来仅同 tab 立即切换，其他 tab 需刷新）。
+
+
 ## [0.2.21] - 2026-06-17
 
 ### Fixed

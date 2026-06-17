@@ -10,7 +10,6 @@ export default defineConfig({
     rollupOptions: {
       input: {
         newtab: 'newtab.html',
-        options: 'options.html',
         popup: 'popup.html',
       },
     },

@@ -9,7 +9,7 @@ import { createTopbar } from './topbar';
 import { openSettingsPanel } from './settings-panel';
 import { getBookmarkTree } from '../lib/chrome/bookmarks';
 import { initDebug, log, group, groupEnd } from '../lib/debug';
-import { applyTheme } from '../features/themes/switcher';
+import { applySettingsToDOM, installSettingsChangeListener } from '../features/settings/apply';
 import { parseSplitParams, renderSplitView } from '../features/split/split-view';
 
 /** Initialize the new tab page */
@@ -34,8 +34,15 @@ export async function initApp(): Promise<void> {
     await initSettings();
     log('init', 'settings initialized');
 
-    // 1a. Apply theme to documentElement so theme CSS variables take effect
-    applyTheme(String(getSetting('theme')));
+    // 1a. Listen for chrome.storage.onChanged so other tabs (or the popup)
+    // can update settings live here. applySettingsToDOM() is re-run on each
+    // change, and settings-panel edits are also picked up because they
+    // write through the same setSync path that fires the listener.
+    installSettingsChangeListener();
+
+    // 1b. Apply theme + dynamic styles to documentElement so theme CSS
+    // variables take effect and font/colors/animations render correctly.
+    applySettingsToDOM();
 
     // 2. Load bookmark tree to get root IDs
     const tree = await getBookmarkTree();
@@ -117,8 +124,8 @@ export async function initApp(): Promise<void> {
     }
 
     // Open options if requested
-    if (window.location.search === '?options') {
-      log('init', 'opening settings panel (?options)');
+    if (window.location.search === '?options' || window.location.hash === '#settings=1') {
+      log('init', 'opening settings panel (?options / #settings=1)');
       openSettingsPanel();
     }
 
@@ -132,85 +139,5 @@ export async function initApp(): Promise<void> {
     root.appendChild(errorEl);
     console.error('[newtab01] init error:', err);
   }
-}
-
-/** Apply settings as CSS custom properties and dynamic styles */
-function applySettingsToDOM(): void {
-  const settings = getSetting;
-
-  // Apply dynamic styles via a <style> element
-  const style = document.createElement('style');
-  style.id = 'dynamic-styles';
-
-  const rules: string[] = [];
-
-  // Font
-  rules.push(`#main a { font-family: "${settings('font')}"; }`);
-  rules.push(`#main a { font-size: ${settings('fontSize') / 10}em; }`);
-  rules.push(`#main a { font-weight: ${settings('fontWeight')}; }`);
-
-  // Colors
-  rules.push(`#main a { color: var(--newtab-text); }`);
-  rules.push(`#main a:hover { color: var(--newtab-highlight-text); background-color: var(--newtab-highlight); }`);
-
-  // Shadow
-  const shadowBlur = scale(settings('shadowBlur'), 7, 100);
-  rules.push(`#main a:hover { box-shadow: 0 0 ${shadowBlur}px var(--newtab-highlight); }`);
-
-  // Border radius
-  const highlightRound = scale(settings('highlightRound'), 0.2, 1.5);
-  rules.push(`#main a { border-radius: ${highlightRound}em; }`);
-
-  // Fade transition
-  const fadeMs = scale(settings('fade'), 200, 1000);
-  rules.push(`#main a { transition-duration: ${fadeMs}ms; }`);
-
-  // Slide transition
-  const slideMs = scale(settings('slide'), 200, 1000);
-  rules.push(`.wrap { transition-duration: ${slideMs}ms; }`);
-
-  // Spacing
-  const lineHeight = scale(settings('spacing'), 2, 5.6, 0.8);
-  const paddingH = scale(settings('spacing'), 0.8, 2, 0.4);
-  rules.push(`#main a { line-height: ${lineHeight}; padding-left: ${paddingH + 0.4}em; padding-right: ${paddingH}em; }`);
-
-  // Width
-  if (settings('autoScale')) {
-    const widthPct = scale(settings('width'), 96, 100, 60);
-    rules.push(`#main { width: ${widthPct}%; }`);
-  } else {
-    const widthPx = scale(settings('width'), 1200, 3000, 800);
-    rules.push(`#main { width: ${widthPx}px; }`);
-  }
-
-  // Vertical margin (0 by default — topbar already provides spacing)
-  if (settings('autoScale')) {
-    const vMarginPct = scale(settings('vMargin'), 0, 5);
-    rules.push(`#main { margin-top: ${vMarginPct}%; }`);
-  } else {
-    const vMarginPx = scale(settings('vMargin'), 0, 200);
-    rules.push(`#main { margin-top: ${vMarginPx}px; }`);
-  }
-
-  style.textContent = rules.join('\n');
-  document.head.appendChild(style);
-
-  const existingUserCss = document.getElementById('user-css');
-  if (existingUserCss) {
-    existingUserCss.textContent = settings('css');
-  } else {
-    const userCssEl = document.createElement('style');
-    userCssEl.id = 'user-css';
-    userCssEl.textContent = settings('css');
-    document.head.appendChild(userCssEl);
-  }
-}
-
-/** Scale a value from [0,1,2] to [min,mid,max] */
-function scale(value: number, mid: number, max: number, min: number = 0): number {
-  if (value > 1) {
-    return mid + (value - 1) * (max - mid);
-  }
-  return min + value * (mid - min);
 }
 

@@ -9,11 +9,37 @@ console.log('newtab01 background service worker loaded');
 type CreateTabGroupResponse = { ok: true; groupId: number } | { ok: false; error: string };
 type RefreshDnrResponse = { ok: true } | { ok: false; error: string };
 
-// Register declarativeNetRequest dynamic rules on install
+const OPEN_SETTINGS_MENU_ID = 'newtab01-open-settings';
+
+// Register declarativeNetRequest dynamic rules and the right-click "Open
+// Settings" menu item on install. The menu item is recreated on every
+// install / update because the service worker can be restarted at any
+// time and the menu entries do not survive SW termination.
 chrome.runtime.onInstalled.addListener(() => {
   console.log('newtab01 installed');
   void registerFrameHeaderRules();
+  void registerContextMenu();
 });
+
+chrome.contextMenus.onClicked.addListener((info) => {
+  if (info.menuItemId !== OPEN_SETTINGS_MENU_ID) return;
+  // Open a new-tab page with a hash marker; newtab's initApp reads the
+  // hash and opens the floating settings panel automatically.
+  void chrome.tabs.create({ url: 'chrome://newtab#settings=1' });
+});
+
+async function registerContextMenu(): Promise<void> {
+  try {
+    await chrome.contextMenus.remove(OPEN_SETTINGS_MENU_ID);
+  } catch {
+    // The entry may not exist on first install — safe to ignore.
+  }
+  chrome.contextMenus.create({
+    id: OPEN_SETTINGS_MENU_ID,
+    title: '打开设置',
+    contexts: ['action'],
+  });
+}
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // 1. Reject messages from any context that isn't this extension.

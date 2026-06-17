@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "newtab01",
-  "version": "0.2.21",
+  "version": "0.2.22",
   "minimum_chrome_version": "104",
   "description": "Redesigned new tab page featuring your bookmarks, apps, most visited, and recently closed in a custom layout with split screen and search.",
   "icons": {
@@ -12,9 +12,9 @@
   "chrome_url_overrides": { "newtab": "newtab.html" },
   "action": { "default_popup": "popup.html" },
   "background": { "service_worker": "src/background.ts", "type": "module" },
-  "options_ui": { "page": "options.html", "open_in_tab": true },
   "permissions": ["bookmarks", "favicon", "topSites", "tabs", "tabGroups",
                   "storage", "fontSettings", "sessions", "alarms",
+                  "contextMenus",
                   "declarativeNetRequest", "search"],
   "host_permissions": ["<all_urls>"],
   "optional_permissions": []
