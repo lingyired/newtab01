@@ -5,6 +5,15 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.38] - 2026-06-18
+
+### Changed
+- **链接间距从硬编码 4px 改为 `var(--newtab-spacing)`**（`styles/newtab.css` 的 `#main ul`）。`--newtab-spacing` 之前在 globals.css 定义但**没人消费**（CLAUDE.md § 9.7 列为 required setting），所以 spacing setting 在 UI 上能调但实际不影响排版。默认 10px —— 对 brutalist 主题（3px 边 + 5px 偏移阴影）刚好够呼吸，对其他主题也明显比 4px 舒服。
+
+### Notes
+- 用户在设置面板里调 spacing setting 现在能真正生效了（之前是被 hardcoded gap: 4px 覆盖）。
+- `--newtab-vmargin`（vertical margin）也定义但同样未消费，下个 PR 修。
+
 ## [0.2.37] - 2026-06-18
 
 ### Added

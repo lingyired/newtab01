@@ -22,7 +22,11 @@
 #main ul {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  /* `--newtab-spacing` is the canonical link-list gap. Default 10px
+   * (defined in :where(:root) of styles/globals.css); previously this
+   * was hardcoded 4px which read too tight once the brutalist style
+   * added 3px borders + 5px offset shadows per link. */
+  gap: var(--newtab-spacing);
 }
 
 #main a + ul,
