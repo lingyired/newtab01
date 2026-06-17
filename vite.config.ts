@@ -1,5 +1,7 @@
-import { defineConfig } from 'vite';
+import { defineConfig, type Plugin } from 'vite';
 import { crx } from '@crxjs/vite-plugin';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import manifest from './manifest.json';
 
 // Rollup names chunks using the source file path verbatim, so a chunk
@@ -15,9 +17,34 @@ const stripSourceExt = (id: string | undefined): string => {
   return base.replace(/\.[a-z]+$/i, '') || 'chunk';
 };
 
+// The source manifest carries a "DO NOT LOAD" warning (name + description)
+// so anyone opening the project root in chrome://extensions immediately
+// sees they should be loading dist/ instead. @crxjs/vite-plugin copies
+// the manifest verbatim into dist/ and only rewrites the background
+// service-worker path, so we have to scrub the warning fields back to
+// their public-facing values in a post-build hook — otherwise the
+// extension the user actually loads also shows the warning.
+const PUBLIC_NAME = 'newtab01';
+const PUBLIC_DESCRIPTION =
+  'Redesigned new tab page featuring your bookmarks, apps, most visited, and recently closed in a custom layout with split screen and search.';
+
+function fixupDistManifest(): Plugin {
+  return {
+    name: 'fixup-dist-manifest',
+    closeBundle() {
+      const path = resolve('dist/manifest.json');
+      const json = JSON.parse(readFileSync(path, 'utf-8')) as Record<string, unknown>;
+      json.name = PUBLIC_NAME;
+      json.description = PUBLIC_DESCRIPTION;
+      writeFileSync(path, JSON.stringify(json, null, 2) + '\n');
+    },
+  };
+}
+
 export default defineConfig({
   plugins: [
     crx({ manifest }),
+    fixupDistManifest(),
   ],
   build: {
     rollupOptions: {

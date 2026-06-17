@@ -5,6 +5,17 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.30] - 2026-06-17
+
+### Fixed
+- **用户误加载项目根目录触发 `application/octet-stream` + Service worker status code 11 错误**：源 `manifest.json` 的 `background.service_worker` 指向 `src/background.ts`、`chrome_url_overrides.newtab` 指向 `newtab.html`（引用 `/src/newtab/main.ts`）。如果用户在 `chrome://extensions` 选「加载已解压的扩展程序」时选了**项目根**而不是 `dist/`，Chrome 直接从 `chrome-extension://` 协议静态服务 `.ts` 文件，扩展名是 `.ts` 不是 `.js`、MIME 降级为 `application/octet-stream`，module script 严格 MIME 检查拒绝加载 → newtab 空白 + service worker 注册失败（Status code 11 = `SERVICE_WORKER_RESOURCE_ERROR`）。修复：
+  1. 源 `manifest.json` 的 `name` 改为 `newtab01 [dev — DO NOT LOAD: load dist/ instead]`、`description` 加明显警告，让误加载项目根的用户立刻看到提示
+  2. `vite.config.ts` 加 `fixupDistManifest` Vite plugin，在 `closeBundle` hook 里把 dist/manifest.json 的 `name` / `description` 改回公开版本（避免「DO NOT LOAD」提示蔓延到 dist/，影响实际加载的扩展）
+
+### Why load `dist/`
+- `pnpm dev` 跑的是 Vite dev server（`http://localhost:5173`），但 Chrome 扩展从 `chrome-extension://` 协议加载静态资源，**dev server 不参与**这条路径。所以 dev server 启动不能代替 build + load dist/ 的工作流
+- build 后 `dist/` 里的 `.js` 文件被 Rollup 打包、MIME type 正常（`text/javascript`），Chrome module script 正常加载
+
 ## [0.2.29] - 2026-06-17
 
 ### Fixed
