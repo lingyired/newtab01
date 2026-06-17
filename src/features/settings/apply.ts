@@ -54,17 +54,26 @@ const STYLE_KEYS: ReadonlySet<keyof Settings> = new Set<keyof Settings>([
  * `applyTheme` must have run at least once before this is called so the
  * CSS variable already resolves to the active theme's value; otherwise
  * we'd be writing a property that the cascade has no source for.
+ *
+ * `shadowColor` is a legacy Settings field whose CSS source is
+ * `--newtab-highlight` (see newtab.css: `box-shadow: 0 0 var(--newtab-shadow-blur) var(--newtab-highlight)`),
+ * so its inline override MUST be sourced from the `highlightColor`
+ * setting rather than its own — otherwise storage's `shadowColor`
+ * default (`#57b0ff`) would clobber a `highlightColor` override the
+ * user just made on every `applySettingsToDOM` (which re-runs all five
+ * overrides on every storage change).
  */
 export function applyUserColorOverride(key: ColorKey): void {
   if (typeof document === 'undefined') return;
   const cssVar = COLOR_KEYS[key];
-  const value = String(getSetting(key) ?? '').trim();
+  const sourceKey: ColorKey = key === 'shadowColor' ? 'highlightColor' : key;
+  const value = String(getSetting(sourceKey) ?? '').trim();
   if (!value) {
     document.documentElement.style.removeProperty(cssVar);
     return;
   }
   document.documentElement.style.setProperty(cssVar, value);
-  log('apply', 'applyUserColorOverride', { key, cssVar, value });
+  log('apply', 'applyUserColorOverride', { key, cssVar, sourceKey, value });
 }
 
 /** Build (or replace) the `<style id="dynamic-styles">` node from current settings. */

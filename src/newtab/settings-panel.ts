@@ -3,7 +3,7 @@
 import { getSettings, getSetting, updateSetting, updateSettings } from '../lib/storage/settings';
 import type { Settings } from '../features/bookmarks/types';
 import { applyTheme, listThemes } from '../features/themes/switcher';
-import { applySettingChange } from '../features/settings/apply';
+import { applySettingChange, applyUserColorOverride } from '../features/settings/apply';
 import * as debug from '../lib/debug';
 import { renderColumns } from '../features/bookmarks/board';
 
@@ -104,6 +104,11 @@ export function openSettingsPanel(): void {
   document.body.appendChild(overlayEl);
   document.body.appendChild(panelEl);
 
+  // Subscribe to storage.onChanged so cross-tab edits (and same-tab edits
+  // from `saveThemeChange`) update the color inputs and theme dropdown
+  // in place — see `refreshInputsFromSettings`. Removed on close.
+  installStorageListener();
+
   // Trigger animation
   requestAnimationFrame(() => {
     overlayEl?.classList.add('sp-overlay--visible');
@@ -113,6 +118,7 @@ export function openSettingsPanel(): void {
 
 /** Close the floating settings panel */
 export function closeSettingsPanel(): void {
+  uninstallStorageListener();
   if (overlayEl) overlayEl.classList.remove('sp-overlay--visible');
   if (panelEl) panelEl.classList.remove('sp-panel--open');
 
@@ -122,6 +128,74 @@ export function closeSettingsPanel(): void {
     overlayEl = null;
     panelEl = null;
   }, 200);
+}
+
+/**
+ * Settings keys whose UI controls are <input type="color">. We refresh
+ * these specifically (rather than re-rendering the whole tab) because
+ * re-rendering blows away the user's focus and selection — relevant
+ * when the change is coming from `saveThemeChange` (the theme dropdown
+ * is on the same tab) or from a cross-tab storage.onChanged event.
+ */
+const COLOR_INPUT_KEYS: ReadonlyArray<keyof Settings> = [
+  'backgroundColor',
+  'fontColor',
+  'highlightColor',
+  'highlightFontColor',
+  'shadowColor',
+];
+
+/**
+ * Push the current `currentSettings` values into the visible <input>
+ * elements without rebuilding the DOM. No-op for inputs that don't
+ * exist (panel closed) or whose value already matches storage.
+ *
+ * The `shadowColor` input is displayed using the `highlightColor`
+ * value because the two share a single CSS variable (`--newtab-highlight`)
+ * — the user sees what is actually being rendered.
+ */
+function refreshInputsFromSettings(): void {
+  for (const key of COLOR_INPUT_KEYS) {
+    const input = document.getElementById(`sp-${key}`) as HTMLInputElement | null;
+    if (!input || input.type !== 'color') continue;
+    const sourceKey: keyof Settings = key === 'shadowColor' ? 'highlightColor' : key;
+    const next = String(getSetting(sourceKey) ?? '');
+    if (input.value !== next) input.value = next;
+  }
+  // Theme select lives on the same tab as the color inputs; keep it in sync.
+  const themeSelect = document.getElementById('sp-theme') as HTMLSelectElement | null;
+  if (themeSelect) {
+    const next = String(getSetting('theme') ?? '');
+    if (themeSelect.value !== next) themeSelect.value = next;
+  }
+}
+
+// Named (not inline) so we can pass the same reference to both
+// addListener and removeListener. The key prefix matches the one used
+// in lib/storage/index.ts (`newtab01.`).
+const STORAGE_FULL_KEY = 'newtab01.settings';
+function onSettingsStorageChanged(changes: Record<string, chrome.storage.StorageChange>, areaName: string): void {
+  if (areaName !== 'sync') return;
+  if (!changes[STORAGE_FULL_KEY]) return;
+  debug.log('settings-panel', 'storage.onChanged -> refreshInputs', {
+    keysChanged: Object.keys(changes),
+  });
+  refreshInputsFromSettings();
+}
+
+let storageListenerInstalled = false;
+function installStorageListener(): void {
+  if (storageListenerInstalled) return;
+  if (typeof chrome === 'undefined' || !chrome.storage?.onChanged) return;
+  chrome.storage.onChanged.addListener(onSettingsStorageChanged);
+  storageListenerInstalled = true;
+}
+
+function uninstallStorageListener(): void {
+  if (!storageListenerInstalled) return;
+  if (typeof chrome === 'undefined' || !chrome.storage?.onChanged) return;
+  chrome.storage.onChanged.removeListener(onSettingsStorageChanged);
+  storageListenerInstalled = false;
 }
 
 // --- Helpers ---
@@ -305,6 +379,18 @@ function saveSetting(key: keyof Settings): void {
     return;
   }
 
+  // shadowColor shares --newtab-highlight with highlightColor in the CSS
+  // (see newtab.css `box-shadow: 0 0 var(--newtab-shadow-blur) var(--newtab-highlight)`).
+  // Editing only shadowColor would leave highlightColor stale, so the
+  // shared CSS variable would still render the old highlight color and
+  // a subsequent applySettingsToDOM (e.g. on a different storage edit)
+  // would write the old highlightColor back into --newtab-highlight.
+  // Mirror the value into highlightColor in a single atomic write.
+  if (key === 'shadowColor') {
+    void saveShadowColorChange(String(value));
+    return;
+  }
+
   void updateSetting(key, value as Settings[keyof Settings]);
   debug.log('settings-panel', 'saveSetting', { key, before, after: getSetting(key) });
 
@@ -317,6 +403,26 @@ function saveSetting(key: keyof Settings): void {
   if (RERENDER_KEYS.has(key)) {
     void renderColumns();
   }
+}
+
+/**
+ * Persist a shadowColor edit by mirroring it into highlightColor (the
+ * CSS source for both the highlight background and the box-shadow color)
+ * and re-asserting the inline `--newtab-highlight` override so the page
+ * reflects the new value without waiting for the storage round-trip.
+ */
+async function saveShadowColorChange(value: string): Promise<void> {
+  const beforeShadow = getSetting('shadowColor');
+  const beforeHighlight = getSetting('highlightColor');
+  await updateSettings({ shadowColor: value, highlightColor: value });
+  // applyUserColorOverride('highlightColor') reads from getSetting, which
+  // has just been updated by updateSettings, so it writes the new value
+  // into the inline --newtab-highlight.
+  applyUserColorOverride('highlightColor');
+  debug.log('settings-panel', 'saveShadowColorChange', {
+    from: { shadowColor: beforeShadow, highlightColor: beforeHighlight },
+    to: { shadowColor: value, highlightColor: value },
+  });
 }
 
 /**
@@ -430,7 +536,7 @@ function renderAppearanceTab(): HTMLElement {
   container.appendChild(createRow('背景颜色', createColorInput('backgroundColor'), 'backgroundColor', '新标签页的背景颜色（不设置背景图时生效）。'));
   container.appendChild(createRow('高亮颜色', createColorInput('highlightColor'), 'highlightColor', '鼠标悬停或当前选中书签时的背景高亮颜色。'));
   container.appendChild(createRow('高亮文字颜色', createColorInput('highlightFontColor'), 'highlightFontColor', '鼠标悬停或选中时书签文字的颜色。'));
-  container.appendChild(createRow('阴影颜色', createColorInput('shadowColor'), 'shadowColor', '书签高亮时四周光晕（box-shadow）的颜色。'));
+  container.appendChild(createRow('阴影颜色', createColorInput('shadowColor'), 'shadowColor', '书签高亮时四周光晕颜色；与"高亮颜色"共享同一 CSS 变量，修改会自动同步到高亮颜色。'));
   container.appendChild(createRow('阴影模糊', createNumberInput('shadowBlur'), 'shadowBlur', '高亮光晕的模糊半径，数值越大光晕越大越柔和。'));
   container.appendChild(createRow('高亮圆角', createNumberInput('highlightRound'), 'highlightRound', '书签高亮背景的圆角大小，0 为直角，数值越大越圆。'));
   container.appendChild(createRow('淡入淡出时长', createNumberInput('fade'), 'fade', '鼠标悬停时颜色变化的过渡时长（毫秒）。'));

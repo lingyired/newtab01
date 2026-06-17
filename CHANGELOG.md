@@ -5,6 +5,13 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.28] - 2026-06-17
+
+### Fixed
+- **`highlightColor` 改完被 `shadowColor` 默认值覆盖**：`COLOR_KEYS.shadowColor` 在 `src/features/settings/apply.ts` 映射到 CSS 变量 `--newtab-highlight`（与 `highlightColor` 共享，因为 `newtab.css:61` 的 `box-shadow` 用 `var(--newtab-highlight)`），但 `applyUserColorOverride` 之前从 `getSetting('shadowColor')` 读值写 inline style，而 storage 里 `shadowColor` 默认 `#57b0ff`。`applySettingsToDOM` 在每个 storage 变更后跑 5 个 `applyUserColorOverride`，顺序是 highlightColor 先、shadowColor 后 → 后者用旧 `#57b0ff` 覆盖了用户刚设的 highlightColor，hover 时仍是默认蓝。修复：让 `applyUserColorOverride('shadowColor')` 的 source 改为 `highlightColor`（与 CSS 渲染源一致），5 个 override 永远写同一个值，幂等。
+- **切主题时 5 个 color input + theme select 不刷新**：`src/newtab/settings-panel.ts` 的 `renderAppearanceTab` 只在 panel 打开或 tab 切换时跑一次；`saveThemeChange` 写 storage 后，panel 已经显示的 input/select 仍是旧值，要关闭再打开才能看到新主题色。修复：settings-panel 内部维护一个 `chrome.storage.onChanged` 监听器（`openSettingsPanel` 时安装、`closeSettingsPanel` 时 `removeListener`），触发时调 `refreshInputsFromSettings` 把 5 个 color input 和 theme select 同步到 `currentSettings`（shadowColor input 显示 highlightColor 值以匹配实际渲染）。这样切主题、跨 tab 改色、跨设备同步都能立即反映在 panel UI 上，且不重新 render tab 不会破坏用户 focus。
+- **改 `shadowColor` input 不生效**：`shadowColor` 改值只写自己的字段，CSS 共用变量 `--newtab-highlight` 实际由 `highlightColor` 决定，所以改完视觉无变化。修复：`saveSetting('shadowColor')` 走新 `saveShadowColorChange`，把值原子 mirror 到 `highlightColor`（一次 `updateSettings`），再调 `applyUserColorOverride('highlightColor')` 立即写 inline style。Description 加注"与高亮颜色共享同一 CSS 变量，修改会自动同步到高亮颜色"。
+
 ## [0.2.27] - 2026-06-17
 
 ### Fixed
