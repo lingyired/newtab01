@@ -7,4 +7,26 @@
   --muted-foreground: #423b24;
   --border: #000000;
   --ring: #008f47;
+
+  /* Neo-brutalist link style — driven entirely through CSS variables
+   * consumed by #main a / :hover / :active / :focus-visible in
+   * styles/newtab.css. No JS mapping required (THEME_STYLE_CLASSES is
+   * gone as of v0.2.39). All entries have sensible fallbacks defined
+   * inline in newtab.css's `var(--foo, default)` syntax, so other
+   * themes can opt in by overriding only the entries they want. */
+  --newtab-link-border: 3px solid #000000;
+  --newtab-link-radius: 0;
+  --newtab-link-bg: #ffffff;
+  --newtab-link-weight: 600;
+  --newtab-link-shadow: 5px 5px 0 #000000;
+  --newtab-link-shadow-hover: 3px 3px 0 #000000;
+  --newtab-link-shadow-active: 0 0 0 #000000;
+  --newtab-link-bg-hover: var(--primary);
+  --newtab-link-color-hover: var(--primary-foreground);
+  --newtab-link-border-color-hover: #000000;
+  --newtab-link-transform-hover: translate(2px, 2px);
+  --newtab-link-transform-active: translate(5px, 5px);
+  --newtab-link-outline-focus: 3px solid var(--primary);
+  --newtab-link-outline-offset-focus: 2px;
+  --newtab-link-transition-duration: 0.1s;
 }

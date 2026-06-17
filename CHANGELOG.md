@@ -5,6 +5,40 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.39] - 2026-06-18
+
+### Changed
+- **Brutalist link style 重构成纯 CSS 变量驱动**。v0.2.37 引入的 `THEME_STYLE_CLASSES` JS 映射 + `body.<class>` 选择器方案被移除 —— 它虽然能工作，但用户从 tweakcn 拷贝主题后还得**手动改 switcher.ts** 加映射，不符合"拷过来就能用"的承诺。
+  - 新方案：brutalist 风格完全靠 15 个 `--newtab-link-*` CSS 变量驱动，每个都有 `var(--foo, default)` 内联兜底。`styles/newtab.css` 的 `#main a / :hover / :active / :focus-visible` 全部消费这些变量；`styles/themes/mx-brutalist.css` 只负责声明需要的变量值。
+  - 删除了 `THEME_STYLE_CLASSES` 映射和 `applyTheme` 里给 `<body>` 加 class 的代码（约 12 行 JS 减少）。
+  - 删除了 `styles/newtab.css` 里 `body.brutalist #main a` 等 4 个选择器块（~45 行 CSS 减少）。
+  - 同时给默认（非 brutalist）主题也加了 `:focus-visible` 焦点环（2px solid `var(--primary)` + 2px offset），之前完全没实现，键盘可达性提升。
+
+### Variables exposed for theme authors
+主题文件可以覆盖的 15 个 link 变量（都有 fallback，**按需声明**）：
+
+| 变量 | 默认 | 用途 |
+|------|------|------|
+| `--newtab-link-border` | `1px solid var(--border)` | 边框 shorthand |
+| `--newtab-link-radius` | `0.6em` | 圆角 |
+| `--newtab-link-bg` | `var(--newtab-surface)` | 背景色 |
+| `--newtab-link-weight` | `normal` | 字重 |
+| `--newtab-link-shadow` | `none` | 默认态阴影 |
+| `--newtab-link-shadow-hover` | `0 0 var(--newtab-shadow-blur) var(--newtab-highlight)` | hover 阴影 |
+| `--newtab-link-shadow-active` | `none` | active 阴影 |
+| `--newtab-link-bg-hover` | `var(--newtab-highlight)` | hover 背景 |
+| `--newtab-link-color-hover` | `var(--newtab-highlight-text)` | hover 文字 |
+| `--newtab-link-border-color-hover` | `var(--primary)` | hover 边框色 |
+| `--newtab-link-transform-hover` | `none` | hover transform |
+| `--newtab-link-transform-active` | `none` | active transform |
+| `--newtab-link-outline-focus` | `2px solid var(--primary)` | focus 轮廓 |
+| `--newtab-link-outline-offset-focus` | `2px` | focus 轮廓偏移 |
+| `--newtab-link-transition-duration` | `var(--newtab-fade-ms)` | 过渡时长 |
+
+### Notes
+- 这次删除 `THEME_STYLE_CLASSES` 是有意识的取舍：如果未来需要"layout-level"差异（比如整个 column 是侧边栏布局、整个 newtab 改 grid），再加回 body class 机制；现在 brutalist 这种"element-level"差异用变量就够。
+- docs/themes-from-tweakcn.md 会在下个 commit 更新，加 link 变量表。
+
 ## [0.2.38] - 2026-06-18
 
 ### Changed
