@@ -5,6 +5,13 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.31] - 2026-06-17
+
+### Fixed
+- **首次安装背景是白色而不是默认主题的灰色**：`src/lib/storage/settings.ts` 的 `defaults` 5 个 color 字段（`fontColor` / `backgroundColor` / `highlightColor` / `highlightFontColor` / `shadowColor`）写死了具体 hex（`#ffffff` 等），首次安装时 storage 是空的 → `currentSettings = { ...defaults }` → `applyUserColorOverride('backgroundColor')` 用 `#ffffff` 写 inline style → 覆盖 default 主题的 `--newtab-bg: #f1f5f9`（灰色）→ 背景变白。切到别的主题再切回 default 后背景变灰是因为 `saveThemeChange` 把 5 color 重新设为新主题的色（含 default 的灰色）。修复：
+  1. 5 个 color 的 `defaults` 改为 `''`（空字符串）。`applyUserColorOverride` 看到空值会走 `removeProperty` 让主题 CSS 变量独立生效
+  2. 在 `initSettings` 加 `looksLikeLegacyPaletteDefaults` 检测：如果 unified storage 已存在 + 5 color 全部等于 v0.2.30 之前的默认 hex → 视为"未设置的死亡值"、清空 5 color、写回 storage。这样老用户从 v0.2.30 升级到 v0.2.31 也会自动迁移；v0.2.30+ 显式改过 color 的用户不受影响（hex 不再匹配旧默认）
+
 ## [0.2.30] - 2026-06-17
 
 ### Fixed

@@ -12,12 +12,22 @@ const defaults: Settings = {
   fontSize: 18,
   fontWeight: 400,
   theme: 'default',
-  fontColor: '#555555',
-  backgroundColor: '#ffffff',
+  // The five palette fields are intentionally empty strings: `applyUserColorOverride`
+  // treats `''` as "no override" and calls `removeProperty`, so the active
+  // theme's CSS variables (defined in styles/themes/*.css) are what
+  // render. Hardcoding hex values here would force white/grey defaults
+  // to clobber the theme's actual palette on first install (no storage
+  // yet -> currentSettings = { ...defaults } -> 5 overrides paint the
+  // page in the hardcoded hex). Once a user explicitly edits a color
+  // (or switches theme, which saveThemeChange stamps the new theme's
+  // palette into storage), the field becomes a concrete hex value and
+  // starts overriding the theme.
+  fontColor: '',
+  backgroundColor: '',
   backgroundImage: '',
-  highlightColor: '#e4f4ff',
-  highlightFontColor: '#000000',
-  shadowColor: '#57b0ff',
+  highlightColor: '',
+  highlightFontColor: '',
+  shadowColor: '',
   shadowBlur: 1,
   highlightRound: 1,
   fade: 1,
@@ -171,6 +181,33 @@ export async function migrateLegacySettings(): Promise<boolean> {
   return true;
 }
 
+/**
+ * Settings that, in the pre-0.2.30 codebase, were stored in the unified
+ * settings object as concrete hex defaults (`#ffffff`, `#57b0ff`, etc.)
+ * but had no UI wiring — they were dead values. In 0.2.30 we wired them
+ * up through inline custom properties, so any pre-existing storage that
+ * still carries the dead defaults now overrides the active theme's
+ * palette (most visibly: backgroundColor `#ffffff` repaints the page
+ * white even on the `default` theme whose `--newtab-bg` is `#f1f5f9`).
+ *
+ * Detected here by literal equality with the historical defaults: if a
+ * user actively edited a color in 0.2.30+, the value will no longer
+ * match, and we leave it alone.
+ */
+const LEGACY_DEFAULT_PALETTE = {
+  fontColor: '#555555',
+  backgroundColor: '#ffffff',
+  highlightColor: '#e4f4ff',
+  highlightFontColor: '#000000',
+  shadowColor: '#57b0ff',
+} as const satisfies Partial<Record<keyof Settings, string>>;
+
+function looksLikeLegacyPaletteDefaults(s: Settings): boolean {
+  return (Object.entries(LEGACY_DEFAULT_PALETTE) as Array<[keyof Settings, string]>).every(
+    ([k, v]) => s[k] === v,
+  );
+}
+
 /** Load settings from chrome.storage.sync, falling back to defaults */
 export async function initSettings(): Promise<Settings> {
   const stored = await getSync<Settings>(SETTINGS_KEY);
@@ -184,6 +221,19 @@ export async function initSettings(): Promise<Settings> {
         await setSync(SETTINGS_KEY, merged);
         debug.log('settings', 'migrate fontSize', { from: stored.fontSize, to: defaults.fontSize });
       }
+    }
+    // See LEGACY_DEFAULT_PALETTE: clear dead pre-0.2.30 hex values so the
+    // active theme's palette can render through (applyUserColorOverride
+    // treats '' as "no override" and removeProperty's the inline value).
+    if (looksLikeLegacyPaletteDefaults(merged)) {
+      for (const k of Object.keys(LEGACY_DEFAULT_PALETTE) as Array<keyof Settings>) {
+        // The five keys in LEGACY_DEFAULT_PALETTE are all string fields;
+        // the cast drops the Settings[keyof Settings] union so we can
+        // assign '' without the TS compiler complaining.
+        (merged as unknown as Record<string, unknown>)[k] = '';
+      }
+      await setSync(SETTINGS_KEY, merged);
+      debug.log('settings', 'migrate legacy palette defaults -> empty (theme takes over)');
     }
     currentSettings = merged;
   } else {
