@@ -1,0 +1,36 @@
+/*
+ * Cyberpunk theme (赛博朋克) — neon magenta + green on dark purple.
+ * Source: https://tweakcn.com/r/themes/cmon6sc5v000204la41n1g1gv
+ *
+ * tweakcn intentionally ships this theme with BOTH variants dark:
+ *   - light = dark purple bg with neon green text
+ *   - dark  = near-black bg with neon green text
+ * The "light" label is tweakcn's convention but the actual rendering is
+ * dark. In newtab01 this means picking "cyberpunk" gives you a dark
+ * theme; pick "cyberpunk-dark" for the even-darker variant.
+ *
+ * Uses OKLCH directly (manifest minimum_chrome_version is bumped to 111
+ * in v0.2.41 to match globals.css color-mix + these OKLCH values).
+ * No newtab-link overrides — the global link style applies.
+ */
+:root[data-theme="cyberpunk"] {
+  --background: oklch(0.1418 0.0662 295.8049);
+  --foreground: oklch(0.8803 0.2083 157.3340);
+  --primary: oklch(0.6083 0.2973 312.1096);
+  --primary-foreground: #ffffff;
+  --muted: oklch(0.2755 0.0276 284.4447);
+  --muted-foreground: oklch(0.6324 0.0253 285.6550);
+  --border: oklch(0.3740 0.0528 283.5546);
+  --ring: oklch(0.6083 0.2973 312.1096);
+}
+
+:root[data-theme="cyberpunk-dark"] {
+  --background: oklch(0.1149 0 0);
+  --foreground: oklch(0.8803 0.2083 157.3340);
+  --primary: oklch(0.6083 0.2973 312.1096);
+  --primary-foreground: #ffffff;
+  --muted: oklch(0.2178 0 0);
+  --muted-foreground: oklch(0.5693 0 0);
+  --border: oklch(0.3211 0 0);
+  --ring: oklch(0.6083 0.2973 312.1096);
+}

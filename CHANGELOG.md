@@ -5,6 +5,19 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.40] - 2026-06-18
+
+### Features
+- **新主题：赛博朋克** (`cyberpunk` / `cyberpunk-dark`) —— 霓虹品红 + 荧光绿，深紫底。来源 tweakcn `cmon6sc5v000204la41n1g1gv`。tweakcn 故意把 light 变体也做成暗色（深紫），dark 变体是更深的纯黑；newtab01 沿用这个双暗色设计。
+- **新主题：AstroVista** (`astrovista` / `astrovista-dark`) —— 干净橙色专业风，冷白 / 近黑两套。来源 tweakcn `cmlk6zefr000004lbe9jygsqc`。
+- 这两个主题直接使用 OKLCH（与 tweakcn JSON 一致），不再预转 hex。
+
+### Bug fixes
+- `styles/themes/mx-brutalist.css` 的 shadow 偏移从硬编码 `5px 5px` 修正为 tweakcn JSON 真实值 `4px 4px`。
+
+### Changed
+- `manifest.minimum_chrome_version`: `104` → `111`（globals.css 早就在用 `color-mix()`，要求 111+；本次与新主题的 OKLCH 同步到 manifest）。
+
 ## [0.2.39] - 2026-06-18
 
 ### Changed

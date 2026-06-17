@@ -21,6 +21,10 @@ const THEME_LABELS: Readonly<Record<string, string>> = {
   green: '森林',
   purple: '紫罗兰',
   orange: '暖橙',
+  cyberpunk: '赛博朋克',
+  'cyberpunk-dark': '赛博朋克·暗',
+  astrovista: 'AstroVista',
+  'astrovista-dark': 'AstroVista·暗',
 };
 
 type SettingsTab = 'layout' | 'appearance' | 'features' | 'advanced';

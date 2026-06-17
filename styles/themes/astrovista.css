@@ -1,0 +1,34 @@
+/*
+ * AstroVista theme — clean, orange-accented, professional.
+ * Source: https://tweakcn.com/r/themes/cmlk6zefr000004lbe9jygsqc
+ *
+ * Light: cool-white bg with near-black text and orange accent
+ * Dark:  near-black bg with near-white text and the same orange accent
+ *
+ * Uses OKLCH directly (manifest minimum_chrome_version is bumped to 111
+ * in v0.2.41 to match globals.css color-mix + these OKLCH values).
+ * tweakcn ships a 0.5rem radius and 0em letter-spacing — we don't pass
+ * those through to newtab01 (newtab's link/column geometry is fixed),
+ * only the 8 shadcn color variables.
+ */
+:root[data-theme="astrovista"] {
+  --background: oklch(0.9383 0.0042 236.4993);
+  --foreground: oklch(0.3211 0 0);
+  --primary: oklch(0.6420 0.1691 38.5815);
+  --primary-foreground: #ffffff;
+  --muted: oklch(0.9846 0.0017 247.8389);
+  --muted-foreground: oklch(0.5510 0.0234 264.3637);
+  --border: oklch(0.8452 0 0);
+  --ring: oklch(0.6397 0.1720 36.4421);
+}
+
+:root[data-theme="astrovista-dark"] {
+  --background: oklch(0.2178 0 0);
+  --foreground: oklch(0.9219 0 0);
+  --primary: oklch(0.6420 0.1691 38.5815);
+  --primary-foreground: #ffffff;
+  --muted: oklch(0.2850 0 0);
+  --muted-foreground: oklch(0.5999 0 0);
+  --border: oklch(0.3290 0 0);
+  --ring: oklch(0.6397 0.1720 36.4421);
+}

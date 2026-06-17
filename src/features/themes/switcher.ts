@@ -35,6 +35,10 @@ const THEMES = [
   'green',
   'purple',
   'orange',
+  'cyberpunk',
+  'cyberpunk-dark',
+  'astrovista',
+  'astrovista-dark',
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number];

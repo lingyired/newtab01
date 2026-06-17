@@ -1,31 +1,56 @@
 :root[data-theme="mx-brutalist"] {
-  --background: #fffcf5;
-  --foreground: #05140d;
-  --primary: #008f47;
-  --primary-foreground: #ffffff;
-  --muted: #f5edd6;
-  --muted-foreground: #423b24;
-  --border: #000000;
-  --ring: #008f47;
+  /* === 8 shadcn variables (translated from tweakcn light variant) ===
+   * Source: https://tweakcn.com/r/themes/cmllfu8oc000004l1a0tidj2g
+   * tweakcn CSS uses OKLCH; newtab uses hex (Chrome 104 compat) — the
+   * OKLCH→hex conversion goes through culori (see docs/themes-from-
+   * tweakcn.md step 2). */
+  --background: #fffcf5;          /* tweakcn: light.background */
+  --foreground: #05140d;          /* tweakcn: light.foreground */
+  --primary: #008f47;             /* tweakcn: light.primary */
+  --primary-foreground: #ffffff;  /* tweakcn: light.primary-foreground */
+  --muted: #f5edd6;               /* tweakcn: light.muted */
+  --muted-foreground: #423b24;    /* tweakcn: light.muted-foreground */
+  --border: #000000;              /* tweakcn: light.border (the brutalist
+                                   * signature: pure black, no gray) */
+  --ring: #008f47;                /* tweakcn: light.ring */
 
-  /* Neo-brutalist link style — driven entirely through CSS variables
-   * consumed by #main a / :hover / :active / :focus-visible in
-   * styles/newtab.css. No JS mapping required (THEME_STYLE_CLASSES is
-   * gone as of v0.2.39). All entries have sensible fallbacks defined
-   * inline in newtab.css's `var(--foo, default)` syntax, so other
-   * themes can opt in by overriding only the entries they want. */
+  /* === Link style — neo-brutalist treatment, translated from tweakcn
+   * parameters that are NOT in the 8 shadcn vars but are also part of
+   * the tweakcn JSON. The mapping is:
+   *
+   *   tweakcn field          tweakcn value         → newtab link var
+   *   ────────────────────   ────────────────────   ──────────────────
+   *   light.card             oklch(1 0 0)           → --newtab-link-bg
+   *   light.border (color)   oklch(0 0 0)           → --newtab-link-border
+   *   light.radius           "0px"                  → --newtab-link-radius
+   *   light.shadow-color     hsl(0 0% 0%)          → shadow color
+   *   light.shadow-offset-x  "4px"                  → offset x
+   *   light.shadow-offset-y  "4px"                  → offset y
+   *   light.shadow-blur      "0px"                  → 0 (hard edge)
+   *   light.shadow-spread    "0px"                  → 0
+   *
+   * The resulting 4px 4px 0 0 black drop-shadow + 0 corner radius +
+   * pure-white link surface on a cream page = the brutalist signature
+   * tweakcn shows. The hover/active states are newtab-specific (tweakcn
+   * doesn't define a press interaction): on hover the offset halves
+   * and the link slides toward the cursor, on active the offset is
+   * eliminated so the link sits flush with where the shadow used to be.
+   *
+   * border-width (3px) and font-weight (600) are newtab additions for
+   * visual weight — tweakcn doesn't expose these directly. */
+
   --newtab-link-border: 3px solid #000000;
   --newtab-link-radius: 0;
   --newtab-link-bg: #ffffff;
   --newtab-link-weight: 600;
-  --newtab-link-shadow: 5px 5px 0 #000000;
-  --newtab-link-shadow-hover: 3px 3px 0 #000000;
-  --newtab-link-shadow-active: 0 0 0 #000000;
+  --newtab-link-shadow: 4px 4px 0 0 #000000;
+  --newtab-link-shadow-hover: 2px 2px 0 0 #000000;
+  --newtab-link-shadow-active: 0 0 0 0 #000000;
   --newtab-link-bg-hover: var(--primary);
   --newtab-link-color-hover: var(--primary-foreground);
   --newtab-link-border-color-hover: #000000;
   --newtab-link-transform-hover: translate(2px, 2px);
-  --newtab-link-transform-active: translate(5px, 5px);
+  --newtab-link-transform-active: translate(4px, 4px);
   --newtab-link-outline-focus: 3px solid var(--primary);
   --newtab-link-outline-offset-focus: 2px;
   --newtab-link-transition-duration: 0.1s;
