@@ -188,14 +188,18 @@ function applySettingsToDOM(): void {
     rules.push(`#main { margin-top: ${vMarginPx}px; }`);
   }
 
-  // Custom CSS
-  const customCss = settings('css');
-  if (customCss) {
-    rules.push(customCss);
-  }
-
   style.textContent = rules.join('\n');
   document.head.appendChild(style);
+
+  const existingUserCss = document.getElementById('user-css');
+  if (existingUserCss) {
+    existingUserCss.textContent = settings('css');
+  } else {
+    const userCssEl = document.createElement('style');
+    userCssEl.id = 'user-css';
+    userCssEl.textContent = settings('css');
+    document.head.appendChild(userCssEl);
+  }
 }
 
 /** Scale a value from [0,1,2] to [min,mid,max] */
