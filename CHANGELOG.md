@@ -5,6 +5,12 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.23] - 2026-06-17
+
+### Fixed
+- **hPos=1 (默认) 实际不居中**：v0.2.22 在 `src/features/settings/apply.ts:rebuildDynamicStyles()` 新增的 hPos 处理用了 `scale(hPos, 50, 100, 0) / 2` 公式，默认 hPos=1 → 50 → 25% margin-left，对 width: 96% 的 `#main` 来说意味着从视口 25% 起、向右溢出 21%，而且覆盖了 `newtab.css` 的 `margin: 0 auto` 居中。改为 `(hPos / 2) * (100 - width)` 映射：hPos=0 → 0%（左贴边）、hPos=1 → (100-width)/2%（居中）、hPos=2 → 100-width%（右贴边）。固定像素模式下用 `calc((hPos / 2) * (100vw - widthPx))` 保留窗口 resize 居中。同时把 hPos 合并到 `#main { width: ...; margin-left: ...; }` 同一行，删除原来独立的二次写入块（会覆盖前一次宽度计算）。
+
+
 ## [0.2.22] - 2026-06-17
 
 ### Changed

@@ -57,10 +57,17 @@ function rebuildDynamicStyles(): void {
   // Width
   if (settings('autoScale')) {
     const widthPct = scale(settings('width'), 96, 100, 60);
-    rules.push(`#main { width: ${widthPct}%; }`);
+    // Horizontal position: 0 = left, 1 = center, 2 = right.
+    // hPos=1 must keep #main visually centered — that is, margin-left
+    // = half the slack between widthPct and the viewport (100%).
+    const slackPct = 100 - widthPct;
+    const marginLeftPct = (settings('hPos') / 2) * slackPct;
+    rules.push(`#main { width: ${widthPct}%; margin-left: ${marginLeftPct}%; }`);
   } else {
     const widthPx = scale(settings('width'), 1200, 3000, 800);
-    rules.push(`#main { width: ${widthPx}px; }`);
+    // Fixed-width mode: margin-left is computed against 100vw so the
+    // hPos=1 position remains centered even when the window resizes.
+    rules.push(`#main { width: ${widthPx}px; margin-left: calc((${settings('hPos')} / 2) * (100vw - ${widthPx}px)); }`);
   }
 
   // Vertical margin
@@ -70,15 +77,6 @@ function rebuildDynamicStyles(): void {
   } else {
     const vMarginPx = scale(settings('vMargin'), 0, 200);
     rules.push(`#main { margin-top: ${vMarginPx}px; }`);
-  }
-
-  // Horizontal position: shift #main left/right within available space.
-  if (settings('autoScale')) {
-    const hPosPct = scale(settings('hPos'), 50, 100, 0);
-    rules.push(`#main { margin-left: ${hPosPct / 2}%; }`);
-  } else {
-    const hPosPx = scale(settings('hPos'), 600, 1500, 0);
-    rules.push(`#main { margin-left: ${hPosPx}px; }`);
   }
 
   const style = document.getElementById(STYLE_ELEMENT_ID) as HTMLStyleElement | null
