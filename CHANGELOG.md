@@ -5,6 +5,16 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.32] - 2026-06-17
+
+### Changed
+- **主题文件格式对齐 tweakcn**：每个主题 CSS 改为 `:root[data-theme="<id>"] { ... }` 包裹，**只声明 8 个 shadcn 变量**（`--background`、`--foreground`、`--primary`、`--primary-foreground`、`--muted`、`--muted-foreground`、`--border`、`--ring`）。`styles/globals.css` 的 `:where(:root)` 默认值把 6 个 `--newtab-*` 变量改为从这 8 个 shadcn 变量派生（`--newtab-bg: var(--background)`、`--newtab-highlight: var(--muted)`、`--newtab-drop-indicator: var(--primary)` 等）。从 tweakcn 复制主题变成 5 步：复制 `:root` 块 → 改选择器 → 裁剪到 8 个变量 → 转 OKLCH 为 hex（如果需要 Chrome 104 兼容）→ 加 import 和 THEMES 数组注册。详见 `docs/themes-from-tweakcn.md`。
+- **删除两个相似灰色主题**：`zinc` 和 `stone`（与 default 视觉差异极小，冗余），保留 `slate`（冷蓝灰）作为唯一的次级中性灰。
+- **新增 4 个彩色主题**：`blue`（海蓝）、`green`（森林）、`purple`（紫罗兰）、`orange`（暖橙）。同样只声明 8 个 shadcn 变量。
+
+### Notes
+- dark 主题背景从 `#000000` 变成 `#0f172a`（shadcn 标准 dark 的 `--background`），这是派生规则的副作用 —— 如果需要纯黑背景，可以在 dark.css 里手动加一行 `--newtab-bg: #000000;` override。tweakcn 的 `.dark` 块改成 `:root[data-theme="my-dark"]` 后不需要任何 newtab-specific 编辑。
+
 ## [0.2.31] - 2026-06-17
 
 ### Fixed

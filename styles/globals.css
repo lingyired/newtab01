@@ -2,10 +2,12 @@
 @import './themes/slate.css';
 @import './themes/rose.css';
 @import './themes/dark.css';
-@import './themes/zinc.css';
-@import './themes/stone.css';
 @import './themes/midnight.css';
 @import './themes/mocha.css';
+@import './themes/blue.css';
+@import './themes/green.css';
+@import './themes/purple.css';
+@import './themes/orange.css';
 
 /*
  * Base CSS variables live in :where(:root) so their specificity is 0.
@@ -13,9 +15,19 @@
  * 0,1,0) win the cascade — without this trick, the imported theme rules
  * end up listed before :root in the bundled CSS and :root would override
  * every theme because it appears later in the file.
+ *
+ * The 6 `--newtab-*` variables are DERIVED from the 8 shadcn variables
+ * above (see `--newtab-bg: var(--background)` etc). This means a theme
+ * file only needs to declare the 8 shadcn variables — the newtab
+ * palette (bookmark bg, hover highlight, drop indicator) falls out
+ * automatically. New themes can be added by copying any tweakcn theme
+ * block (`:root { ... }`) and renaming the selector to
+ * `:root[data-theme="my-theme"]`; no newtab-specific edits required.
+ * See docs/themes-from-tweakcn.md.
  */
 :where(:root) {
-  /* Base semantic colors */
+  /* shadcn/ui semantic colors. Each theme overrides these via
+   * `:root[data-theme="xxx"] { ... }`. The 8 we use are: */
   --background: #ffffff;
   --foreground: #1a1a1a;
   --primary: #2563eb;
@@ -25,13 +37,15 @@
   --border: #e2e8f0;
   --ring: #2563eb;
 
-  /* Newtab specific */
-  --newtab-bg: #f1f5f9;
-  --newtab-surface: #ffffff;
+  /* Newtab palette — derived from the shadcn variables above so that
+   * tweakcn-imported themes work without per-theme newtab overrides. */
+  --newtab-bg: var(--background);
+  --newtab-surface: var(--background);
   --newtab-text: var(--foreground);
-  --newtab-highlight: #e4f4ff;
-  --newtab-highlight-text: #000;
-  --newtab-drop-indicator: #2563eb;
+  --newtab-highlight: var(--muted);
+  --newtab-highlight-text: var(--foreground);
+  --newtab-drop-indicator: var(--primary);
+
   --newtab-spacing: 10px;
   --newtab-vmargin: 5%;
   --newtab-column-width: auto;

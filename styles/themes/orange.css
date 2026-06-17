@@ -1,0 +1,10 @@
+:root[data-theme="orange"] {
+  --background: #fff7ed;
+  --foreground: #431407;
+  --primary: #ea580c;
+  --primary-foreground: #ffffff;
+  --muted: #ffedd5;
+  --muted-foreground: #9a3412;
+  --border: #fed7aa;
+  --ring: #ea580c;
+}

@@ -2,12 +2,16 @@
 // change notification. Used by options/app.ts, newtab/settings-panel.ts and
 // any future surface that needs to enumerate or apply themes.
 //
-// Adding a new theme:
+// Adding a new theme (e.g. one copied from tweakcn):
 //   1. Append its id to THEMES below.
-//   2. Add a `[data-theme="<id>"] { ... }` block to a new file under
-//      styles/themes/, and `@import` that file from styles/globals.css.
-//   3. (Optional) Provide a Chinese label in settings-panel.ts's local label
-//      map — the English fallback (capitalized id) is always available.
+//   2. Add a new file under styles/themes/ with the format
+//      `:root[data-theme="<id>"] { 8 shadcn variables }`. The 6 `--newtab-*`
+//      variables are derived from these 8 in styles/globals.css, so no
+//      newtab-specific edits are required.
+//   3. Add the file to the @import list at the top of styles/globals.css.
+//   4. Add a Chinese label in settings-panel.ts's THEME_LABELS map (English
+//      id is the fallback if no label is provided).
+// See docs/themes-from-tweakcn.md for a tweakcn-specific walkthrough.
 
 import { getSetting } from '../../lib/storage/settings';
 import { log } from '../../lib/debug';
@@ -24,10 +28,12 @@ const THEMES = [
   'slate',
   'rose',
   'dark',
-  'zinc',
-  'stone',
   'midnight',
   'mocha',
+  'blue',
+  'green',
+  'purple',
+  'orange',
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number];

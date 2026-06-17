@@ -1,17 +1,10 @@
-[data-theme="dark"] {
-  --background: #0a0a0a;
-  --foreground: #fafafa;
-  --primary: #3b82f6;
-  --primary-foreground: #ffffff;
+:root[data-theme="dark"] {
+  --background: #0f172a;
+  --foreground: #e2e8f0;
+  --primary: #60a5fa;
+  --primary-foreground: #0f172a;
   --muted: #1e293b;
   --muted-foreground: #94a3b8;
-  --border: #1e293b;
-  --ring: #3b82f6;
-
-  --newtab-bg: #000000;
-  --newtab-surface: #0f172a;
-  --newtab-text: #e2e8f0;
-  --newtab-highlight: #1e293b;
-  --newtab-highlight-text: #ffffff;
-  --newtab-drop-indicator: #60a5fa;
+  --border: #334155;
+  --ring: #60a5fa;
 }

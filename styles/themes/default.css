@@ -1,11 +1,29 @@
-/* Default light theme - inherits from :root */
-[data-theme="default"] {
+/*
+ * Default theme. The 8 shadcn variables below are the entire theme
+ * surface; the 6 `--newtab-*` variables are derived from these in
+ * globals.css (see `--newtab-bg: var(--background)`).
+ *
+ * To convert any tweakcn theme into a newtab01 theme:
+ *   1. Copy the `:root { ... }` block from tweakcn (or any shadcn theme).
+ *   2. Rename the selector to `:root[data-theme="my-id"]`.
+ *   3. Keep only the 8 shadcn variables below (--background, --foreground,
+ *      --primary, --primary-foreground, --muted, --muted-foreground,
+ *      --border, --ring). Drop everything else (cards, popover, accent,
+ *      destructive, etc.) — newtab01 does not consume them.
+ *   4. Drop the OKLCH wrapper if your browser support matrix requires
+ *      older Chrome (pre-111); convert to hex manually.
+ *   5. Register the id in src/features/themes/switcher.ts THEMES array
+ *      and add a Chinese label in src/newtab/settings-panel.ts
+ *      THEME_LABELS.
+ * See docs/themes-from-tweakcn.md.
+ */
+:root[data-theme="default"] {
   --background: #ffffff;
   --foreground: #1a1a1a;
-  --newtab-bg: #f1f5f9;
-  --newtab-surface: #ffffff;
-  --newtab-text: #1a1a1a;
-  --newtab-highlight: #e4f4ff;
-  --newtab-highlight-text: #000;
-  --newtab-drop-indicator: #2563eb;
+  --primary: #2563eb;
+  --primary-foreground: #ffffff;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --border: #e2e8f0;
+  --ring: #2563eb;
 }

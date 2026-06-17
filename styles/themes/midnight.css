@@ -1,17 +1,10 @@
-[data-theme="midnight"] {
-  --background: #0b1220;
-  --foreground: #e2e8f0;
-  --primary: #38bdf8;
-  --primary-foreground: #0b1220;
-  --muted: #111c2e;
-  --muted-foreground: #64748b;
-  --border: #1e293b;
-  --ring: #38bdf8;
-
-  --newtab-bg: #0b1220;
-  --newtab-surface: #111c2e;
-  --newtab-text: #cbd5e1;
-  --newtab-highlight: #1e3a5f;
-  --newtab-highlight-text: #f0f9ff;
-  --newtab-drop-indicator: #38bdf8;
+:root[data-theme="midnight"] {
+  --background: #0b0e23;
+  --foreground: #e0e7ff;
+  --primary: #818cf8;
+  --primary-foreground: #0b0e23;
+  --muted: #1e1b4b;
+  --muted-foreground: #a5b4fc;
+  --border: #312e81;
+  --ring: #818cf8;
 }

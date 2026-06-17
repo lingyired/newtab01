@@ -14,10 +14,12 @@ const THEME_LABELS: Readonly<Record<string, string>> = {
   slate: '石板灰',
   rose: '玫瑰红',
   dark: '暗色',
-  zinc: '锌灰',
-  stone: '石灰',
   midnight: '午夜',
   mocha: '摩卡',
+  blue: '海蓝',
+  green: '森林',
+  purple: '紫罗兰',
+  orange: '暖橙',
 };
 
 type SettingsTab = 'layout' | 'appearance' | 'features' | 'advanced';
