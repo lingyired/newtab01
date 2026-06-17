@@ -490,12 +490,32 @@
 
 /* ─── Settings panel (floating drawer) ─── */
 
-/* Overlay */
+/*
+ * Z-index plan (low → high):
+ *   0          bookmark columns
+ *   50         #search-overlay — search dim layer, stays BELOW #topbar
+ *              so the topbar / search input / settings gear remain
+ *              visible & clickable during a search (per CLAUDE.md
+ *              § "search overlay does not obscure the search box").
+ *  100         #topbar — sits above the search dim layer for the same
+ *              reason and also lifts the settings gear above the columns.
+ *  110         .sp-overlay — settings dim layer, sits ABOVE #topbar so
+ *              it also dims the topbar (search box included) and the
+ *              settings gear while the panel is open. This is the
+ *              opposite of the search overlay by design: when the user
+ *              explicitly opens the settings panel, we want their
+ *              attention to stay on the panel, not on the topbar.
+ *  120         .sp-panel — must sit above the gear icon (which lives
+ *              inside #topbar @ z-index 100) so the icon is occluded
+ *              while the drawer is on screen.
+ *  200         #search-results — search results are the topmost surface
+ *              since the user is mid-search.
+ */
 .sp-overlay {
   position: fixed;
   inset: 0;
   background-color: rgba(0, 0, 0, 0.3);
-  z-index: 40;
+  z-index: 110;
   opacity: 0;
   transition: opacity 0.2s ease;
 }
@@ -514,7 +534,7 @@
   height: 100vh;
   background-color: var(--background);
   border-left: 1px solid var(--border);
-  z-index: 50;
+  z-index: 120;
   display: flex;
   flex-direction: column;
   transform: translateX(100%);

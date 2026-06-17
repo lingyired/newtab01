@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.26] - 2026-06-17
+
+### Fixed
+- **设置浮层的 z-index 层级错**：`styles/newtab.css` 里 `.sp-overlay` z-index 40、`.sp-panel` z-index 50，而 `#topbar` z-index 100（齿轮在 topbar 内），导致 (1) 齿轮图标在打开的设置浮层之上方显示，(2) 设置遮罩不覆盖搜索框。提升 `.sp-overlay` → 110、`.sp-panel` → 120，保留 `#search-overlay` 50 在 `#topbar` 100 之下以维持「搜索遮罩不遮搜索框」的设计意图，保留 `#search-results` 200 在最上方。文件内附完整 z-index 计划注释供后续参考。
+
 ## [0.2.25] - 2026-06-17
 
 ### Changed
