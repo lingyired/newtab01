@@ -147,7 +147,7 @@ export function applyTheme(theme: string): void {
 
 /**
  * Resolve any CSS color expression (hex, rgb(), hsl(), oklch(),
- * color-mix(), var()-bearing expressions, ...) to a concrete
+ * color(), color-mix(), var()-bearing expressions, ...) to a concrete
  * `rgb(r, g, b)` or `rgba(r, g, b, a)` string the browser has
  * already evaluated. This is the only thing that satisfies
  * `<input type="color">` (which requires exactly `#rrggbb`) and
@@ -156,8 +156,15 @@ export function applyTheme(theme: string): void {
  *
  * Implementation: stamp the expression onto a throwaway element's
  * `style.color` and let the browser do the resolution. `getComputedStyle`
- * on the color property always returns a concrete rgb()/rgba() value,
- * not the original expression.
+ * on the color property returns a concrete rgb()/rgba() value for
+ * most input formats — but for the new CSS Color 4 forms
+ * (`color(srgb ...)`, `oklch(...)`, `oklab(...)`, etc.) Chrome 111+
+ * returns the value **preserved in its original function form**
+ * (per spec, `getComputedStyle` does not serialize color functions).
+ * To handle those, we do a second probe round-trip: stamp the
+ * already-resolved value back into `style.color` and read the
+ * computed style a second time. By the second hop the browser has
+ * normalized the value into `rgb()` form.
  *
  * Fast path: a value that's already a simple `rgb()` / `rgba()` / hex
  * is returned unchanged (the temp-DOM round-trip is ~0.1ms each but
@@ -167,15 +174,32 @@ export function resolveCssColor(cssValue: string): string {
   const v = cssValue.trim();
   if (!v) return '';
   if (/^#[0-9a-f]{3,8}$/i.test(v)) return v;
-  if (/^(rgb|rgba|hsl|hsla)\(/i.test(v)) return v;
+  if (/^(rgb|rgba)\(/i.test(v)) return v;
   if (typeof document === 'undefined') return v;
   const probe = document.createElement('span');
   probe.style.color = v;
   probe.style.display = 'none';
   document.body.appendChild(probe);
-  const resolved = getComputedStyle(probe).color;
+  const first = getComputedStyle(probe).color;
   document.body.removeChild(probe);
-  return resolved || v;
+
+  // If the first pass already returned an rgb()/rgba() form, we're done.
+  if (/^rgba?\(/i.test(first)) return first;
+
+  // Otherwise the browser preserved the CSS Color 4 form. Re-stamp and
+  // re-read — by the second hop the value is in `rgb()` form. The
+  // `style.color` setter on a <span> accepts every color function and
+  // outputs an rgb() when serialized via getComputedStyle on the same
+  // element. Two hops are needed because the *first* hop preserves the
+  // input; the *second* hop (where the input is now the preserved
+  // function form) is what triggers the rgb() normalization in Chrome.
+  const probe2 = document.createElement('span');
+  probe2.style.color = first;
+  probe2.style.display = 'none';
+  document.body.appendChild(probe2);
+  const second = getComputedStyle(probe2).color;
+  document.body.removeChild(probe2);
+  return second || first || v;
 }
 
 /**

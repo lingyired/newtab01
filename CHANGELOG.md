@@ -5,6 +5,18 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.43] - 2026-06-18
+
+### Bug fixes
+- **`resolveCssColor` 不再泄漏 `color(srgb ...)` 形式到 color input**。CSS Color 4 函数（`color(srgb ...)` / `oklch(...)` / `oklab(...)` 等）经 `getComputedStyle(probe).color` 第一次读取时，Chrome 111+ 会按规范**原样保留**函数形式而非 normalize 成 `rgb()`。color input 要求 `#rrggbb` 格式，所以直接把它写回去会触发 "The specified value 'color(srgb 0.87 ...)' does not conform to the required format" 报错。
+  - 修复：第一次 probe 拿到非 `rgb()` 形式时，再做**第二次** probe（把 `getComputedStyle` 的返回值再 stamp 进 `style.color` 再读一次）。第二次 Chrome 才会 normalize 成 `rgb(r, g, b)`。
+  - `hsl()` 也从快路径中移出 —— 同样的根因，hsl() 第一次也会保留为 `hsl()`，需要两跳。
+  - 原先的快路径只识别 `rgb`/`rgba`/`hsl`/`hsla`/hex，对 `color()` 形式既不命中快路径也不触发二跳，所以 bug 被掩盖了。
+
+### Notes
+- 影响范围：所有 tweakcn 主题在 settings 面板打开颜色选择器时（包括 cyberpunk / astrovista / mx-brutalist，以及任何运行时导入的 tweakcn 主题）。v0.2.42 之后只有 tweakcn 来源主题，命中率变高，所以用户明显感受到。
+- 测试方法：选择 cyberpunk 主题 → 设置 → 外观 → 改动任一颜色 → 看到 #rrggbb 格式正常显示，无 color input 报错。
+
 ## [0.2.42] - 2026-06-18
 
 ### Changed
