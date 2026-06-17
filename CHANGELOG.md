@@ -5,6 +5,15 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.34] - 2026-06-18
+
+### Changed
+- **默认主题链接背景色改为纯白**：`styles/themes/default.css` 新增 `--newtab-surface: #ffffff;` 覆盖全局的 `color-mix(in srgb, var(--newtab-bg), var(--newtab-text) 6%)` 派生。默认主题下 link bg === page bg === #ffffff，链接定义完全靠 1px `--border` 边框 + 文本/图标，呈现"clean white card"风格。其他 9 个主题继续走 6% 派生。
+
+### Notes
+- 这是 newtab-specific 的第 9 个变量（8 个 shadcn 变量 + 1 个 `--newtab-surface` override），不破坏 tweakcn 复制流程 —— 从 tweakcn 拷过来的主题删掉这行就回到默认的 6% mix。
+- 由于 link bg = page bg = 白，1px `--border`（默认 #e2e8f0，浅灰白）是唯一的区分信号。如果觉得边框太弱看不清，可以把 default 的 `--border` 改成更深的灰（例如 `#cbd5e1` slate-300）—— 这同样只是 8 个 shadcn 变量之一。
+
 ## [0.2.33] - 2026-06-18
 
 ### Changed

@@ -26,4 +26,12 @@
   --muted-foreground: #64748b;
   --border: #e2e8f0;
   --ring: #2563eb;
+
+  /* Default theme: pin the link surface to pure white instead of the
+   * color-mix(--newtab-bg, --newtab-text 6%) used by every other theme.
+   * With --background: #ffffff this means link bg === page bg, and
+   * the 1px --border on `#main a` is the only definition signal. This
+   * is the intended "clean white card" look for default; if a future
+   * tweakcn import wants the 6% mix back, just delete this line. */
+  --newtab-surface: #ffffff;
 }
