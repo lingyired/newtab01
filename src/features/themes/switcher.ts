@@ -30,6 +30,7 @@ const THEMES = [
   'dark',
   'midnight',
   'mocha',
+  'mx-brutalist',
   'blue',
   'green',
   'purple',

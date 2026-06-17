@@ -5,6 +5,21 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.35] - 2026-06-18
+
+### Added
+- **MX-Brutalist 主题**（来自 [tweakcn cmllfu8oc000004l1a0tidj2g](https://tweakcn.com/r/themes/cmllfu8oc000004l1a0tidj2g)，作者 Victor Hugo Avelar Ossorio）。文件 `styles/themes/mx-brutalist.css`，注册到 `globals.css` 的 `@import` 列表、`switcher.ts` 的 `THEMES` 数组、`settings-panel.ts` 的 `THEME_LABELS`（标签"MX 暴力"）。复制流程：
+  1. `curl https://tweakcn.com/r/themes/<id>` 拿 raw shadcn registry JSON
+  2. 从 `light` 块挑 8 个 shadcn 变量（background / foreground / primary / primary-foreground / muted / muted-foreground / border / ring）
+  3. 用 `culori` 把 OKLCH 转 hex（Chrome 104 还不能原生解析 OKLCH）
+  4. 写 `:root[data-theme="mx-brutalist"] { ... }` 文件
+  5. 三个地方注册
+
+### Notes
+- 只取了 tweakcn 给的 light 变体（cream 背景 + 纯黑边框 + 亮绿主色 = 典型 brutalist 风格）。dark 变体要等用户需要再补。
+- brutalist 风格的特征在 border 变量上：MX-Brutalist 把 `--border` 设成纯黑 `#000000`，所以新标签页里 1px 边在 cream 背景上对比度极高，和其他 9 个主题完全不同（其他都是浅灰边）。这是有意为之 —— brutalist 的视觉冲击来自硬边。
+- hex 值（culori 转的）：`--background: #fffcf5; --foreground: #05140d; --primary: #008f47; --primary-foreground: #ffffff; --muted: #f5edd6; --muted-foreground: #423b24; --border: #000000; --ring: #008f47;`
+
 ## [0.2.34] - 2026-06-18
 
 ### Changed

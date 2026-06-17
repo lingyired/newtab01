@@ -16,6 +16,7 @@ const THEME_LABELS: Readonly<Record<string, string>> = {
   dark: '暗色',
   midnight: '午夜',
   mocha: '摩卡',
+  'mx-brutalist': 'MX 暴力',
   blue: '海蓝',
   green: '森林',
   purple: '紫罗兰',

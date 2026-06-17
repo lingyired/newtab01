@@ -1,0 +1,10 @@
+:root[data-theme="mx-brutalist"] {
+  --background: #fffcf5;
+  --foreground: #05140d;
+  --primary: #008f47;
+  --primary-foreground: #ffffff;
+  --muted: #f5edd6;
+  --muted-foreground: #423b24;
+  --border: #000000;
+  --ring: #008f47;
+}
