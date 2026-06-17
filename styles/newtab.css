@@ -78,12 +78,19 @@
    * no JS mapping needed. Adding `transform` to the transition list
    * is a no-op for the default (transform is always none) but lets
    * themed variants animate the press interaction. */
+  /* link bg defaults to page bg (matches Codex: white-on-white with a
+   * 1px border and a hairline shadow). The generic --newtab-surface
+   * is a 6% color-mix toward the foreground, which reads as gray on
+   * the default light theme and made every link look like a filled
+   * row instead of a button. --newtab-link-bg is still the per-theme
+   * escape hatch (brutalist / glassmorphism override it directly). */
   padding: 0.45em 0.8em 0.45em 1.2em;
-  background-color: var(--newtab-link-bg, var(--newtab-surface));
+  background-color: var(--newtab-link-bg, var(--newtab-bg));
   border: var(--newtab-link-border, 1px solid var(--border));
   border-radius: var(--newtab-link-radius, 0.6em);
   font-weight: var(--newtab-link-weight, normal);
-  box-shadow: var(--newtab-link-shadow, none);
+  /* Codex-style hairline shadow (Tailwind shadow-sm equivalent). */
+  box-shadow: var(--newtab-link-shadow, 0 1px 2px hsl(0 0% 0% / 0.05));
   cursor: pointer;
   white-space: nowrap;
   transition-property: color, background-color, border-color, box-shadow, transform, opacity;

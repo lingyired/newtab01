@@ -5,6 +5,15 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.46] - 2026-06-18
+
+### Fixed
+- **修复 v0.2.45 Codex 主题 link 背景变灰 + 无阴影的视觉回归**（用户反馈 "codex 的 button 是白色背景的，但是你生成的是灰色的。而且它的还是带一点点的阴影的"）：
+  - **`styles/newtab.css:82`** link 默认 `background-color` 由 `var(--newtab-surface)` 改为 `var(--newtab-bg)`。`--newtab-surface` 在 `globals.css` 是 `color-mix(in srgb, var(--newtab-bg), var(--newtab-text) 6%)` 派生，light theme 下读起来就是"灰色填充"而不是 Codex 风格的"白底按钮"。v0.2.34 时代 `default.css` 还有一行 `--newtab-surface: #ffffff;` override 视觉 reset 到白底，v0.2.45 把 `default.css` 改成 `[data-theme="default"] { 8 shadcn vars }` 块时这个 override 被一并删掉了，灰色派生顺势生效。
+  - **`styles/newtab.css:86`** link 默认 `box-shadow` 由 `none` 改为 `0 1px 2px hsl(0 0% 0% / 0.05)`（Tailwind `shadow-sm` 等价，Codex 真实按钮的微阴影）。
+  - `globals.css` 的 `--newtab-surface` 派生本身不动（其他地方仍依赖，如 `.search-input` 区分搜索框与 page bg）。
+  - `--newtab-link-bg` / `--newtab-link-shadow` 仍是 per-theme 出口：brutalist / glassmorphism 等未来 link 装饰预设直接覆盖这两个变量即可。
+
 ## [0.2.45] - 2026-06-18
 
 ### Features
