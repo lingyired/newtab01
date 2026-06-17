@@ -24,10 +24,14 @@ const ACTIONS: ActionButton[] = [
   { icon: ICONS.columns2, title: 'Open in split view', action: openSplit },
 ];
 
-/** Create the folder action buttons container */
-export function createFolderActions(node: BookmarkNode): HTMLSpanElement {
+/** Create the folder action buttons container. Returns an empty span when bookmarkCount is 0. */
+export function createFolderActions(node: BookmarkNode, bookmarkCount: number): HTMLSpanElement {
   const container = document.createElement('span');
   container.classList.add('folder-actions');
+
+  if (bookmarkCount === 0) {
+    return container;
+  }
 
   for (const actionDef of ACTIONS) {
     const btn = document.createElement('button');
