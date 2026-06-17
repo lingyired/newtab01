@@ -32,6 +32,50 @@
   --border: oklch(0.9067 0 0);
   --ring: oklch(0.5286 0.1734 254.9750);
 
+  /* Tweakcn design tokens — fallback values. As of v0.2.50, theme
+   * blocks (built-in or runtime-imported) carry these vars and our
+   * UI elements read them so a tweakcn theme's visual identity isn't
+   * dropped on the floor. Each var has a shadcn-style default so
+   * themes that don't define a particular token still get a sensible
+   * value (rounded corners, soft shadow, system font) instead of
+   * producing an unstyled element.
+   *
+   * - --radius: shadcn's default (0.5rem). MX-Brutalist overrides to
+   *   0px for sharp corners.
+   * - shadow-*: shadcn's default shadow stack (subtle drop shadow at
+   *   --shadow, slightly heavier at --shadow-md/lg). MX-Brutalist
+   *   overrides to a 4px 4px 0 0 hard black drop.
+   * - font-*: shadcn's default font stacks. Tweakscn themes override
+   *   to specific families (e.g. Montserrat for MX-Brutalist).
+   * - letter-spacing / tracking-*: tweakcn's typography tokens.
+   * - spacing: shadcn's default 0.25rem base. */
+  --radius: 0.5rem;
+  --shadow-color: hsl(0 0% 0%);
+  --shadow-opacity: 0.1;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 1px;
+  --shadow: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-2xs: 0 1px 3px 0 hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0 hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px 0 hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
+  --shadow-md: 0 4px 6px -1px hsl(0 0% 0% / 0.1), 0 2px 4px -2px hsl(0 0% 0% / 0.1);
+  --shadow-lg: 0 10px 15px -3px hsl(0 0% 0% / 0.1), 0 4px 6px -4px hsl(0 0% 0% / 0.1);
+  --shadow-xl: 0 20px 25px -5px hsl(0 0% 0% / 0.1), 0 8px 10px -6px hsl(0 0% 0% / 0.1);
+  --shadow-2xl: 0 25px 50px -12px hsl(0 0% 0% / 0.25);
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-serif: ui-serif, Georgia, Cambria, 'Times New Roman', serif;
+  --letter-spacing: 0em;
+  --tracking-normal: 0em;
+  --tracking-tighter: calc(var(--tracking-normal) - 0.05em);
+  --tracking-tight: calc(var(--tracking-normal) - 0.025em);
+  --tracking-wide: calc(var(--tracking-normal) + 0.025em);
+  --tracking-wider: calc(var(--tracking-normal) + 0.05em);
+  --tracking-widest: calc(var(--tracking-normal) + 0.1em);
+  --spacing: 0.25rem;
+
   /* Newtab palette — derived from the shadcn variables above so that
    * tweakcn-imported themes work without per-theme newtab overrides.
    *

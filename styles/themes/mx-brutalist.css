@@ -6,15 +6,21 @@
  * theme-scope override on #main a (was removed in v0.2.45 so all
  * built-in themes shared the same 8-vars-only baseline).
  *
- * The 8 shadcn variables below are verbatim from the tweakcn light
- * and dark blocks. The shadow-color (hsl(0,0%,0%) light /
- * hsl(45,100%,80%) dark) is hardcoded in the link overrides below
- * because it's not one of the canonical 8 shadcn vars we expose to
- * the newtab palette (those 8 are: background, foreground, primary,
- * primary-foreground, muted, muted-foreground, border, ring).
+ * v0.2.50: extends the 8 shadcn color variables with the full set of
+ * tweakcn design tokens (radius, the shadow system, font families,
+ * letter-spacing, tracking, spacing) so runtime-imported themes also
+ * keep their visual identity. The light + dark shadow stacks are
+ * verbatim from the tweakcn JSON: the dark variant's --shadow-color
+ * is hsl(45 100% 80%) (warm cream against the deep green
+ * background) instead of the light variant's hsl(0 0% 0%).
+ *
+ * The 8 shadcn variables + the design tokens below are exactly what
+ * we expose as a `theme` block. The 6 --newtab-* variables are
+ * derived from the 8 in globals.css so they need no per-theme work.
  */
 
 :root[data-theme="mx-brutalist"] {
+  /* Required 8 — validation gate for runtime imports. */
   --background: oklch(0.9923 0.0104 91.4994);
   --foreground: oklch(0.1759 0.0275 161.2531);
   --primary: oklch(0.5687 0.1498 151.9380);
@@ -23,9 +29,33 @@
   --muted-foreground: oklch(0.3525 0.0379 91.7268);
   --border: oklch(0 0 0);
   --ring: oklch(0.5687 0.1498 151.9380);
+
+  /* Tweakcn design tokens — verbatim from the JSON. */
+  --radius: 0px;
+  --shadow-color: hsl(0, 0%, 0%);
+  --shadow-opacity: 1;
+  --shadow-blur: 0px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 4px;
+  --shadow-offset-y: 4px;
+  --shadow-2xs: 4px 4px 0px 0px hsl(0 0% 0% / 0.50);
+  --shadow-xs: 4px 4px 0px 0px hsl(0 0% 0% / 0.50);
+  --shadow-sm: 4px 4px 0px 0px hsl(0 0% 0% / 1.00), 4px 1px 2px -1px hsl(0 0% 0% / 1.00);
+  --shadow: 4px 4px 0px 0px hsl(0 0% 0% / 1.00), 4px 1px 2px -1px hsl(0 0% 0% / 1.00);
+  --shadow-md: 4px 4px 0px 0px hsl(0 0% 0% / 1.00), 4px 2px 4px -1px hsl(0 0% 0% / 1.00);
+  --shadow-lg: 4px 4px 0px 0px hsl(0 0% 0% / 1.00), 4px 4px 6px -1px hsl(0 0% 0% / 1.00);
+  --shadow-xl: 4px 4px 0px 0px hsl(0 0% 0% / 1.00), 4px 8px 10px -1px hsl(0 0% 0% / 1.00);
+  --shadow-2xl: 4px 4px 0px 0px hsl(0 0% 0% / 2.50);
+  --font-sans: 'Montserrat', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --font-serif: 'Lora', serif;
+  --letter-spacing: 0.02em;
+  --tracking-normal: 0.04em;
+  --spacing: 0.25rem;
 }
 
 :root[data-theme="mx-brutalist-dark"] {
+  /* Required 8. */
   --background: oklch(0.1649 0.0308 162.2739);
   --foreground: oklch(0.9809 0.0260 91.6197);
   --primary: oklch(0.8484 0.2275 151.1487);
@@ -34,53 +64,76 @@
   --muted-foreground: oklch(0.8253 0.0270 91.6606);
   --border: oklch(0.9809 0.0260 91.6197);
   --ring: oklch(0.7951 0.1631 68.6392);
+
+  /* Tweakcn design tokens — same as light, except the shadow color
+   * is hsl(45 100% 80%) (warm cream) instead of pure black. */
+  --radius: 0px;
+  --shadow-color: hsl(45, 100%, 80%);
+  --shadow-opacity: 1;
+  --shadow-blur: 0px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 4px;
+  --shadow-offset-y: 4px;
+  --shadow-2xs: 4px 4px 0px 0px hsl(45 100% 80% / 0.50);
+  --shadow-xs: 4px 4px 0px 0px hsl(45 100% 80% / 0.50);
+  --shadow-sm: 4px 4px 0px 0px hsl(45 100% 80% / 1.00), 4px 1px 2px -1px hsl(45 100% 80% / 1.00);
+  --shadow: 4px 4px 0px 0px hsl(45 100% 80% / 1.00), 4px 1px 2px -1px hsl(45 100% 80% / 1.00);
+  --shadow-md: 4px 4px 0px 0px hsl(45 100% 80% / 1.00), 4px 2px 4px -1px hsl(45 100% 80% / 1.00);
+  --shadow-lg: 4px 4px 0px 0px hsl(45 100% 80% / 1.00), 4px 4px 6px -1px hsl(45 100% 80% / 1.00);
+  --shadow-xl: 4px 4px 0px 0px hsl(45 100% 80% / 1.00), 4px 8px 10px -1px hsl(45 100% 80% / 1.00);
+  --shadow-2xl: 4px 4px 0px 0px hsl(45 100% 80% / 2.50);
+  --font-sans: 'Montserrat', sans-serif;
+  --font-mono: 'Space Mono', monospace;
+  --font-serif: 'Lora', serif;
+  --letter-spacing: 0.04em;
+  --tracking-normal: 0.04em;
+  --spacing: 0.25rem;
 }
 
 /* Theme-scope link treatment — only active when this theme is
  * selected. Selector specificity: 0,2,1 beats #main a (0,1,1) and
- * #main a:hover (0,1,1) from newtab.css, so the brutalist shadow /
- * border / transform win the cascade without re-introducing the
- * generic --newtab-link-* variables that v0.2.45 retired.
+ * #main a:hover (0,1,1) from newtab.css, so the brutalist border /
+ * transform win the cascade without re-introducing the generic
+ * --newtab-link-* variables that v0.2.45 retired.
  *
- * Values: 3px hard black border + 0 radius + 4px 4px solid black
- * shadow on the default state, then on hover the link slides up-left
- * by 2px and the shadow grows to 6px 6px (classic neo-brutalist
- * "press" animation — same pattern as shadcn-ui's Button for this
- * theme). */
+ * v0.2.50: border-radius and box-shadow now read from the theme's
+ * --radius (0px) and --shadow variables — so the same override works
+ * for both the light and dark variants (which differ only in
+ * --shadow-color, picked up automatically). 3px hard border stays
+ * hardcoded because tweakcn doesn't define an input border width
+ * token; 2-3px is the typical neo-brutalist signature.
+ *
+ * Hover: classic neo-brutalist "press" — slide up-left by 2px and
+ * grow the shadow to 6px 6px so it visibly "lifts" out of the page. */
 :root[data-theme="mx-brutalist"] #main a,
 :root[data-theme="mx-brutalist-dark"] #main a {
   border: 3px solid var(--border);
-  border-radius: 0;
+  border-radius: var(--radius);
   background-color: var(--newtab-bg);
-  /* offset-y / offset-x / blur / spread / color — matches tweakcn
-   * "shadow" entry in the JSON (4px 4px 0px 0px <shadow-color> / 1). */
-  box-shadow: 4px 4px 0 0 hsl(0 0% 0% / 1);
+  box-shadow: var(--shadow);
 }
 
 :root[data-theme="mx-brutalist"] #main a:hover,
 :root[data-theme="mx-brutalist-dark"] #main a:hover {
   transform: translate(-2px, -2px);
-  box-shadow: 6px 6px 0 0 hsl(0 0% 0% / 1);
+  /* The hover shadow color matches the theme's --shadow-color (black
+   * in light, cream in dark) and uses --shadow-blur / --shadow-
+   * spread from the theme to stay consistent. */
+  box-shadow: 6px 6px 0 0 var(--shadow-color);
 }
 
 :root[data-theme="mx-brutalist"] #main a:active,
 :root[data-theme="mx-brutalist-dark"] #main a:active {
   transform: translate(0, 0);
-  box-shadow: 4px 4px 0 0 hsl(0 0% 0% / 1);
+  box-shadow: var(--shadow);
 }
 
-/* Dark variant: tweakcn's dark theme uses hsl(45, 100%, 80%) as the
- * shadow color (a warm cream against the deep green background)
- * instead of pure black — overrides stack on top of the light rules
- * above via higher specificity. */
-:root[data-theme="mx-brutalist-dark"] #main a {
-  box-shadow: 4px 4px 0 0 hsl(45 100% 80% / 1);
-}
-
-:root[data-theme="mx-brutalist-dark"] #main a:hover {
-  box-shadow: 6px 6px 0 0 hsl(45 100% 80% / 1);
-}
-
-:root[data-theme="mx-brutalist-dark"] #main a:active {
-  box-shadow: 4px 4px 0 0 hsl(45 100% 80% / 1);
+/* Search input — apply the same brutalist 3px hard border + var(--shadow)
+ * to the topbar's search box so the whole UI shares one visual
+ * language. The 1px default border in newtab.css is overridden here.
+ * border-radius: var(--radius) is already 0 in this theme (declared
+ * above), so no explicit 0 needed. */
+:root[data-theme="mx-brutalist"] .search-input,
+:root[data-theme="mx-brutalist-dark"] .search-input {
+  border: 3px solid var(--border);
 }

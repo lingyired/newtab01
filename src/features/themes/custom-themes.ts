@@ -2,25 +2,35 @@
 // directly into the settings panel, the JSON is stored in
 // chrome.storage.local under "customThemes", and on every newtab/
 // options/popup startup we emit a single <style id="custom-themes">
-// block with one :root[data-theme="user-<kebab>"] { 8 shadcn vars }
-// selector per installed entry.
+// block with one :root[data-theme="user-<kebab>"] { ... } selector
+// per installed entry.
 //
-// The 6 `--newtab-*` variables are NOT emitted here — globals.css
-// already derives them from the 8 shadcn vars at the :where(:root)
-// level (specificity 0,0,0), so any [data-theme="user-x"] block
-// (specificity 0,1,0) wins for the 8 vars and the derived 6 follow
+// As of v0.2.50 we preserve ALL tweakcn variables the source theme
+// actually defined (radius, the shadow system, font families, letter-
+// spacing, tracking tokens, spacing) — not just the 8 shadcn color
+// variables. This matters because tweakcn themes encode their visual
+// identity in those tokens: MX-Brutalist's 0px radius + 4px 4px 0 0
+// shadow is the *whole point* of the theme, and dropping it on the
+// floor left a generic 8px-radius shadowless search bar even when the
+// user had imported MX-Brutalist. Themes that define only the 8 colors
+// (older hand-written ones, partial pastes) still work — we just
+// emit whatever non-empty vars are present.
+//
+// The 8 shadcn color variables remain the validation gate. The 6
+// `--newtab-*` variables are NOT emitted here — globals.css already
+// derives them from the 8 shadcn vars at the :where(:root) level
+// (specificity 0,0,0), so any [data-theme="user-x"] block
+// (specificity 0,1,0) wins for those vars and the derived 6 follow
 // automatically. This matches the static themes under styles/themes/.
 //
 // Design spec: docs/superpowers/specs/2026-06-17-runtime-theme-import-design.md
-//
-// Long-term direction: replace all built-in themes with tweakcn
-// imports via this feature (decision after v0.2.41 lands).
 
 import { log } from '../../lib/debug';
 
-/** The 8 shadcn variables we copy from cssVars.light / cssVars.dark.
- *  Anything else in the tweakcn JSON (chart-*, sidebar-*, font-sans, etc.)
- *  is dropped on the floor — newtab01 doesn't use those surfaces. */
+/** The 8 shadcn color variables we REQUIRE for any theme. The validator
+ *  rejects a paste that doesn't define all 8 — they are the
+ *  irreducible palette that drives :where(:root) cascade wins and
+ *  the 6 --newtab-* derivations. */
 const THEME_VARS = [
   'background',
   'foreground',
@@ -31,14 +41,70 @@ const THEME_VARS = [
   'border',
   'ring',
 ] as const;
+type RequiredThemeVar = (typeof THEME_VARS)[number];
 
-type ThemeVar = (typeof THEME_VARS)[number];
+/** Optional tweakcn variables we PASS THROUGH if present. v0.2.50:
+ *  we no longer drop these on the floor. The full list covers tweakcn
+ *  themes' visual identity:
+ *  - `--radius` — corner rounding (MX-Brutalist is 0px, the
+ *    Codex/default is 0.5rem)
+ *  - `--shadow-color / --shadow-opacity / --shadow-blur /
+ *     --shadow-spread / --shadow-offset-x / --shadow-offset-y` —
+ *     the shadow primitive that the preset vars below compose from
+ *  - `--shadow / --shadow-2xs / --shadow-xs / --shadow-sm /
+ *     --shadow-md / --shadow-lg / --shadow-xl / --shadow-2xl` —
+ *     the composed shadow presets
+ *  - `--font-sans / --font-mono / --font-serif` — type families
+ *  - `--letter-spacing / --tracking-normal / --tracking-tighter /
+ *     --tracking-tight / --tracking-wide / --tracking-wider /
+ *     --tracking-widest` — letter spacing tokens
+ *  - `--spacing` — base spacing unit
+ *
+ *  We deliberately do NOT carry through `chart-*`, `sidebar-*`,
+ *  `card*`, `popover*`, `secondary`, `accent`, `destructive`, or
+ *  `input` — newtab01 doesn't render those surfaces. Carrying them
+ *  would just bloat the <style> block. */
+const THEME_VARS_OPTIONAL = [
+  'radius',
+  'shadow-color',
+  'shadow-opacity',
+  'shadow-blur',
+  'shadow-spread',
+  'shadow-offset-x',
+  'shadow-offset-y',
+  'shadow',
+  'shadow-2xs',
+  'shadow-xs',
+  'shadow-sm',
+  'shadow-md',
+  'shadow-lg',
+  'shadow-xl',
+  'shadow-2xl',
+  'font-sans',
+  'font-mono',
+  'font-serif',
+  'letter-spacing',
+  'tracking-normal',
+  'tracking-tighter',
+  'tracking-tight',
+  'tracking-wide',
+  'tracking-wider',
+  'tracking-widest',
+  'spacing',
+] as const;
+type OptionalThemeVar = (typeof THEME_VARS_OPTIONAL)[number];
 
-/** The minimum subset of a tweakcn registry item JSON we care about. */
+/** Every tweakcn variable key we know about. */
+type ThemeVar = RequiredThemeVar | OptionalThemeVar;
+
+/** The minimum subset of a tweakcn registry item JSON we care about.
+ *  `light` must contain all 8 required color vars; the optional vars
+ *  may be present or absent depending on what the source theme
+ *  defined. `dark` follows the same shape. */
 type TweakcnCssVarsBlock = {
   theme?: Record<string, string>;
-  light: Record<ThemeVar, string>;
-  dark?: Record<ThemeVar, string>;
+  light: Record<RequiredThemeVar, string> & Partial<Record<OptionalThemeVar, string>>;
+  dark?: Record<RequiredThemeVar, string> & Partial<Record<OptionalThemeVar, string>>;
 };
 
 export type TweakcnJson = {
@@ -140,13 +206,16 @@ export function validateThemeJson(
   const isUpdate = Object.prototype.hasOwnProperty.call(existing, name);
   const prev = existing[name];
 
-  // Normalize the JSON we store. We re-emit a clean object that only
-  // contains the 8 shadcn vars plus the name + type — discarding
-  // chart-*, sidebar-*, font-sans, css, files, etc. that tweakcn ships
-  // but we don't use. This keeps the storage payload small (~1KB/entry)
-  // and reduces the XSS surface: anything we serialize is then
-  // injected into a CSS <style> tag (not HTML), and we only ever
-  // interpolate the 8 fields we validated as non-empty strings.
+  // Normalize the JSON we store. We re-emit a clean object that
+  // contains the 8 required shadcn color vars + any optional tweakcn
+  // vars the source theme defined (radius, shadow-*, font-*, letter-
+  // spacing, tracking-*, spacing) + the name + type. We drop the
+  // surfaces newtab01 doesn't render: chart-*, sidebar-*, card*,
+  // popover*, secondary, accent, destructive, input, and any css /
+  // files. Keeping storage small (~1-2KB/entry) and reducing the XSS
+  // surface: anything we serialize is then injected into a CSS <style>
+  // tag (not HTML), and we only ever interpolate the keys we either
+  // validated as required or as optional + non-empty strings.
   const lightNormalized: TweakcnJson = {
     name,
     type: 'registry:style',
@@ -191,11 +260,17 @@ export function validateThemeJson(
   return { ok: true, entry, isUpdate };
 }
 
-function pickVars(block: Partial<Record<ThemeVar, string>>): Record<ThemeVar, string> {
+function pickVars(
+  block: Partial<Record<ThemeVar, string>>,
+): Record<ThemeVar, string> {
   const out = {} as Record<ThemeVar, string>;
   for (const v of THEME_VARS) {
     const val = block[v];
-    if (typeof val === 'string') out[v] = val;
+    if (typeof val === 'string' && val.trim()) out[v] = val;
+  }
+  for (const v of THEME_VARS_OPTIONAL) {
+    const val = block[v];
+    if (typeof val === 'string' && val.trim()) out[v] = val;
   }
   return out;
 }
@@ -257,16 +332,22 @@ export function userThemeId(name: CustomThemeName, variant: 'light' | 'dark' = '
 
 // --- CSS generation ---
 
-/** Generate a single :root[data-theme="user-xxx"] { 8 vars } block.
+/** Generate a single :root[data-theme="user-xxx"] { ... } block.
  *  Values are emitted as-is (OKLCH / hex / color-mix all pass through
  *  to the CSS engine). The outer block is the only place we interpolate
  *  user-provided data into a CSS string — and we only do that for the
- *  8 vars we explicitly validated above, with values that were checked
- *  to be non-empty strings. */
-function emitBlock(id: string, vars: Record<ThemeVar, string>): string {
+ *  vars we explicitly validated above (8 required + any non-empty
+ *  optional), with values that were checked to be non-empty strings.
+ *  Iterating the keys of `vars` (instead of THEME_VARS) means we
+ *  automatically pick up the optional ones when the source theme
+ *  defined them and skip them when it didn't — no per-key branching. */
+function emitBlock(id: string, vars: Record<string, string>): string {
   const lines: string[] = [`:root[data-theme="${id}"] {`];
-  for (const v of THEME_VARS) {
-    lines.push(`  --${v}: ${vars[v]};`);
+  for (const k of THEME_VARS) {
+    if (vars[k]) lines.push(`  --${k}: ${vars[k]};`);
+  }
+  for (const k of THEME_VARS_OPTIONAL) {
+    if (vars[k]) lines.push(`  --${k}: ${vars[k]};`);
   }
   lines.push('}');
   return lines.join('\n');

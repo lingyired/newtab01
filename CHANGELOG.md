@@ -5,6 +5,16 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.50] - 2026-06-18
+
+### Architecture
+- **tweakcn 主题装饰细节不再丢失**（用户反馈 "MX-Brutalist 的 search bar 应该是这样的，所以要看看直接使用 tweakcn 主题的时候，不能丢失这些细节"）。v0.2.41 决定 runtime import 只接受 8 个 shadcn 颜色 vars，丢弃 tweakcn 的 radius / shadow / 字体系统。后果：直接 import MX-Brutalist 后 search bar 还是 8px 圆角 + 0 阴影 + system-ui 字体，tweakcn 的 brutalist 装饰（0px 圆角 + 4px 4px 0 0 黑阴影 + Montserrat）一个都没传过来。修复——完整架构调整：
+  - **`src/features/themes/custom-themes.ts`**：把 `THEME_VARS` 拆成两层。8 个颜色 vars 仍是 validate 必填门槛；新增 `THEME_VARS_OPTIONAL`（27 个 vars：`radius`、6 个 shadow primitives、8 个 shadow 预设、3 个字体、7 个 letter-spacing / tracking、1 个 `spacing`）作为 pass-through。`pickVars` 把两者都收集，存储大小从 ~1KB/entry 涨到 ~1.5KB/entry。`emitBlock` 按 keys 顺序输出所有非空 vars。Tweakcn 其他不相关的 vars（chart-* / sidebar-* / card* / popover* / secondary / accent / destructive / input）仍然丢弃——newtab01 不渲染这些 surface。**用户操作**：v0.2.50 之前 import 的主题需要重新粘贴 JSON 一次，因为 storage 里只存了 8 vars，升级不会自动回填。
+  - **`styles/globals.css`**：`:where(:root)` 增加 27 个 optional vars 的 shadcn 默认值兜底（`--radius: 0.5rem`、shadcn 风格 `--shadow` 栈、system 字体栈、`--letter-spacing: 0em` 等）。任一主题块不写这些 vars 也能渲染出 sensible 的样式。
+  - **`styles/newtab.css` `.search-input`**：硬编码 `border-radius: 8px` 改为 `var(--radius)`；加 `box-shadow: var(--shadow)` 默认状态。`:focus` 状态 box-shadow 改为 `var(--shadow), 0 0 0 2px var(--ring)` 保留主题的 drop shadow + 叠 focus ring。`.search-input` 整元素现在从 theme vars 自动派生——MX-Brutalist 主题下 `var(--radius)` = 0px，`var(--shadow)` = 4px 4px 0 0 黑阴影，无需 theme-scope override。
+  - **`styles/newtab.css` `#main a`**：硬编码 `box-shadow: 0 1px 2px hsl(0 0% 0% / 0.05)` 改为 `var(--shadow-sm)`。Codex 主题下得到柔光 shadcn 阴影；MX-Brutalist 主题下（`--shadow-sm: 4px 4px 0 0 ...`）自动得到硬阴影。
+  - **`styles/themes/mx-brutalist.css`**：补全 8 vars + 27 optional vars（按 tweakcn JSON verbatim）。light 主题 shadow color = `hsl(0 0% 0%)` 纯黑；dark 主题 = `hsl(45 100% 80%)` 暖白。Link override 改用 `var(--shadow)` / `var(--shadow-color)`（v0.2.48 硬编码 `4px 4px 0 0 hsl(0 0% 0% / 1)` 改为 `var(--shadow)`，dark variant 自动跟随 `--shadow-color` 切换）。**新增** `:root[data-theme="mx-brutalist"] .search-input` theme-scope override：3px 硬黑边（tweakcn 不定义 input border width，brutalist 风格典型是 2-3px）+ 由 `var(--radius)` 和 `var(--shadow)` 自动派生的 0 圆角 + 4px 4px 0 0 阴影——search bar 与 link 视觉一致。
+
 ## [0.2.49] - 2026-06-18
 
 ### Changed

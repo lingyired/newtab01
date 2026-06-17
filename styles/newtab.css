@@ -83,14 +83,21 @@
    * is a 6% color-mix toward the foreground, which reads as gray on
    * the default light theme and made every link look like a filled
    * row instead of a button. --newtab-link-bg is still the per-theme
-   * escape hatch (brutalist / glassmorphism override it directly). */
+   * escape hatch (brutalist / glassmorphism override it directly).
+   *
+   * v0.2.50: box-shadow now reads var(--shadow-sm) (the soft shadcn
+   * drop shadow) instead of a hardcoded 0 1px 2px. Themes can change
+   * the whole link shadow aesthetic by overriding --shadow-sm in
+   * their :root[data-theme="..."] block — MX-Brutalist's "shadow-sm:
+   * 4px 4px 0 0 hsl(0 0% 0% / 1.00)" already does this transparently. */
   padding: 0.45em 0.8em 0.45em 1.2em;
   background-color: var(--newtab-link-bg, var(--newtab-bg));
   border: var(--newtab-link-border, 1px solid var(--border));
   border-radius: var(--newtab-link-radius, 0.6em);
   font-weight: var(--newtab-link-weight, normal);
-  /* Codex-style hairline shadow (Tailwind shadow-sm equivalent). */
-  box-shadow: var(--newtab-link-shadow, 0 1px 2px hsl(0 0% 0% / 0.05));
+  /* Codex-style hairline shadow by default, brutalist 4px 4px 0 0 in
+   * the MX-Brutalist theme via its own --shadow-sm override. */
+  box-shadow: var(--newtab-link-shadow, var(--shadow-sm));
   cursor: pointer;
   white-space: nowrap;
   transition-property: color, background-color, border-color, box-shadow, transform, opacity;
@@ -339,9 +346,18 @@
   padding: 11px 18px;
   font-size: 1.8em;
   border: 1px solid var(--border);
-  border-radius: 8px;
+  /* v0.2.50: read the theme's --radius instead of hardcoding 8px.
+   * Codex-style themes get 0.5rem rounded corners, MX-Brutalist
+   * gets 0px (sharp corners). Tweaks to a theme's --radius now
+   * shape the search bar without any newtab-side code changes. */
+  border-radius: var(--radius);
   background-color: var(--newtab-surface);
   color: var(--foreground);
+  /* Default: soft shadcn drop shadow from the active theme. Brutalist
+   * themes (MX-Brutalist) override --shadow to 4px 4px 0 0 hard
+   * color, so the search bar picks up the brutalist signature
+   * automatically — no theme-scope override needed in this file. */
+  box-shadow: var(--shadow);
   outline: none;
   transition: border-color 0.15s, box-shadow 0.15s;
   position: relative;
@@ -350,7 +366,10 @@
 
 .search-input:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 2px var(--ring);
+  /* Focus: keep the theme's drop shadow + add the focus ring in front
+   * of it. Comma-stacking two box-shadows is standard CSS — the ring
+   * is drawn first so it appears in front. */
+  box-shadow: var(--shadow), 0 0 0 2px var(--ring);
 }
 
 .search-input::placeholder {
