@@ -19,16 +19,7 @@ import { renderColumns } from '../features/bookmarks/board';
  *  entry fall back to the English id — see renderAppearanceTab. */
 const THEME_LABELS: Readonly<Record<string, string>> = {
   default: '默认',
-  slate: '石板灰',
-  rose: '玫瑰红',
-  dark: '暗色',
-  midnight: '午夜',
-  mocha: '摩卡',
   'mx-brutalist': 'MX 暴力',
-  blue: '海蓝',
-  green: '森林',
-  purple: '紫罗兰',
-  orange: '暖橙',
   cyberpunk: '赛博朋克',
   'cyberpunk-dark': '赛博朋克·暗',
   astrovista: 'AstroVista',

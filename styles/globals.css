@@ -1,14 +1,4 @@
-@import './themes/default.css';
-@import './themes/slate.css';
-@import './themes/rose.css';
-@import './themes/dark.css';
-@import './themes/midnight.css';
-@import './themes/mocha.css';
 @import './themes/mx-brutalist.css';
-@import './themes/blue.css';
-@import './themes/green.css';
-@import './themes/purple.css';
-@import './themes/orange.css';
 @import './themes/cyberpunk.css';
 @import './themes/astrovista.css';
 

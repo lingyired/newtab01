@@ -24,24 +24,29 @@ import { log } from '../../lib/debug';
 import { listAllThemes, type ThemeListEntry } from './custom-themes';
 
 /**
- * Canonical list of built-in themes. Order here drives insertion order; the
- * public `listThemes()` returns a sorted copy so the dropdown is stable.
+ * Canonical list of built-in themes. All built-in themes are sourced
+ * from tweakcn (https://tweakcn.com). Other tweakcn themes can be
+ * installed at runtime via the settings panel — see
+ * `custom-themes.ts` and docs/superpowers/specs/2026-06-17-runtime-theme-import-design.md.
  *
- * Adding a theme here without also adding the matching CSS file will leave
- * the new id rendering with the `:root` defaults until the CSS file lands.
+ * Adding a new built-in theme (rare — prefer runtime import):
+ *   1. Append its id to THEMES below.
+ *   2. Add a new file under styles/themes/ with the format
+ *      `:root[data-theme="<id>"] { 8 shadcn variables }`. The 6 `--newtab-*`
+ *      variables are derived from these 8 in styles/globals.css, so no
+ *      newtab-specific edits are required.
+ *   3. Add the file to the @import list at the top of styles/globals.css.
+ *   4. Add a Chinese label in settings-panel.ts's THEME_LABELS map (English
+ *      id is the fallback if no label is provided).
+ *
+ * RUNTIME-IMPORTED themes (tweakcn JSON pasted in settings) are not in
+ * this list — they live in chrome.storage.local and are merged into the
+ * dropdown at render time via listAllThemes(). See
+ * docs/superpowers/specs/2026-06-17-runtime-theme-import-design.md.
  */
 const THEMES = [
   'default',
-  'slate',
-  'rose',
-  'dark',
-  'midnight',
-  'mocha',
   'mx-brutalist',
-  'blue',
-  'green',
-  'purple',
-  'orange',
   'cyberpunk',
   'cyberpunk-dark',
   'astrovista',

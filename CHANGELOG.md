@@ -5,6 +5,21 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.42] - 2026-06-18
+
+### Changed
+- **缩减内置主题为 6 个**：保留 `default` / `mx-brutalist` / `cyberpunk` / `cyberpunk-dark` / `astrovista` / `astrovista-dark`，删除 `slate` / `rose` / `dark` / `midnight` / `mocha` / `blue` / `green` / `purple` / `orange` 共 9 个非 tweakcn 内置。
+  - 删除 `styles/themes/{slate,rose,dark,midnight,mocha,blue,green,purple,orange}.css`
+  - 从 `styles/globals.css` 移除 9 个 `@import`
+  - 从 `THEMES` 数组和 `THEME_LABELS` map 移除 9 个 id
+  - dist CSS bundle 减少 ~2kB
+- **设计意图**：内置主题仅保留 tweakcn 来源（cyberpunk/astrovista/mx-brutalist），其他主题通过 v0.2.41 的运行时导入功能从 tweakcn 社区获取。后续不再维护非 tweakcn 内置主题。
+- 选保留 `default` 是因为它是"未设 data-theme"时的基线，删了语义混乱；运行时未匹配的主题（已被删除的）会自然 fall back 到 default 派生值。
+
+### Notes
+- **不动的用户状态**：用户已选中的旧主题（如 `slate` / `dark`）的 chrome.storage 字段值不会被迁移 —— 加载时 data-theme 属性设到这些 id，CSS 匹配不到，元素显示 `:where(:root)` 的 default 派生值（与 `default` 主题视觉一致）。用户需从下拉框重选一次或运行时导入其他 tweakcn 主题。
+- **测试方法**：打开 newtab → 设置 → 外观 → 主题，下拉框应只显示 6 个内置主题（无 slate/dark/midnight 等）。
+
 ## [0.2.41] - 2026-06-18
 
 ### Features
