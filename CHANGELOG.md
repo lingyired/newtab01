@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.12] - 2026-06-17
+
+### Added
+- CLAUDE.md 新增 9.8「集成验证与代码同步」小节：要求每次任务前先重新审视代码（其他任务/agent 可能改动），任务开始前强制 4 步复查（`Read`/`Grep` 复查状态 → 对照接口签名 → 不相关变更只报告 → 假设不符先更新假设），集成问题优先修复调用方、修复后必须实际运行验证。
+- 第 10 节风险表新增 2 条：并行 Agent 开发的接口对齐、代码被其他任务/Agent 改动导致假设失效，引用 9.8 规则。
+
 ## [0.2.11] - 2026-06-17
 
 ### Removed
@@ -78,7 +84,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 新增 `lib/chrome/bookmarks.ts` 的 `getBookmark(id)` 包装。
 - 新增 `src/features/bookmarks/moved-out.ts` 模块。
 
-[Unreleased]: https://github.com/lingyired/newtab01/compare/v0.2.11...HEAD
+[Unreleased]: https://github.com/lingyired/newtab01/compare/v0.2.12...HEAD
+[0.2.12]: https://github.com/lingyired/newtab01/compare/v0.2.11...v0.2.12
 [0.2.11]: https://github.com/lingyired/newtab01/compare/v0.2.10...v0.2.11
 [0.2.10]: https://github.com/lingyired/newtab01/compare/v0.2.7...v0.2.10
 [0.2.7]: https://github.com/lingyired/newtab01/compare/v0.2.6...v0.2.7

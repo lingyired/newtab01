@@ -258,6 +258,20 @@ splitManager.register(new IframeSplitEngine());
 - 设置加载完成前显示 Loading 状态
 - 所有设置项（spacing、vMargin、columnWidth、align、shadowBlur、highlightRound、fadeMs、slideMs、lockColumns、showTopLevel、hideOptions、autoScale、numberTop）必须正确消费并实现
 
+### 9.8 集成验证与代码同步
+- 根据测试结果修复集成问题
+- 各 Agent 并行开发时可能存在的接口对齐问题需在运行时验证
+- **每次执行任务之前都需要先重新审视代码，因为代码可能由其他任务或 agent 改动**
+- 任务开始前的强制步骤：
+  1. 用 `Read` / `Grep` 复查目标文件及其依赖模块的当前状态
+  2. 对照假设检查函数签名、导出名称、类型定义是否仍匹配
+  3. 发现与本任务无关的变更 → 报告但不擅自修改
+  4. 假设与现状不符 → 先更新假设再动手
+- 集成问题修复原则：
+  - 优先修复调用方（适配接口变化），不破坏已稳定模块
+  - 接口冲突时与相关 Agent 协商统一，而非各自变体
+  - 修复后必须实际运行验证，不可只靠 TypeScript 编译通过
+
 ---
 
 ## 10. 风险与未决项
@@ -270,6 +284,8 @@ splitManager.register(new IframeSplitEngine());
 | 拖拽性能（千级书签） | 列表虚拟化（`@tanstack/react-virtual`），不在 v1 必做 |
 | 自定义 CSS 注入 XSS | 仅注入到 `<style>` 节点，不进 `innerHTML`；CSP 已禁 unsafe-inline |
 | declarativeNetRequest 规则失效 | 使用动态规则（`updateDynamicRules`）而非静态规则文件，更可靠 |
+| 并行 Agent 开发的接口对齐 | 运行时验证，遵循 9.8 集成验证与代码同步规则 |
+| 代码被其他任务/Agent 改动导致假设失效 | 任务开始前先 `Read` 复查，再动手 |
 
 ---
 
