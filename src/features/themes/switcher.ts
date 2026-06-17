@@ -37,6 +37,22 @@ const THEMES = [
   'orange',
 ] as const;
 
+/**
+ * Optional "style class" applied to <body> in addition to the
+ * data-theme attribute. Themes that need a layout / component
+ * treatment beyond what CSS variables can express (heavy borders,
+ * hard offset shadows, transform-on-press interactions, ...) opt in
+ * here. Most themes leave this empty and rely on the variable system
+ * alone.
+ *
+ * The matching CSS lives in styles/newtab.css under
+ * `body.<classname> #main ...` selectors — see `body.brutalist` for
+ * the MX-Brutalist example.
+ */
+const THEME_STYLE_CLASSES: Readonly<Record<string, string>> = {
+  'mx-brutalist': 'brutalist',
+};
+
 export type ThemeId = (typeof THEMES)[number];
 
 /** Subscribe here to react to theme application (e.g. re-render widgets). */
@@ -89,6 +105,19 @@ export function applyTheme(theme: string): void {
     // 2. Activate the theme CSS so the four variables now resolve to
     //    the palette defined in styles/themes/<theme>.css.
     root.setAttribute('data-theme', theme);
+
+    // 2b. Apply the theme's optional style class on <body>. Themes that
+    //     want a layout / component treatment beyond CSS variables
+    //     (heavy borders, hard offset shadows, transform-on-press
+    //     interactions, ...) register a class in THEME_STYLE_CLASSES
+    //     and the matching CSS lives under `body.<class> #main ...`.
+    //     We clear every known style class first so a previously
+    //     selected theme's class doesn't survive the switch.
+    for (const cls of Object.values(THEME_STYLE_CLASSES)) {
+      document.body.classList.remove(cls);
+    }
+    const styleClass = THEME_STYLE_CLASSES[theme];
+    if (styleClass) document.body.classList.add(styleClass);
 
     // 3. Promote the resolved values to inline style (specificity 1,0,0,0)
     //    so subsequent `applyUserColorOverride` calls have a known target

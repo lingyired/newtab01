@@ -5,6 +5,28 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.37] - 2026-06-18
+
+### Added
+- **Theme "style class" 机制 + brutalist 风格类**：某些主题需要的视觉处理超出 CSS 变量能表达的范围（重边框、硬偏移阴影、按压交互），所以新增了"主题可选 style class"机制：
+  1. `THEME_STYLE_CLASSES` 映射（`src/features/themes/switcher.ts`）：`{ 'mx-brutalist': 'brutalist' }`。`applyTheme` 在切换主题时先清掉所有已知 class，再给 `<body>` 加上新主题对应的 class。
+  2. CSS 在 `styles/newtab.css` 末尾以 `body.brutalist #main a` 为选择器写 brutalist 专用样式，不影响其他主题（默认走 soft 1px border + 0.6em radius + soft glow 路径）。
+
+- **MX-Brutalist 主题的链接视觉对齐 tweakcn 原版**：
+  - 3px 纯黑实线边框（替代默认 1px + theme color）
+  - 0 圆角（替代默认 0.6em）
+  - 5px 5px 0 黑色硬偏移阴影（无 blur，对比默认的 `0 0 7px var(--newtab-highlight)` soft glow）
+  - 加粗字重（`font-weight: 600`）
+  - 白色背景（替代默认的 6% color-mix 派生，让 brutalist 风格的"white card on cream page"对比成立）
+  - Hover：translate(2px, 2px) + shadow 缩到 3px 3px + 背景变 `--primary` + 文字变 `--primary-foreground`（按钮"被拉向"光标）
+  - Active：translate(5px, 5px) + shadow 缩到 0（按钮"完全按下"）
+  - Focus-visible：3px `var(--primary)` outline + 2px offset（保证键盘可达性，看得见焦点）
+
+### Notes
+- 这次没有把 `<a>` 重构成 `<button>`。brutalist 风格完全靠 CSS class 实现，DOM 结构保持不变（书签仍是 `<a href>`，folder header 仍是 `<a class="folder">`）。
+- 后续如果想加更多 style class（neumorphic / glassmorphism / outline-only），往 `THEME_STYLE_CLASSES` 加映射，CSS 写在 `body.<class>` 块里就行。
+- folder header 里的 3 个 action 图标（ExternalLink / FolderPlus / Columns2）**不**走 brutalist 样式 —— 它们是 `<button>`/`<span>`，不匹配 `#main a` 选择器。如果未来想让 action 图标也 brutalist，再加 `body.brutalist .folder-actions button` 规则。
+
 ## [0.2.36] - 2026-06-18
 
 ### Fixed

@@ -67,6 +67,52 @@
   box-shadow: 0 0 var(--newtab-shadow-blur) var(--newtab-highlight);
 }
 
+/* ─── Brutalist style class (applied to <body> by switcher.ts when a
+ * theme registers `brutalist` in THEME_STYLE_CLASSES — currently
+ * MX-Brutalist). Overrides the default soft surface with the
+ * neo-brutalist signature: hard 3px black border, 0 corner radius,
+ * 5px offset solid black drop shadow, bold text, and a "press" hover
+ * interaction that pulls the button toward the cursor. All overrides
+ * are scoped to `body.brutalist` so non-brutalist themes are
+ * untouched. */
+body.brutalist #main a {
+  border: 3px solid #000000;
+  border-radius: 0;
+  background-color: #ffffff;
+  font-weight: 600;
+  box-shadow: 5px 5px 0 #000000;
+  /* Slightly bigger transition budget for the transform/shadow press
+   * interaction so it doesn't feel snappy. */
+  transition-property: transform, box-shadow, background-color, color;
+  transition-duration: 0.1s;
+  transition-timing-function: ease-out;
+}
+
+body.brutalist #main a:hover {
+  /* Pull the button toward the cursor: same offset distance as the
+   * shadow. The shadow shrinks to match so the visual "height" of
+   * the button stays consistent. */
+  transform: translate(2px, 2px);
+  box-shadow: 3px 3px 0 #000000;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  border-color: #000000;
+}
+
+body.brutalist #main a:active {
+  /* Fully pressed: button has moved into the shadow, no offset left. */
+  transform: translate(5px, 5px);
+  box-shadow: 0 0 0 #000000;
+}
+
+body.brutalist #main a:focus-visible {
+  /* Keep focus visible against the heavy black border — outline
+   * outside the border, in the theme's primary color, so keyboard
+   * users can still see the focused row. */
+  outline: 3px solid var(--primary);
+  outline-offset: 2px;
+}
+
 /* ─── Icons ─── */
 .icon {
   display: inline-block;
