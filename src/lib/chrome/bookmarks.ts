@@ -147,26 +147,6 @@ export function updateTab(tabId: number, url: string): Promise<void> {
   });
 }
 
-/** Create a Chrome tab group */
-export function createTabGroup(tabIds: number[], title?: string): Promise<number | undefined> {
-  return new Promise((resolve) => {
-    if (chrome.tabGroups) {
-      const nonEmptyTabIds: [number, ...number[]] = [tabIds[0]!, ...tabIds.slice(1)];
-      chrome.tabs.group({ tabIds: nonEmptyTabIds }, (groupId) => {
-        if (title) {
-          chrome.tabGroups.update(groupId, { title }, () => {
-            resolve(groupId);
-          });
-        } else {
-          resolve(groupId);
-        }
-      });
-    } else {
-      resolve(undefined);
-    }
-  });
-}
-
 /** Restore a recently closed session */
 export function restoreSession(sessionId: string): Promise<chrome.sessions.Session | undefined> {
   return new Promise((resolve) => {

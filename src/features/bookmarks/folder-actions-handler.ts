@@ -3,7 +3,8 @@
 
 import type { BookmarkNode } from './types';
 import { getChildren } from './special-folders';
-import { getCurrentTab, createTab, createTabGroup } from '../../lib/chrome/bookmarks';
+import { getCurrentTab, createTab } from '../../lib/chrome/bookmarks';
+import { sendMessage } from '../../lib/chrome/messages';
 import * as debug from '../../lib/debug';
 
 /** Open all links in a folder as individual tabs (background) */
@@ -35,10 +36,21 @@ export async function openAsGroup(node: BookmarkNode): Promise<void> {
     }
   }
 
-  if (tabIds.length > 0) {
-    await createTabGroup(tabIds, node.title);
+  if (tabIds.length === 0) {
+    debug.log('folder-action', 'openAsGroup:done', { folder: node.title, groupSize: 0 });
+    return;
   }
-  debug.log('folder-action', 'openAsGroup:done', { folder: node.title, groupSize: tabIds.length });
+
+  const result = await sendMessage<{ ok: true; groupId: number } | { ok: false; error: string }>({
+    type: 'createTabGroup',
+    tabIds,
+    title: node.title,
+  });
+  if (!result.ok) {
+    debug.warn('folder-action', 'openAsGroup: createTabGroup failed', { folder: node.title, error: result.error });
+    return;
+  }
+  debug.log('folder-action', 'openAsGroup:done', { folder: node.title, groupSize: tabIds.length, groupId: result.groupId });
 }
 
 /** Open links in split view (via split engine) */
