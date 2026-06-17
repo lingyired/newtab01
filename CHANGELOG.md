@@ -5,6 +5,19 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.45] - 2026-06-18
+
+### Features
+- **default / default-dark 改用 tweakcn "Codex" 调色板**（`cmpu4oh99000304l404e1ct14`）。原本 `:where(:root)` 是一组手调 hex 基线，现在对齐到 tweakcn 的 shadcn 默认风格：白底 / 近黑字 + 蓝主色，干净专业。下拉框里的 "默认 / 默认·暗" 名字不变。
+- **MX-Brutalist 补齐 dark variant**：从 tweakcn JSON 提取 dark 块（深绿底 + 亮绿 primary + 奶白文字）作为 `mx-brutalist-dark` 主题。同时 v0.2.40 那个 6 个 `--newtab-link-*` 装饰（4px 4px shadow、3px border、0 radius 等）从 CSS 文件中删除 —— 所有内置主题现在统一只声明 8 个 shadcn vars，不再硬编码 link 装饰。brutalist 视觉特色由默认 8 vars（0 radius 的 `--border`、高对比的 `--foreground` 等）自然呈现，shadow 装饰以后作为"link 装饰预设"功能单独设计。
+- **`.globals.css` `:where(:root)` 基线** 与 `default` 主题一致：8 shadcn vars 改为 Codex 调色板，确保任何"已删除主题"的 chrome.storage 状态（v0.2.42 删除的主题）落到 fallback 视觉 = `default` 主题，与 explicit 选 `default` 一致。
+
+### Built-in themes (8 total)
+- `default` (Codex light) / `default-dark` (Codex dark)
+- `mx-brutalist` (tweakcn `cmllfu8oc000004l1a0tidj2g` light) / `mx-brutalist-dark` (dark)
+- `cyberpunk` / `cyberpunk-dark` (tweakcn `cmon6sc5v000204la41n1g1gv`)
+- `astrovista` / `astrovista-dark` (tweakcn `cmlk6zefr000004lbe9jygsqc`)
+
 ## [0.2.44] - 2026-06-18
 
 ### Changed

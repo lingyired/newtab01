@@ -1,37 +1,23 @@
 /*
- * Default theme. The 8 shadcn variables below are the entire theme
- * surface; the 6 `--newtab-*` variables are derived from these in
- * globals.css (see `--newtab-bg: var(--background)`).
+ * Default theme — clean, professional. Named "default" in the user
+ * dropdown but actually built from tweakcn's "Codex" palette
+ * (cmpu4oh99000304l404e1ct14). Clean white / near-black, blue primary,
+ * minimal shadows — suitable as a neutral baseline that doesn't
+ * impose any visual character.
  *
- * To convert any tweakcn theme into a newtab01 theme:
- *   1. Copy the `:root { ... }` block from tweakcn (or any shadcn theme).
- *   2. Rename the selector to `:root[data-theme="my-id"]`.
- *   3. Keep only the 8 shadcn variables below (--background, --foreground,
- *      --primary, --primary-foreground, --muted, --muted-foreground,
- *      --border, --ring). Drop everything else (cards, popover, accent,
- *      destructive, etc.) — newtab01 does not consume them.
- *   4. Drop the OKLCH wrapper if your browser support matrix requires
- *      older Chrome (pre-111); convert to hex manually.
- *   5. Register the id in src/features/themes/switcher.ts THEMES array
- *      and add a Chinese label in src/newtab/settings-panel.ts
- *      THEME_LABELS.
- * See docs/themes-from-tweakcn.md.
+ * v0.2.45: replaced the previous hand-tuned :where(:root) baseline
+ * with the tweakcn Codex light variant. The previous baseline had
+ * an arbitrary hand-picked set of OKLCH values; aligning with tweakcn
+ * means users can paste the same JSON at runtime and get a
+ * pixel-equivalent result. See docs/themes-from-tweakcn.md.
  */
 :root[data-theme="default"] {
-  --background: #ffffff;
-  --foreground: #1a1a1a;
-  --primary: #2563eb;
-  --primary-foreground: #ffffff;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --border: #e2e8f0;
-  --ring: #2563eb;
-
-  /* Default theme: pin the link surface to pure white instead of the
-   * color-mix(--newtab-bg, --newtab-text 6%) used by every other theme.
-   * With --background: #ffffff this means link bg === page bg, and
-   * the 1px --border on `#main a` is the only definition signal. This
-   * is the intended "clean white card" look for default; if a future
-   * tweakcn import wants the 6% mix back, just delete this line. */
-  --newtab-surface: #ffffff;
+  --background: oklch(1.0000 0 0);
+  --foreground: oklch(0.1776 0 0);
+  --primary: oklch(0.5286 0.1734 254.9750);
+  --primary-foreground: oklch(1.0000 0 0);
+  --muted: oklch(0.9551 0 0);
+  --muted-foreground: oklch(0.5103 0 0);
+  --border: oklch(0.9067 0 0);
+  --ring: oklch(0.5286 0.1734 254.9750);
 }

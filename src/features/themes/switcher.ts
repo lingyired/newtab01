@@ -46,7 +46,9 @@ import { listAllThemes, type ThemeListEntry } from './custom-themes';
  */
 const THEMES = [
   'default',
+  'default-dark',
   'mx-brutalist',
+  'mx-brutalist-dark',
   'cyberpunk',
   'cyberpunk-dark',
   'astrovista',

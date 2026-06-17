@@ -1,57 +1,31 @@
+/*
+ * MX-Brutalist theme — neo-brutalist with hard black borders, no radius,
+ * green primary. tweakcn JSON: cmllfu8oc000004l1a0tidj2g.
+ *
+ * v0.2.45: now uses the 8 shadcn variables only (no --newtab-link-*
+ * overrides) — the brutalist link look (4px 4px black shadow, 0 radius,
+ * 3px border) used to live here but was removed so all built-in themes
+ * are uniform. If a future user-facing "link style preset" feature
+ * lands, MX-Brutalist's shadow is the canonical example to expose.
+ */
 :root[data-theme="mx-brutalist"] {
-  /* === 8 shadcn variables (translated from tweakcn light variant) ===
-   * Source: https://tweakcn.com/r/themes/cmllfu8oc000004l1a0tidj2g
-   * tweakcn CSS uses OKLCH; newtab uses hex (Chrome 104 compat) — the
-   * OKLCH→hex conversion goes through culori (see docs/themes-from-
-   * tweakcn.md step 2). */
-  --background: #fffcf5;          /* tweakcn: light.background */
-  --foreground: #05140d;          /* tweakcn: light.foreground */
-  --primary: #008f47;             /* tweakcn: light.primary */
-  --primary-foreground: #ffffff;  /* tweakcn: light.primary-foreground */
-  --muted: #f5edd6;               /* tweakcn: light.muted */
-  --muted-foreground: #423b24;    /* tweakcn: light.muted-foreground */
-  --border: #000000;              /* tweakcn: light.border (the brutalist
-                                   * signature: pure black, no gray) */
-  --ring: #008f47;                /* tweakcn: light.ring */
+  --background: oklch(0.9923 0.0104 91.4994);
+  --foreground: oklch(0.1759 0.0275 161.2531);
+  --primary: oklch(0.5687 0.1498 151.9380);
+  --primary-foreground: oklch(1.0000 0 0);
+  --muted: oklch(0.9465 0.0314 91.6628);
+  --muted-foreground: oklch(0.3525 0.0379 91.7268);
+  --border: oklch(0 0 0);
+  --ring: oklch(0.5687 0.1498 151.9380);
+}
 
-  /* === Link style — neo-brutalist treatment, translated from tweakcn
-   * parameters that are NOT in the 8 shadcn vars but are also part of
-   * the tweakcn JSON. The mapping is:
-   *
-   *   tweakcn field          tweakcn value         → newtab link var
-   *   ────────────────────   ────────────────────   ──────────────────
-   *   light.card             oklch(1 0 0)           → --newtab-link-bg
-   *   light.border (color)   oklch(0 0 0)           → --newtab-link-border
-   *   light.radius           "0px"                  → --newtab-link-radius
-   *   light.shadow-color     hsl(0 0% 0%)          → shadow color
-   *   light.shadow-offset-x  "4px"                  → offset x
-   *   light.shadow-offset-y  "4px"                  → offset y
-   *   light.shadow-blur      "0px"                  → 0 (hard edge)
-   *   light.shadow-spread    "0px"                  → 0
-   *
-   * The resulting 4px 4px 0 0 black drop-shadow + 0 corner radius +
-   * pure-white link surface on a cream page = the brutalist signature
-   * tweakcn shows. The hover/active states are newtab-specific (tweakcn
-   * doesn't define a press interaction): on hover the offset halves
-   * and the link slides toward the cursor, on active the offset is
-   * eliminated so the link sits flush with where the shadow used to be.
-   *
-   * border-width (3px) and font-weight (600) are newtab additions for
-   * visual weight — tweakcn doesn't expose these directly. */
-
-  --newtab-link-border: 3px solid #000000;
-  --newtab-link-radius: 0;
-  --newtab-link-bg: #ffffff;
-  --newtab-link-weight: 600;
-  --newtab-link-shadow: 4px 4px 0 0 #000000;
-  --newtab-link-shadow-hover: 2px 2px 0 0 #000000;
-  --newtab-link-shadow-active: 0 0 0 0 #000000;
-  --newtab-link-bg-hover: var(--primary);
-  --newtab-link-color-hover: var(--primary-foreground);
-  --newtab-link-border-color-hover: #000000;
-  --newtab-link-transform-hover: translate(2px, 2px);
-  --newtab-link-transform-active: translate(4px, 4px);
-  --newtab-link-outline-focus: 3px solid var(--primary);
-  --newtab-link-outline-offset-focus: 2px;
-  --newtab-link-transition-duration: 0.1s;
+:root[data-theme="mx-brutalist-dark"] {
+  --background: oklch(0.1649 0.0308 162.2739);
+  --foreground: oklch(0.9809 0.0260 91.6197);
+  --primary: oklch(0.8484 0.2275 151.1487);
+  --primary-foreground: oklch(0.1292 0.0270 165.3808);
+  --muted: oklch(0.2724 0.0467 159.1721);
+  --muted-foreground: oklch(0.8253 0.0270 91.6606);
+  --border: oklch(0.9809 0.0260 91.6197);
+  --ring: oklch(0.7951 0.1631 68.6392);
 }

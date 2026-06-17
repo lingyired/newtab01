@@ -1,3 +1,5 @@
+@import './themes/default.css';
+@import './themes/default-dark.css';
 @import './themes/mx-brutalist.css';
 @import './themes/cyberpunk.css';
 @import './themes/astrovista.css';
@@ -21,14 +23,14 @@
 :where(:root) {
   /* shadcn/ui semantic colors. Each theme overrides these via
    * `:root[data-theme="xxx"] { ... }`. The 8 we use are: */
-  --background: #ffffff;
-  --foreground: #1a1a1a;
-  --primary: #2563eb;
-  --primary-foreground: #ffffff;
-  --muted: #f1f5f9;
-  --muted-foreground: #64748b;
-  --border: #e2e8f0;
-  --ring: #2563eb;
+  --background: oklch(1.0000 0 0);
+  --foreground: oklch(0.1776 0 0);
+  --primary: oklch(0.5286 0.1734 254.9750);
+  --primary-foreground: oklch(1.0000 0 0);
+  --muted: oklch(0.9551 0 0);
+  --muted-foreground: oklch(0.5103 0 0);
+  --border: oklch(0.9067 0 0);
+  --ring: oklch(0.5286 0.1734 254.9750);
 
   /* Newtab palette — derived from the shadcn variables above so that
    * tweakcn-imported themes work without per-theme newtab overrides.
