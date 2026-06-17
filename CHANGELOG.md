@@ -5,6 +5,16 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.44] - 2026-06-18
+
+### Changed
+- **目录与子目录层级间距全面调整**（用户反馈 "目录之间也要大一些，父和子之间尤其要大一些"）：
+  - **父→子列表 边距**：`margin-top: 4px` → `calc(var(--newtab-spacing) * 1.4)`（10px 默认 → 14px）—— 4px 太紧，文件夹与子列表视觉上粘在一起
+  - **子层级缩进**：`padding-left: 24px` → `calc(var(--newtab-spacing) * 1.8)`（10px 默认 → 18px）—— 减少深嵌套树的水平占位
+  - **子 ul 内 gap**：`var(--newtab-spacing)` → `calc(var(--newtab-spacing) * 0.8)`（10px 默认 → 8px）—— 子层级读起来"更细"，与父层级形成视觉差
+  - **子层级 folder 额外 top margin**：`calc(var(--newtab-spacing) * 0.2)`（10px 默认 → 2px）—— 解决子层级内 folder 挨在一起的密集感
+  - 所有值都用 `calc(var(--newtab-spacing) * X)` 形式，用户的 `spacing` 设置会按比例缩放整个层级（spacing 6px → 父→子 8.4px / 缩进 10.8px / 子 gap 4.8px；spacing 16px → 父→子 22.4px / 缩进 28.8px / 子 gap 12.8px），不会破坏可读性。
+
 ## [0.2.43] - 2026-06-18
 
 ### Bug fixes

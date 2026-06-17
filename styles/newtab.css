@@ -29,10 +29,33 @@
   gap: var(--newtab-spacing);
 }
 
+/* Parent → child list spacing. The 4px default read too tight once
+ * folders had visible backgrounds and shadows — visually, a child
+ * folder looked glued to its parent header. Bumped to 1.4× the
+ * canonical spacing so a tighter user setting (e.g. 6px) still leaves
+ * 8px of breathing room between levels, and a generous 16px setting
+ * scales to 22px without overflowing the column.
+ *
+ * Indent also reduced 24px → 18px so the extra vertical space
+ * doesn't get eaten by horizontal nesting on deep trees. */
 #main a + ul,
 #main a + div {
-  padding-left: 24px;
-  margin-top: 4px;
+  padding-left: calc(var(--newtab-spacing) * 1.8);
+  margin-top: calc(var(--newtab-spacing) * 1.4);
+}
+
+/* Children of nested folders (depth ≥ 1) use a slightly tighter
+ * inter-item gap (0.8×) so the deeper layer reads as "finer" than
+ * its parent. The 1.2× boost on direct child folder items (a.folder
+ * at depth ≥ 1) keeps sibling folders visually distinct from leaf
+ * bookmarks, which is what the user complained about ("目录之间
+ * 也要大一些"). */
+#main li[data-depth] > div > ul {
+  gap: calc(var(--newtab-spacing) * 0.8);
+}
+
+#main li[data-depth]:not([data-depth="0"]) > div > ul > li > a.folder {
+  margin-top: calc(var(--newtab-spacing) * 0.2);
 }
 
 /* ─── Links (bookmarks + folder headers) ─── */
