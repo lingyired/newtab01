@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.29] - 2026-06-17
+
+### Fixed
+- **打开扩展报 `Failed to load module script: ... MIME type of "application/octet-stream"`**：Rollup 用 source 路径给 chunk 命名，`src/background.ts` 直接拼成 `background.ts-<hash>.js`。Chrome 扩展资源服务看到这个 `.ts-` 段时无法决定扩展名（介于 `.js` 和 `.ts-` 之间），把 MIME 降级为 `application/octet-stream` —— 严格 module-script MIME 检查直接拒绝加载。修复：`vite.config.ts` 加 `rollupOptions.output.entryFileNames` + `chunkFileNames` 自定义函数，从 chunk name 里剥掉 source 扩展名（`background.ts` → `background`），输出名变为 `background-<hash>.js`，Chrome 识别为 `text/javascript` 正常加载。`service-worker-loader.js` 引用的路径同步更新（vite plugin 自动重写），无需改 manifest。
+
 ## [0.2.28] - 2026-06-17
 
 ### Fixed
