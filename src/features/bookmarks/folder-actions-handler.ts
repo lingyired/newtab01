@@ -5,6 +5,8 @@ import type { BookmarkNode } from './types';
 import { getChildren } from './special-folders';
 import { getCurrentTab, createTab } from '../../lib/chrome/bookmarks';
 import { sendMessage } from '../../lib/chrome/messages';
+import { splitManager } from '../split/manager';
+import type { SplitLayout } from '../split/types';
 import * as debug from '../../lib/debug';
 
 /** Open all links in a folder as individual tabs (background) */
@@ -65,17 +67,16 @@ export async function openSplit(node: BookmarkNode): Promise<void> {
     return;
   }
 
-  // Build split URL with hash params
-  const layout = urls.length <= 2 ? '2h' : urls.length <= 3 ? '3grid' : '4grid';
-  const params = new URLSearchParams({
-    split: '1',
-    urls: urls.slice(0, 4).join(','),
-    layout,
-  });
+  // Pick layout by URL count (cap at 4 to match SplitMode's max)
+  const mode: SplitLayout['mode'] =
+    urls.length <= 2 ? '2h' : urls.length <= 3 ? '3grid' : '4grid';
+  const layout: SplitLayout = { mode };
+  const slicedUrls = urls.slice(0, 4);
 
-  debug.log('folder-action', 'openSplit', { folder: node.title, urlCount: urls.length, layout });
+  debug.log('folder-action', 'openSplit', { folder: node.title, urlCount: urls.length, layout: mode });
 
-  // Open in new tab
-  const splitUrl = `chrome-extension://${chrome.runtime.id}/newtab.html?${params.toString()}`;
-  await createTab(splitUrl, true);
+  // Delegate URL+layout encoding to the split engine (CLAUDE.md § 4).
+  // The engine knows the wire format (hash+JSON), builds the new-tab URL,
+  // and the new tab's app.ts:initApp reads it back via parseSplitParams().
+  await splitManager.open(slicedUrls, layout);
 }

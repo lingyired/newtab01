@@ -9,6 +9,7 @@ import { createTopbar } from './topbar';
 import { openSettingsPanel } from './settings-panel';
 import { getBookmarkTree } from '../lib/chrome/bookmarks';
 import { initDebug, log, group, groupEnd } from '../lib/debug';
+import { parseSplitParams, renderSplitView } from '../features/split/split-view';
 
 /** Initialize the new tab page */
 export async function initApp(): Promise<void> {
@@ -49,11 +50,32 @@ export async function initApp(): Promise<void> {
     // 4. Clear loading and render
     root.textContent = '';
 
-    // Check if split mode
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('split') === '1') {
-      log('init', 'entering split view mode', Object.fromEntries(params));
-      renderSplitView(root, params);
+    // Check if split mode (?split=1 with hash+JSON params - see CLAUDE.md section 4.1)
+    const parsed = parseSplitParams();
+    if (parsed) {
+      log('init', 'entering split view mode', { urlCount: parsed.urls.length, layout: parsed.layout.mode });
+      const view = renderSplitView(parsed.urls, parsed.layout);
+      root.replaceWith(view);
+      groupEnd();
+      return;
+    }
+
+    // If ?split=1 was present but params were invalid, show an error placeholder
+    // (mirrors the pattern in split-view.ts renderSplitView's invalid-config branch)
+    const splitFlag = new URLSearchParams(window.location.search).get('split');
+    if (splitFlag === '1') {
+      log('init', 'split view: invalid or missing hash params');
+      const error = document.createElement('div');
+      error.style.cssText = `
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        color: var(--muted-foreground);
+        font-size: 14px;
+      `;
+      error.textContent = 'Invalid split view URL: missing or malformed #urls / #layout parameters';
+      root.appendChild(error);
       groupEnd();
       return;
     }
@@ -184,21 +206,3 @@ function scale(value: number, mid: number, max: number, min: number = 0): number
   return min + value * (mid - min);
 }
 
-/** Render split view (placeholder — full implementation in split feature) */
-function renderSplitView(root: HTMLElement, params: URLSearchParams): void {
-  const urls = params.get('urls')?.split(',') ?? [];
-  const layout = params.get('layout') ?? '2h';
-
-  const container = document.createElement('div');
-  container.classList.add('split-container', `split-${layout}`);
-
-  for (const url of urls) {
-    const frame = document.createElement('iframe');
-    frame.src = url;
-    frame.sandbox.add('allow-scripts', 'allow-same-origin', 'allow-popups', 'allow-forms');
-    frame.loading = 'lazy';
-    container.appendChild(frame);
-  }
-
-  root.appendChild(container);
-}
