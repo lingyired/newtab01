@@ -9,6 +9,7 @@ import { createTopbar } from './topbar';
 import { openSettingsPanel } from './settings-panel';
 import { getBookmarkTree } from '../lib/chrome/bookmarks';
 import { initDebug, log, group, groupEnd } from '../lib/debug';
+import { applyTheme } from '../features/themes/switcher';
 import { parseSplitParams, renderSplitView } from '../features/split/split-view';
 
 /** Initialize the new tab page */
@@ -32,6 +33,9 @@ export async function initApp(): Promise<void> {
     // 1. Initialize settings first
     await initSettings();
     log('init', 'settings initialized');
+
+    // 1a. Apply theme to documentElement so theme CSS variables take effect
+    applyTheme(String(getSetting('theme')));
 
     // 2. Load bookmark tree to get root IDs
     const tree = await getBookmarkTree();

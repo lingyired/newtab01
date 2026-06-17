@@ -5,6 +5,13 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.21] - 2026-06-17
+
+### Fixed
+- **主题切换不生效**：`styles/globals.css`（含 `:root` 基础色 + 8 个 `[data-theme]` 主题块）此前未被打包进 `dist/` — Vite + `@crxjs/vite-plugin` 不处理 HTML 中以绝对路径引用的 CSS 文件。在 `src/{newtab,options,popup}/main.ts` 顶部加 `import '../../styles/globals.css';`，Vite 把它合并进 shared CSS chunk 后由 3 个 HTML 共同加载。同时 `src/newtab/app.ts:initApp()` 在 `await initSettings()` 之后调一次 `applyTheme(getSetting('theme'))`，让 newtab 启动时把 `data-theme` 写到 `documentElement`，主题立刻生效而不是停在 `:root` 默认值。
+- **分屏视图报 `NotFoundError: insertBefore`**：`src/features/split/split-view.ts:createIframe()` 创建了 iframe 元素但没有 append 到 `slot`，导致后续 `slot.insertBefore(frameToolbar, frame.iframe)` 抛 `NotFoundError` 并 fall through 到 `initApp` 的 catch 块，页面被替换为 "Failed to load bookmarks. Please refresh the page."。在 `createIframe` 内加 `slot.appendChild(iframe)`，并删除已经变成死代码的 IntersectionObserver（`iframe.src` 已在创建时立即设置）。
+
+
 ## [0.2.20] - 2026-06-17
 
 ### Added

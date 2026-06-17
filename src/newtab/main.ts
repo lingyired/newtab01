@@ -1,3 +1,4 @@
+import '../../styles/globals.css';
 import { initApp } from './app';
 
 let bootstrapped = false;

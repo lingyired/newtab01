@@ -107,6 +107,7 @@ function createIframe(url: string, slot: HTMLElement): FrameState {
   iframe.loading = 'lazy';
   iframe.style.cssText = iframeStyles;
   iframe.src = url;
+  slot.appendChild(iframe);
 
   const state: FrameState = {
     url,
@@ -126,17 +127,6 @@ function createIframe(url: string, slot: HTMLElement): FrameState {
     state.error = true;
     showErrorOverlay(slot, url);
   });
-
-  // Use IntersectionObserver for lazy loading
-  const observer = new IntersectionObserver((entries) => {
-    for (const entry of entries) {
-      if (entry.isIntersecting && !iframe.src) {
-        iframe.src = url;
-        observer.disconnect();
-      }
-    }
-  });
-  observer.observe(slot);
 
   return state;
 }
