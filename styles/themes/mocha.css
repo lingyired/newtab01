@@ -1,0 +1,17 @@
+[data-theme="mocha"] {
+  --background: #1c1917;
+  --foreground: #f5f5f4;
+  --primary: #d6a87a;
+  --primary-foreground: #1c1917;
+  --muted: #292524;
+  --muted-foreground: #a8a29e;
+  --border: #3f3a36;
+  --ring: #d6a87a;
+
+  --newtab-bg: #1c1917;
+  --newtab-surface: #292524;
+  --newtab-text: #e7e5e4;
+  --newtab-highlight: #3f3a36;
+  --newtab-highlight-text: #fafaf9;
+  --newtab-drop-indicator: #d6a87a;
+}
