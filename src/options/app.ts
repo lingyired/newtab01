@@ -5,10 +5,9 @@
 
 import { getSettings, getSetting, updateSetting } from '../lib/storage/settings';
 import type { Settings } from '../features/bookmarks/types';
+import { applyTheme, listThemes } from '../features/themes/switcher';
 
 type OptionsTab = 'layout' | 'appearance' | 'features' | 'advanced';
-
-const THEME_LIST = ['default', 'slate', 'rose', 'dark'] as const;
 
 let currentTab: OptionsTab = 'layout';
 
@@ -87,10 +86,6 @@ function saveSetting(key: keyof Settings): void {
   if (key === 'theme' && typeof value === 'string') {
     applyTheme(value);
   }
-}
-
-function applyTheme(theme: string): void {
-  document.documentElement.setAttribute('data-theme', theme);
 }
 
 function createNumberInput(key: keyof Settings): HTMLInputElement {
@@ -215,7 +210,7 @@ function renderLayoutTab(): HTMLElement {
 function renderAppearanceTab(): HTMLElement {
   const container = el('div', 'opt-tab-content');
 
-  const themeOptions = THEME_LIST.map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }));
+  const themeOptions = listThemes().map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }));
   container.appendChild(createSettingRow('Theme', createSelectInput('theme', themeOptions), 'theme'));
   container.appendChild(createSettingRow('Font', createTextInput('font'), 'font'));
   container.appendChild(createSettingRow('Text Color', createColorInput('fontColor'), 'fontColor'));

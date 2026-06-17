@@ -2,8 +2,22 @@
 
 import { getSettings, getSetting, updateSetting } from '../lib/storage/settings';
 import type { Settings } from '../features/bookmarks/types';
+import { listThemes } from '../features/themes/switcher';
 import * as debug from '../lib/debug';
 import { renderColumns } from '../features/bookmarks/board';
+
+/** Chinese labels for the theme dropdown in this panel. Theme ids without an
+ *  entry fall back to the English id — see renderAppearanceTab. */
+const THEME_LABELS: Readonly<Record<string, string>> = {
+  default: '默认',
+  slate: '石板灰',
+  rose: '玫瑰红',
+  dark: '暗色',
+  zinc: '锌灰',
+  stone: '石灰',
+  midnight: '午夜',
+  mocha: '摩卡',
+};
 
 type SettingsTab = 'layout' | 'appearance' | 'features' | 'advanced';
 
@@ -359,12 +373,8 @@ function renderLayoutTab(): HTMLElement {
 function renderAppearanceTab(): HTMLElement {
   const container = el('div', 'sp-tab-content');
 
-  container.appendChild(createRow('主题', createSelectInput('theme', [
-    { value: 'default', label: '默认' },
-    { value: 'slate', label: '石板灰' },
-    { value: 'rose', label: '玫瑰红' },
-    { value: 'dark', label: '暗色' },
-  ]), 'theme', '切换新标签页的整体配色主题。'));
+  const themeOptions = listThemes().map((t) => ({ value: t, label: THEME_LABELS[t] ?? t }));
+  container.appendChild(createRow('主题', createSelectInput('theme', themeOptions), 'theme', '切换新标签页的整体配色主题。'));
   container.appendChild(createRow('字体', createTextInput('font'), 'font', '书签链接使用的字体名称，例如 "PingFang SC"、Inter、Arial。'));
   container.appendChild(createRow('字号', createNumberInput('fontSize'), 'fontSize', '书签链接的字号（单位：px）。'));
   container.appendChild(createRow('字重', createNumberInput('fontWeight'), 'fontWeight', '书签链接的字重，常用值：400 正常、500 中等、600 半粗、700 粗体。'));
