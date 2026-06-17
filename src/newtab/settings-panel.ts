@@ -1,8 +1,8 @@
 // Floating settings panel — rendered as a right-side drawer on the newtab page
 
-import { getSettings, getSetting, updateSetting } from '../lib/storage/settings';
+import { getSettings, getSetting, updateSetting, updateSettings } from '../lib/storage/settings';
 import type { Settings } from '../features/bookmarks/types';
-import { listThemes } from '../features/themes/switcher';
+import { applyTheme, listThemes } from '../features/themes/switcher';
 import { applySettingChange } from '../features/settings/apply';
 import * as debug from '../lib/debug';
 import { renderColumns } from '../features/bookmarks/board';
@@ -293,6 +293,18 @@ function saveSetting(key: keyof Settings): void {
 
   // Capture before/after for the debug log.
   const before = getSetting(key);
+
+  // Theme changes are special: a single user action must atomically
+  // persist the new theme id plus the five palette colors that the theme
+  // just stamped onto the inline `<html>` styles. Persisting only `theme`
+  // would leave the five colors in storage pointing at the previous
+  // theme, so the next page load (or any other tab receiving the
+  // onChanged event) would re-apply the wrong palette.
+  if (key === 'theme') {
+    void saveThemeChange(String(value));
+    return;
+  }
+
   void updateSetting(key, value as Settings[keyof Settings]);
   debug.log('settings-panel', 'saveSetting', { key, before, after: getSetting(key) });
 
@@ -305,6 +317,32 @@ function saveSetting(key: keyof Settings): void {
   if (RERENDER_KEYS.has(key)) {
     void renderColumns();
   }
+}
+
+/**
+ * Persist a theme switch: apply the theme's palette to the inline
+ * `<html>` styles, read those values back from the DOM, and write the
+ * whole `{theme, 5 colors}` bundle to chrome.storage in a single
+ * `setSync` call. We read from the DOM (not from `getSetting`) because
+ * `applyTheme` writes the resolved palette to inline style and those
+ * values are guaranteed to be in sync by the time control returns.
+ */
+async function saveThemeChange(theme: string): Promise<void> {
+  const before = getSetting('theme');
+  applyTheme(theme);
+  if (typeof document === 'undefined') return;
+  const root = document.documentElement;
+  const readVar = (name: string): string => root.style.getPropertyValue(name).trim();
+  const bundle: Partial<Settings> = {
+    theme,
+    backgroundColor: readVar('--newtab-bg'),
+    fontColor: readVar('--newtab-text'),
+    highlightColor: readVar('--newtab-highlight'),
+    highlightFontColor: readVar('--newtab-highlight-text'),
+    shadowColor: readVar('--newtab-highlight'),
+  };
+  await updateSettings(bundle);
+  debug.log('settings-panel', 'saveThemeChange', { from: before, to: theme, bundle });
 }
 
 function createNumberInput(key: keyof Settings): HTMLInputElement {

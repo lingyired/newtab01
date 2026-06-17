@@ -41,16 +41,60 @@ export function listThemes(): string[] {
 }
 
 /**
- * Apply a theme by setting the `data-theme` attribute on the document root.
- * Fires every registered listener with the applied theme id.
+ * Apply a theme by setting the `data-theme` attribute on the document root
+ * and writing the theme's palette to inline custom properties on the same
+ * element. Inline style has specificity (1,0,0,0), which beats both
+ * `:where(:root)` (0) and `[data-theme="..."]` (0,1,0) — so the user can
+ * later override any individual color from the settings panel via
+ * `applyUserColorOverride` and the new value will win the cascade.
+ *
+ * The four CSS variables written here are the single source of truth for
+ * the page background, body text, and hover highlight. The shadow color
+ * is a legacy field (`shadowColor`) that shares `--newtab-highlight`
+ * (see newtab.css `box-shadow: 0 0 var(--newtab-shadow-blur) var(--newtab-highlight)`);
+ * we keep it in storage for backwards compat but it is not exposed as a
+ * separate override.
+ *
+ * `applyTheme` deliberately does NOT mutate `currentSettings`. The five
+ * legacy color fields belong to the user's stored choices; overwriting
+ * them with theme defaults on every switch would discard the user's
+ * per-color overrides. The settings-panel path persists a fresh
+ * `{theme, 5 colors}` bundle on user action (see `saveThemeChange`),
+ * and `applyUserColorOverride` writes the user's choices on top of the
+ * theme baseline at startup and on every other settings change.
  *
  * No-op when called in a non-DOM environment (e.g. unit tests without jsdom).
  */
 export function applyTheme(theme: string): void {
   let prev: string | null = null;
   if (typeof document !== 'undefined') {
-    prev = document.documentElement.getAttribute('data-theme');
-    document.documentElement.setAttribute('data-theme', theme);
+    const root = document.documentElement;
+    prev = root.getAttribute('data-theme');
+
+    // 1. Drop any user overrides so the new theme's palette starts from a
+    //    known baseline. Otherwise a previously-saved `backgroundColor`
+    //    inline value would survive the theme switch and mute the change.
+    root.style.removeProperty('--newtab-bg');
+    root.style.removeProperty('--newtab-text');
+    root.style.removeProperty('--newtab-highlight');
+    root.style.removeProperty('--newtab-highlight-text');
+
+    // 2. Activate the theme CSS so the four variables now resolve to
+    //    the palette defined in styles/themes/<theme>.css.
+    root.setAttribute('data-theme', theme);
+
+    // 3. Promote the resolved values to inline style (specificity 1,0,0,0)
+    //    so subsequent `applyUserColorOverride` calls have a known target
+    //    to overwrite.
+    const styles = getComputedStyle(root);
+    const bg = styles.getPropertyValue('--newtab-bg').trim();
+    const text = styles.getPropertyValue('--newtab-text').trim();
+    const highlight = styles.getPropertyValue('--newtab-highlight').trim();
+    const highlightText = styles.getPropertyValue('--newtab-highlight-text').trim();
+    if (bg) root.style.setProperty('--newtab-bg', bg);
+    if (text) root.style.setProperty('--newtab-text', text);
+    if (highlight) root.style.setProperty('--newtab-highlight', highlight);
+    if (highlightText) root.style.setProperty('--newtab-highlight-text', highlightText);
   }
   log('theme', 'applyTheme', { from: prev, to: theme });
   for (const cb of listeners) {

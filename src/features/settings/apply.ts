@@ -12,13 +12,60 @@ import { log } from '../../lib/debug';
 const STYLE_ELEMENT_ID = 'dynamic-styles';
 const USER_CSS_ELEMENT_ID = 'user-css';
 
-/** Settings that affect the generated `<style id="dynamic-styles">` block. */
+/**
+ * Settings that drive the four `--newtab-*` CSS variables representing
+ * the active theme palette. Each key maps to the inline-style property
+ * it writes; see `applyUserColorOverride` for the write path.
+ *
+ * `shadowColor` is included for backwards-compat with the legacy Settings
+ * type, but in the current CSS the `box-shadow` color is sourced from
+ * `--newtab-highlight` (see newtab.css). The settings panel keeps the
+ * two fields in sync on theme switches via `saveThemeChange`, and
+ * editing either ultimately sets the same inline property.
+ */
+const COLOR_KEYS = {
+  backgroundColor: '--newtab-bg',
+  fontColor: '--newtab-text',
+  highlightColor: '--newtab-highlight',
+  highlightFontColor: '--newtab-highlight-text',
+  shadowColor: '--newtab-highlight',
+} as const satisfies Partial<Record<keyof Settings, string>>;
+type ColorKey = keyof typeof COLOR_KEYS;
+
+/**
+ * Settings that affect the generated `<style id="dynamic-styles">` block.
+ * The five `COLOR_KEYS` are deliberately NOT in this set — their values
+ * flow through inline style on `<html>` (specificity 1,0,0,0) so a theme
+ * switch can wipe them and a per-color user override can win the cascade.
+ * Including them here would emit a hardcoded `color: #...` rule that
+ * would always trump both the theme and any later inline override.
+ */
 const STYLE_KEYS: ReadonlySet<keyof Settings> = new Set<keyof Settings>([
   'font', 'fontSize', 'fontWeight',
-  'fontColor', 'backgroundColor', 'highlightColor', 'highlightFontColor', 'shadowColor',
   'shadowBlur', 'highlightRound', 'fade', 'slide',
   'spacing', 'vMargin', 'width', 'hPos', 'autoScale',
 ]);
+
+/**
+ * Write a single user color override as an inline custom property on the
+ * document root. Inline style beats both the `:where(:root)` defaults and
+ * the `[data-theme="..."]` blocks, so the user value is what renders.
+ *
+ * `applyTheme` must have run at least once before this is called so the
+ * CSS variable already resolves to the active theme's value; otherwise
+ * we'd be writing a property that the cascade has no source for.
+ */
+export function applyUserColorOverride(key: ColorKey): void {
+  if (typeof document === 'undefined') return;
+  const cssVar = COLOR_KEYS[key];
+  const value = String(getSetting(key) ?? '').trim();
+  if (!value) {
+    document.documentElement.style.removeProperty(cssVar);
+    return;
+  }
+  document.documentElement.style.setProperty(cssVar, value);
+  log('apply', 'applyUserColorOverride', { key, cssVar, value });
+}
 
 /** Build (or replace) the `<style id="dynamic-styles">` node from current settings. */
 function rebuildDynamicStyles(): void {
@@ -30,19 +77,12 @@ function rebuildDynamicStyles(): void {
   rules.push(`#main a { font-size: ${settings('fontSize') / 10}em; }`);
   rules.push(`#main a { font-weight: ${settings('fontWeight')}; }`);
 
-  // Colors — driven by the active theme's CSS variables (--newtab-bg,
-  // --newtab-text, --newtab-highlight, --newtab-highlight-text) so a
-  // theme switch automatically retints the page. The fontColor /
-  // backgroundColor / highlightColor / highlightFontColor / shadowColor
-  // settings exist in the legacy Settings type but are not exposed in the
-  // settings panel UI (see CLAUDE.md § 9.7 for the canonical setting
-  // list). If we later want to let users override the theme palette, the
-  // override has to be applied via inline style on <html> (so the theme
-  // switch can wipe it) rather than as a <style> rule, otherwise the
-  // dynamic-styles block would always win the cascade and theme changes
-  // would have no visual effect.
-  rules.push(`#main a { color: var(--newtab-text); }`);
-  rules.push(`#main a:hover { color: var(--newtab-highlight-text); background-color: var(--newtab-highlight); }`);
+  // Note: text/highlight colors are NOT emitted here. They are written
+  // as inline custom properties on <html> by `applyTheme` and
+  // `applyUserColorOverride`, then resolved via the `var(--newtab-*)`
+  // references in newtab.css (#main a / #main a:hover). Hardcoding them
+  // in this <style> block would let dynamic-styles win the cascade and
+  // freeze the colors regardless of theme or per-color user edits.
 
   // Shadow
   const shadowBlur = scale(settings('shadowBlur'), 7, 100);
@@ -114,28 +154,54 @@ function scale(value: number, mid: number, max: number, min: number = 0): number
 }
 
 /**
- * Re-apply all settings to the DOM. Safe to call repeatedly — replaces the
- * existing dynamic-styles node in place rather than appending duplicates.
+ * Re-apply the non-palette parts of the current settings to the DOM.
+ * Specifically: rebuild the dynamic-styles block (font, size, weight,
+ * spacing, ...) and the user CSS node.
+ *
+ * Palette settings (`backgroundColor`, `fontColor`, `highlightColor`,
+ * `highlightFontColor`, `shadowColor`) and the `theme` setting are
+ * NOT touched here — those flow through inline custom properties on
+ * `<html>`, and the corresponding setters (`applyTheme`,
+ * `applyUserColorOverride`) are called by the live-edit paths
+ * (settings-panel saveSetting, initApp startup, the storage
+ * onChanged listener — and only that listener, only when `theme`
+ * changed). Calling `applyTheme` from this function would wipe
+ * legitimate per-color user overrides every time any other setting
+ * was edited.
  */
 export function applySettingsToDOM(): void {
-  const theme = String(getSetting('theme'));
-  log('apply', 'applySettingsToDOM', { theme });
-  applyTheme(theme);
+  log('apply', 'applySettingsToDOM');
+  for (const key of Object.keys(COLOR_KEYS) as ColorKey[]) {
+    applyUserColorOverride(key);
+  }
   rebuildDynamicStyles();
   rebuildUserCss();
 }
 
 /**
  * Apply a single setting change to the DOM without doing a full re-apply.
- * Themed settings call `applyTheme` first so the data-theme attribute
- * updates before the dynamic-styles block is regenerated.
+ *
+ * - `theme` → `applyTheme` clears the inline color overrides and writes
+ *   the new theme's palette to the inline `<html>` styles. The settings
+ *   panel persists the resulting `{theme, 5 colors}` bundle via
+ *   `updateSettings`; the storage.onChanged listener also re-runs
+ *   `applySettingsToDOM` which reasserts the per-color overrides.
+ * - any color key in `COLOR_KEYS` → `applyUserColorOverride` writes a
+ *   single inline property. We do NOT call `rebuildDynamicStyles`
+ *   here — the dynamic-styles block intentionally contains no color
+ *   rules, so the page reflects the new value with no extra work.
+ * - any other key in `STYLE_KEYS` → `rebuildDynamicStyles` regenerates
+ *   the dynamic <style> block (font, size, weight, spacing, etc.).
+ * - `css` → `rebuildUserCss` swaps the user CSS node.
  */
 export function applySettingChange<K extends keyof Settings>(key: K): void {
   log('apply', 'applySettingChange', { key, value: getSetting(key) });
   if (key === 'theme') {
     applyTheme(String(getSetting('theme')));
   }
-  if (STYLE_KEYS.has(key)) {
+  if (key in COLOR_KEYS) {
+    applyUserColorOverride(key as ColorKey);
+  } else if (STYLE_KEYS.has(key)) {
     rebuildDynamicStyles();
   }
   if (key === 'css') {
@@ -168,8 +234,17 @@ export function installSettingsChangeListener(): void {
       return;
     }
     const newValue = changes[FULL_KEY].newValue as Settings | undefined;
+    const oldValue = changes[FULL_KEY].oldValue as Settings | undefined;
     if (newValue) {
       replaceSettings(newValue);
+    }
+    // If `theme` changed, re-apply the theme (which clears the inline
+    // color overrides and writes the new theme's palette to <html>).
+    // For every other key change, `applySettingsToDOM` is enough — it
+    // reasserts the per-color overrides and rebuilds the dynamic-styles
+    // block without touching the theme.
+    if (newValue && oldValue && newValue.theme !== oldValue.theme) {
+      applyTheme(String(newValue.theme));
     }
     applySettingsToDOM();
   });

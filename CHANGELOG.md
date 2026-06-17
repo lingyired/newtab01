@@ -5,6 +5,17 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.27] - 2026-06-17
+
+### Fixed
+- **主题下文字 / 背景 / 高亮等 5 个颜色 setting 改完不生效**：`src/features/settings/apply.ts:rebuildDynamicStyles` 之前把这些颜色硬编码成 `var(--newtab-*)` 主题 CSS 变量后，settings-panel 改 `fontColor` / `backgroundColor` / `highlightColor` / `highlightFontColor` / `shadowColor` 时只写 storage、dynamic-styles 仍然引用主题变量 → 永远显示主题色、用户覆盖被主题吃掉。改为把 5 个颜色通过 `applyUserColorOverride(key)` 写到 `<html>` 上的 inline custom properties (specificity 1,0,0,0)，既能在 cascade 中胜出 `[data-theme="..."]` (0,1,0) 又能被切主题时的 `applyTheme` 用 `removeProperty` 清空再写新主题值；dynamic-styles 同时移除 5 个颜色 rule 避免 dynamic-styles 重新赢 cascade。新增 `src/features/settings/apply.ts:saveThemeChange` 把 `theme + 5 个颜色` 作为一个 `updateSettings` bundle 原子写入 storage，切主题瞬间 5 个 color 同步进 storage（下次开 tab / 跨 tab 也能立刻看到新主题色而不是上一次覆盖的值）。
+- **删除孤儿 `mergeSettingsLocal`**：v0.2.26 临时为 applyTheme 加的"只改内存不写 storage"工具函数已无外部调用方，按 Precise Edits 规则清理；`updateSettings` 内联 `Object.assign(currentSettings, partial)`。`applyTheme` 不再触碰 `currentSettings`，用户的 5 个 color 覆盖完全由 settings-panel 显式 `updateSettings` 持久化。
+
+### Changed
+- `src/features/settings/apply.ts:applySettingsToDOM` 不再调 `applyTheme`（避免每次 storage 变更把用户 color 覆盖冲掉），拆为 `applySettingsToDOM`（5 个 applyUserColorOverride + rebuildDynamicStyles + rebuildUserCss）和 storage onChanged 路径只在 `newValue.theme !== oldValue.theme` 时调 `applyTheme`。`src/newtab/app.ts:initApp` 启动顺序：initSettings → installSettingsChangeListener → applyTheme → applySettingsToDOM。
+- `src/features/settings/apply.ts:applySettingChange(key)` 拆出 color key 路径：color key 走 `applyUserColorOverride`（不再 `rebuildDynamicStyles`，因为 dynamic-styles 不再含颜色 rule）；`theme` 走 `applyTheme`；其他 STYLE_KEYS 走 `rebuildDynamicStyles`；`css` 走 `rebuildUserCss`。
+- `src/features/settings/apply.ts:installSettingsChangeListener` 在 `chrome.storage.onChanged` 回调里比较 `newValue.theme !== oldValue.theme`，只有主题变化才调 `applyTheme`，避免 cross-tab 改字号时把别人改的主题色冲掉。
+
 ## [0.2.26] - 2026-06-17
 
 ### Fixed

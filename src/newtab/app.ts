@@ -10,6 +10,7 @@ import { openSettingsPanel } from './settings-panel';
 import { getBookmarkTree } from '../lib/chrome/bookmarks';
 import { initDebug, log, group, groupEnd } from '../lib/debug';
 import { applySettingsToDOM, installSettingsChangeListener } from '../features/settings/apply';
+import { applyTheme } from '../features/themes/switcher';
 import { parseSplitParams, renderSplitView } from '../features/split/split-view';
 
 /** Initialize the new tab page */
@@ -40,9 +41,17 @@ export async function initApp(): Promise<void> {
     // write through the same setSync path that fires the listener.
     installSettingsChangeListener();
 
-    // 1b. Apply theme + dynamic styles to documentElement so theme CSS
-    // variables take effect and font/colors/animations render correctly.
+    // 1b. Apply the active theme. `applyTheme` writes the theme's
+    // palette to inline custom properties on <html>; `applySettingsToDOM`
+    // (below) then re-asserts the user's per-color overrides on top of
+    // that baseline.
+    applyTheme(String(getSetting('theme')));
+    log('init', 'theme applied', { theme: getSetting('theme') });
+
+    // 1c. Rebuild the dynamic-styles block and the user-CSS block from
+    // the current settings.
     applySettingsToDOM();
+    log('init', 'settings applied to DOM');
 
     // 2. Load bookmark tree to get root IDs
     const tree = await getBookmarkTree();
