@@ -219,6 +219,7 @@ function getDefaults(): Settings {
     theme: 'default',
     fontColor: '#555555',
     backgroundColor: '#ffffff',
+    backgroundImage: '',
     highlightColor: '#e4f4ff',
     highlightFontColor: '#000000',
     shadowColor: '#57b0ff',

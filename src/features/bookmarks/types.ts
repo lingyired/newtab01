@@ -36,6 +36,7 @@ export interface Settings {
   theme: string;
   fontColor: string;
   backgroundColor: string;
+  backgroundImage: string;
   highlightColor: string;
   highlightFontColor: string;
   shadowColor: string;
