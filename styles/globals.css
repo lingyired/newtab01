@@ -2,6 +2,10 @@
 @import './themes/slate.css';
 @import './themes/rose.css';
 @import './themes/dark.css';
+@import './themes/zinc.css';
+@import './themes/stone.css';
+@import './themes/midnight.css';
+@import './themes/mocha.css';
 
 :root {
   /* Base semantic colors */
