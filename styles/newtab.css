@@ -471,15 +471,18 @@
 #options_button {
   position: absolute;
   top: 8px;
-  /* right: 0 — the gear is an absolute child of #topbar (position:
-   * relative), and the topbar already has padding: 16px. absolute
-   * children are positioned relative to the parent's *padding edge*,
-   * so right: 16px here would cancel the topbar's padding-right and
-   * pin the gear flush against the viewport edge. Anchoring to the
-   * padding edge (right: 0) keeps the gear's right gutter in lock-
-   * step with the topbar's padding, so adjusting the topbar padding
-   * moves the gear too. */
-  right: 0;
+  /* right: 16px — the gear is an absolute child of #topbar (position:
+   * relative). Per the CSS spec, the containing block for an absolute
+   * child is the ancestor's PADDING box (content + padding, but not
+   * border/margin). With border-width: 0 and padding-right: 16px on
+   * the topbar, the padding box's right edge IS the viewport's right
+   * edge — so right: 16px puts the gear 16px from the viewport edge
+   * (NOT 32px as you'd get if `right` measured from the content box).
+   * v0.2.47 mistakenly used right: 0 here, which pinned the gear flush
+   * against the viewport (it disappeared off-screen on some widths).
+   * Anchoring to a literal pixel value keeps the gear's right gutter
+   * independent of any future topbar padding tweaks. */
+  right: 16px;
   background: transparent;
   border: none;
   color: var(--newtab-text);

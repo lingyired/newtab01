@@ -5,10 +5,22 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.47] - 2026-06-18
+## [0.2.48] - 2026-06-18
 
 ### Fixed
-- **右上角齿轮按钮顶到视口边缘**（用户反馈 "那个 Settings 图标太靠右了，可以加点右边距"）：`#options_button` 是 `#topbar`（`position: relative; padding: 16px`）的绝对定位子元素，CSS 规范规定 `right` 相对父容器的 **padding edge**（不是 border edge），所以 `right: 16px` 与 topbar 的 `padding-right: 16px` 互相抵消，齿轮实际距视口右 0px。改为 `right: 0`，由 topbar 的 padding 提供视觉间距 —— 以后调整 topbar padding 齿轮会同步跟随。
+- **还原 v0.2.47 误改的齿轮按钮位置**（用户反馈 "setting 图标修改后更靠右了都看不到了"）。v0.2.47 我把 `#options_button` 的 `right` 从 `16px` 改到 `0` 时**误判了 CSS containing block**：absolute 子元素的 `right` 是相对祖先的 **padding box**（content + padding），不是 content box。`#topbar` 的 `border-width: 0`、`padding-right: 16px` 时，padding box 的右 edge **就是**视口右 edge —— `right: 0` 把齿轮顶到屏幕最右边缘而不是"距视口 16px"。改回 `right: 16px`。
+- **重写 MX-Brutalist 主题**（用户反馈 "请移除现在 MX-Brutalist 的主题，重新安装 `https://tweakcn.com/r/themes/cmllfu8oc000004l1a0tidj2g`，主题名称不要乱汉化。同时它的 button 链接应该是带有效果的"）：
+  - `styles/themes/mx-brutalist.css` 整文件重写，8 vars 严格按 tweakcn 原始 JSON（light 块用 `oklch(0.9923 0.0104 91.4994)` 系米色背景 + 深绿 primary + 纯黑 border；dark 块用 `oklch(0.1649 0.0308 162.2739)` 系深绿背景 + 亮绿 primary + 暖白 border）。
+  - **重新引入 brutalist link 装饰**（v0.2.45 删过一次）：以 `:root[data-theme="mx-brutalist"] #main a` 主题作用域选择器实现，3px 硬黑边 + 0 radius + `4px 4px 0 0` 实心阴影。hover 时 `translate(-2px, -2px)` + 阴影扩到 `6px 6px`（neo-brutalist "按下" 动画），active 复原。dark 变体 shadow 颜色用 tweakcn dark 主题原配 `hsl(45 100% 80%)` 暖白代替纯黑。Selector specificity (0,2,1) 高于 newtab.css 的 `#main a` (0,1,1) 胜出，但不影响其他内置主题。
+  - `settings-panel.ts` 的 `THEME_LABELS` 移除"乱汉化"：`'mx-brutalist': 'MX 暴力'` → `'mx-brutalist': 'MX-Brutalist'`、`'mx-brutalist-dark': 'MX 暴力·暗'` → `'mx-brutalist-dark': 'MX-Brutalist Dark'`（尊重原作者命名 Victor Hugo Avelar Ossorio）。其他主题中文名不动（用户常规偏好）。
+
+## [0.2.47] - 2026-06-18
+> **Retracted in 0.2.48** — the CSS containing block was misread. The change
+> below pinned the gear flush against the viewport right edge instead of
+> giving it a 16px gutter. Reverted in v0.2.48.
+
+### Fixed
+- 右上角齿轮按钮顶到视口边缘（用户反馈 "那个 Settings 图标太靠右了，可以加点右边距"）：`#options_button` 是 `#topbar`（`position: relative; padding: 16px`）的绝对定位子元素，CSS 规范规定 `right` 相对父容器的 **padding edge**（不是 border edge），所以 `right: 16px` 与 topbar 的 `padding-right: 16px` 互相抵消，齿轮实际距视口右 0px。改为 `right: 0`，由 topbar 的 padding 提供视觉间距 —— 以后调整 topbar padding 齿轮会同步跟随。
 
 ## [0.2.46] - 2026-06-18
 

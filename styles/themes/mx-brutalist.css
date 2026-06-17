@@ -1,13 +1,19 @@
 /*
- * MX-Brutalist theme — neo-brutalist with hard black borders, no radius,
- * green primary. tweakcn JSON: cmllfu8oc000004l1a0tidj2g.
+ * MX-Brutalist theme — neo-brutalist with hard black borders, no
+ * radius, green primary. tweakcn JSON: cmllfu8oc000004l1a0tidj2g
+ * (Victor Hugo Avelar Ossorio). v0.2.48: re-fetched directly from
+ * tweakcn and the brutalist link treatment was re-introduced as a
+ * theme-scope override on #main a (was removed in v0.2.45 so all
+ * built-in themes shared the same 8-vars-only baseline).
  *
- * v0.2.45: now uses the 8 shadcn variables only (no --newtab-link-*
- * overrides) — the brutalist link look (4px 4px black shadow, 0 radius,
- * 3px border) used to live here but was removed so all built-in themes
- * are uniform. If a future user-facing "link style preset" feature
- * lands, MX-Brutalist's shadow is the canonical example to expose.
+ * The 8 shadcn variables below are verbatim from the tweakcn light
+ * and dark blocks. The shadow-color (hsl(0,0%,0%) light /
+ * hsl(45,100%,80%) dark) is hardcoded in the link overrides below
+ * because it's not one of the canonical 8 shadcn vars we expose to
+ * the newtab palette (those 8 are: background, foreground, primary,
+ * primary-foreground, muted, muted-foreground, border, ring).
  */
+
 :root[data-theme="mx-brutalist"] {
   --background: oklch(0.9923 0.0104 91.4994);
   --foreground: oklch(0.1759 0.0275 161.2531);
@@ -28,4 +34,53 @@
   --muted-foreground: oklch(0.8253 0.0270 91.6606);
   --border: oklch(0.9809 0.0260 91.6197);
   --ring: oklch(0.7951 0.1631 68.6392);
+}
+
+/* Theme-scope link treatment — only active when this theme is
+ * selected. Selector specificity: 0,2,1 beats #main a (0,1,1) and
+ * #main a:hover (0,1,1) from newtab.css, so the brutalist shadow /
+ * border / transform win the cascade without re-introducing the
+ * generic --newtab-link-* variables that v0.2.45 retired.
+ *
+ * Values: 3px hard black border + 0 radius + 4px 4px solid black
+ * shadow on the default state, then on hover the link slides up-left
+ * by 2px and the shadow grows to 6px 6px (classic neo-brutalist
+ * "press" animation — same pattern as shadcn-ui's Button for this
+ * theme). */
+:root[data-theme="mx-brutalist"] #main a,
+:root[data-theme="mx-brutalist-dark"] #main a {
+  border: 3px solid var(--border);
+  border-radius: 0;
+  background-color: var(--newtab-bg);
+  /* offset-y / offset-x / blur / spread / color — matches tweakcn
+   * "shadow" entry in the JSON (4px 4px 0px 0px <shadow-color> / 1). */
+  box-shadow: 4px 4px 0 0 hsl(0 0% 0% / 1);
+}
+
+:root[data-theme="mx-brutalist"] #main a:hover,
+:root[data-theme="mx-brutalist-dark"] #main a:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 0 hsl(0 0% 0% / 1);
+}
+
+:root[data-theme="mx-brutalist"] #main a:active,
+:root[data-theme="mx-brutalist-dark"] #main a:active {
+  transform: translate(0, 0);
+  box-shadow: 4px 4px 0 0 hsl(0 0% 0% / 1);
+}
+
+/* Dark variant: tweakcn's dark theme uses hsl(45, 100%, 80%) as the
+ * shadow color (a warm cream against the deep green background)
+ * instead of pure black — overrides stack on top of the light rules
+ * above via higher specificity. */
+:root[data-theme="mx-brutalist-dark"] #main a {
+  box-shadow: 4px 4px 0 0 hsl(45 100% 80% / 1);
+}
+
+:root[data-theme="mx-brutalist-dark"] #main a:hover {
+  box-shadow: 6px 6px 0 0 hsl(45 100% 80% / 1);
+}
+
+:root[data-theme="mx-brutalist-dark"] #main a:active {
+  box-shadow: 4px 4px 0 0 hsl(45 100% 80% / 1);
 }

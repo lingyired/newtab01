@@ -20,8 +20,8 @@ import { renderColumns } from '../features/bookmarks/board';
 const THEME_LABELS: Readonly<Record<string, string>> = {
   default: '默认',
   'default-dark': '默认·暗',
-  'mx-brutalist': 'MX 暴力',
-  'mx-brutalist-dark': 'MX 暴力·暗',
+  'mx-brutalist': 'MX-Brutalist',
+  'mx-brutalist-dark': 'MX-Brutalist Dark',
   cyberpunk: '赛博朋克',
   'cyberpunk-dark': '赛博朋克·暗',
   astrovista: 'AstroVista',
