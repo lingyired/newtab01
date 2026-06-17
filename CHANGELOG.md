@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.14] - 2026-06-17
+
+### Fixed
+- 文件夹 header 在无书签时仍显示 3 个操作图标（批量打开 / tab group / 分屏）。原因：原 `hasBookmarks` 检查只判断 `node.children !== undefined`（空数组 `[]` 也会通过），且特殊目录（top/recent/closed/devices）始终判定为有图标。修复：
+  - `createFolderActions(node, bookmarkCount)` 新增 `bookmarkCount: number` 参数，`bookmarkCount === 0` 时直接返回空 `<span>`（不渲染按钮）。
+  - `folder.ts` 区分常规与特殊目录：常规用 `node.children?.length ?? 0` 同步决定；特殊目录 `getChildren(node)` 异步解析后，若 `children.length > 0` 才追加 actions。
+  - 常规空目录的 header 不再有任何 hover 效果；特殊目录（top 等）若用户实际数据为空同样不显示图标。
+
 ## [0.2.12] - 2026-06-17
 
 ### Added
@@ -84,7 +92,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 新增 `lib/chrome/bookmarks.ts` 的 `getBookmark(id)` 包装。
 - 新增 `src/features/bookmarks/moved-out.ts` 模块。
 
-[Unreleased]: https://github.com/lingyired/newtab01/compare/v0.2.13...HEAD
+[Unreleased]: https://github.com/lingyired/newtab01/compare/v0.2.14...HEAD
+[0.2.14]: https://github.com/lingyired/newtab01/compare/v0.2.13...v0.2.14
 [0.2.13]: https://github.com/lingyired/newtab01/compare/v0.2.12...v0.2.13
 [0.2.12]: https://github.com/lingyired/newtab01/compare/v0.2.11...v0.2.12
 [0.2.11]: https://github.com/lingyired/newtab01/compare/v0.2.10...v0.2.11

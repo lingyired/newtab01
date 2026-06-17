@@ -35,10 +35,19 @@ export function renderFolder(node: BookmarkNode, target: HTMLElement, depth: num
   icon.classList.add('folder-icon');
   header.insertBefore(icon, header.firstChild);
 
-  // Action icons (only if folder has children/links)
-  const hasBookmarks = node.children !== undefined || node.type === 'top' || node.type === 'recent' || node.type === 'closed' || node.type === 'devices';
-  if (hasBookmarks) {
-    const actions = createFolderActions(node);
+  // Action icons — regular folders use children synchronously; special folders
+  // (top/recent/closed/devices) need an async getChildren() to know the real count.
+  const isSpecial = node.type === 'top' || node.type === 'recent' || node.type === 'closed' || node.type === 'devices';
+  if (isSpecial) {
+    void getChildren(node).then((children) => {
+      if (children.length > 0) {
+        const actions = createFolderActions(node, children.length);
+        header.appendChild(actions);
+      }
+    });
+  } else {
+    const bookmarkCount = node.children?.length ?? 0;
+    const actions = createFolderActions(node, bookmarkCount);
     header.appendChild(actions);
   }
 
