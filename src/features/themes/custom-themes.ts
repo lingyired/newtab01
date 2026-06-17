@@ -1,0 +1,357 @@
+// Custom theme import — users can paste a tweakcn registry item JSON
+// directly into the settings panel, the JSON is stored in
+// chrome.storage.local under "customThemes", and on every newtab/
+// options/popup startup we emit a single <style id="custom-themes">
+// block with one :root[data-theme="user-<kebab>"] { 8 shadcn vars }
+// selector per installed entry.
+//
+// The 6 `--newtab-*` variables are NOT emitted here — globals.css
+// already derives them from the 8 shadcn vars at the :where(:root)
+// level (specificity 0,0,0), so any [data-theme="user-x"] block
+// (specificity 0,1,0) wins for the 8 vars and the derived 6 follow
+// automatically. This matches the static themes under styles/themes/.
+//
+// Design spec: docs/superpowers/specs/2026-06-17-runtime-theme-import-design.md
+//
+// Long-term direction: replace all built-in themes with tweakcn
+// imports via this feature (decision after v0.2.41 lands).
+
+import { log } from '../../lib/debug';
+
+/** The 8 shadcn variables we copy from cssVars.light / cssVars.dark.
+ *  Anything else in the tweakcn JSON (chart-*, sidebar-*, font-sans, etc.)
+ *  is dropped on the floor — newtab01 doesn't use those surfaces. */
+const THEME_VARS = [
+  'background',
+  'foreground',
+  'primary',
+  'primary-foreground',
+  'muted',
+  'muted-foreground',
+  'border',
+  'ring',
+] as const;
+
+type ThemeVar = (typeof THEME_VARS)[number];
+
+/** The minimum subset of a tweakcn registry item JSON we care about. */
+type TweakcnCssVarsBlock = {
+  theme?: Record<string, string>;
+  light: Record<ThemeVar, string>;
+  dark?: Record<ThemeVar, string>;
+};
+
+export type TweakcnJson = {
+  name: string;
+  type?: string;
+  /** Always present on data we store (validateThemeJson ensures it).
+   *  Optional only at the type level so we can read untrusted JSON
+   *  and let the validator reject the bad case. */
+  cssVars?: TweakcnCssVarsBlock;
+};
+
+export type CustomThemeEntry = {
+  /** Original JSON (light variant) — kept verbatim so we can re-render
+   *  CSS if the generator changes in future versions. */
+  light: TweakcnJson;
+  /** Original JSON (dark variant) — may be absent if user pasted a JSON
+   *  with no cssVars.dark, in which case we only register the light theme. */
+  dark?: TweakcnJson;
+  installedAt: number;
+  updatedAt: number;
+};
+
+export type CustomThemesMap = Record<string, CustomThemeEntry>;
+
+/** Stable key for the custom-themes map — the JSON `name` field,
+ *  unchanged. Lets us detect "same name pasted twice" as an update. */
+export type CustomThemeName = string;
+
+/** chrome.storage.local key. */
+const STORAGE_KEY = 'customThemes';
+
+/** Style element id. Kept stable so the buildCustomThemesStyle can
+ *  re-write the same node on every update instead of stacking <style>. */
+export const STYLE_ID = 'custom-themes';
+
+/** Internal id prefix for custom themes. Always use kebabThemeId()
+ *  to build the actual id — never string-template by hand. */
+export const USER_THEME_PREFIX = 'user-';
+
+/** Validation result. Either an entry ready to save, or a typed error
+ *  that the settings panel renders as a status message. */
+export type ValidationResult =
+  | { ok: true; entry: CustomThemeEntry; isUpdate: boolean; warning?: string }
+  | { ok: false; error: string; warning?: string };
+
+/** Strict validation per spec § 8. Only type === "registry:style"
+ *  is accepted. 8 variables must be present in cssVars.light. */
+export function validateThemeJson(
+  raw: unknown,
+  existing: CustomThemesMap,
+): ValidationResult {
+  if (raw === null || typeof raw !== 'object') {
+    return { ok: false, error: 'Not a valid JSON object' };
+  }
+  const json = raw as Partial<TweakcnJson>;
+
+  if (json.type !== 'registry:style') {
+    return { ok: false, error: "Only type 'registry:style' is supported" };
+  }
+  if (typeof json.name !== 'string' || !json.name.trim()) {
+    return { ok: false, error: 'Missing or empty "name" field' };
+  }
+  const cv = json.cssVars;
+  if (!cv || typeof cv !== 'object' || !cv.light || typeof cv.light !== 'object') {
+    return { ok: false, error: 'Missing cssVars.light' };
+  }
+  const lightBlock = cv.light as Record<string, unknown>;
+  const missing: ThemeVar[] = [];
+  for (const v of THEME_VARS) {
+    const val = lightBlock[v];
+    if (typeof val !== 'string' || !val.trim()) missing.push(v);
+  }
+  if (missing.length) {
+    return { ok: false, error: `Missing cssVars.light fields: ${missing.join(', ')}` };
+  }
+
+  // dark is optional. If present, must be an object with all 8 vars.
+  let darkBlock: Record<string, unknown> | undefined;
+  if (cv.dark !== undefined) {
+    if (typeof cv.dark !== 'object' || cv.dark === null) {
+      return { ok: false, error: 'cssVars.dark must be an object when present' };
+    }
+    darkBlock = cv.dark as Record<string, unknown>;
+    const missingDark: ThemeVar[] = [];
+    for (const v of THEME_VARS) {
+      const val = darkBlock[v];
+      if (typeof val !== 'string' || !val.trim()) missingDark.push(v);
+    }
+    if (missingDark.length) {
+      return {
+        ok: false,
+        error: `Missing cssVars.dark fields: ${missingDark.join(', ')}`,
+      };
+    }
+  }
+
+  const name = json.name.trim();
+  const now = Date.now();
+  const isUpdate = Object.prototype.hasOwnProperty.call(existing, name);
+  const prev = existing[name];
+
+  // Normalize the JSON we store. We re-emit a clean object that only
+  // contains the 8 shadcn vars plus the name + type — discarding
+  // chart-*, sidebar-*, font-sans, css, files, etc. that tweakcn ships
+  // but we don't use. This keeps the storage payload small (~1KB/entry)
+  // and reduces the XSS surface: anything we serialize is then
+  // injected into a CSS <style> tag (not HTML), and we only ever
+  // interpolate the 8 fields we validated as non-empty strings.
+  const lightNormalized: TweakcnJson = {
+    name,
+    type: 'registry:style',
+    cssVars: {
+      theme: cv.theme ?? {},
+      light: pickVars(lightBlock as Partial<Record<ThemeVar, string>>),
+    },
+  };
+  let darkNormalized: TweakcnJson | undefined;
+  if (darkBlock) {
+    // The dark variant of a TweakcnJson carries cssVars.dark, not
+    // cssVars.light. TweakcnCssVarsBlock requires `light` to be
+    // present for the type to be valid, so we satisfy that with a
+    // pointer to the same validated block — it never serializes to
+    // CSS (only cssVars.dark is read at emit time).
+    darkNormalized = {
+      name,
+      type: 'registry:style',
+      cssVars: {
+        theme: cv.theme ?? {},
+        light: pickVars(darkBlock as Partial<Record<ThemeVar, string>>),
+        dark: pickVars(darkBlock as Partial<Record<ThemeVar, string>>),
+      },
+    };
+  }
+
+  const entry: CustomThemeEntry = {
+    light: lightNormalized,
+    ...(darkNormalized ? { dark: darkNormalized } : {}),
+    installedAt: prev?.installedAt ?? now,
+    updatedAt: now,
+  };
+
+  if (cv.dark === undefined) {
+    return {
+      ok: true,
+      entry,
+      isUpdate,
+      warning: 'No cssVars.dark provided, dark variant will fall back to built-in dark theme',
+    };
+  }
+  return { ok: true, entry, isUpdate };
+}
+
+function pickVars(block: Partial<Record<ThemeVar, string>>): Record<ThemeVar, string> {
+  const out = {} as Record<ThemeVar, string>;
+  for (const v of THEME_VARS) {
+    const val = block[v];
+    if (typeof val === 'string') out[v] = val;
+  }
+  return out;
+}
+
+// --- Storage I/O ---
+
+/** Read the full custom themes map. Returns {} on any error so callers
+ *  can treat the absence of custom themes as the default state. */
+export async function readCustomThemes(): Promise<CustomThemesMap> {
+  if (typeof chrome === 'undefined' || !chrome.storage?.local) return {};
+  try {
+    const result = await chrome.storage.local.get(STORAGE_KEY);
+    const raw = result[STORAGE_KEY];
+    if (!raw || typeof raw !== 'object') return {};
+    return raw as CustomThemesMap;
+  } catch (e) {
+    log('custom-themes', 'readCustomThemes: storage read failed', String(e));
+    return {};
+  }
+}
+/** Persist a single entry. Merges with existing map (keyed by name). */
+export async function installCustomTheme(entry: CustomThemeEntry): Promise<void> {
+  if (typeof chrome === 'undefined' || !chrome.storage?.local) {
+    throw new Error('chrome.storage.local is not available');
+  }
+  const current = await readCustomThemes();
+  current[entry.light.name] = entry;
+  await chrome.storage.local.set({ [STORAGE_KEY]: current });
+}
+
+/** Remove an entry by name. Returns true if it was present, false otherwise. */
+export async function removeCustomTheme(name: CustomThemeName): Promise<boolean> {
+  if (typeof chrome === 'undefined' || !chrome.storage?.local) return false;
+  const current = await readCustomThemes();
+  if (!Object.prototype.hasOwnProperty.call(current, name)) return false;
+  delete current[name];
+  await chrome.storage.local.set({ [STORAGE_KEY]: current });
+  return true;
+}
+
+// --- Naming ---
+
+/** Build the kebab-case CSS id used for both storage and the
+ *  data-theme attribute. Spec § 5: lowercase + collapse any non
+ *  [a-z0-9] run to a single '-' + trim leading/trailing '-'. */
+export function kebabThemeId(name: CustomThemeName): string {
+  return name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
+
+/** `[name]` → `user-<kebab>`. Light and dark variants of the same
+ *  theme share the base id; the dark variant adds `-dark`. */
+export function userThemeId(name: CustomThemeName, variant: 'light' | 'dark' = 'light'): string {
+  const base = `${USER_THEME_PREFIX}${kebabThemeId(name)}`;
+  return variant === 'light' ? base : `${base}-dark`;
+}
+
+// --- CSS generation ---
+
+/** Generate a single :root[data-theme="user-xxx"] { 8 vars } block.
+ *  Values are emitted as-is (OKLCH / hex / color-mix all pass through
+ *  to the CSS engine). The outer block is the only place we interpolate
+ *  user-provided data into a CSS string — and we only do that for the
+ *  8 vars we explicitly validated above, with values that were checked
+ *  to be non-empty strings. */
+function emitBlock(id: string, vars: Record<ThemeVar, string>): string {
+  const lines: string[] = [`:root[data-theme="${id}"] {`];
+  for (const v of THEME_VARS) {
+    lines.push(`  --${v}: ${vars[v]};`);
+  }
+  lines.push('}');
+  return lines.join('\n');
+}
+
+/** Build the full <style id="custom-themes"> body from the map.
+ *  Returns '' for an empty map so the node is removed (cleaner DOM). */
+export function buildCustomThemesStyle(map: CustomThemesMap): string {
+  const blocks: string[] = [];
+  for (const name of Object.keys(map)) {
+    const entry = map[name];
+    if (!entry) continue;
+    const lightCv = entry.light.cssVars;
+    if (!lightCv) continue;
+    const lightId = userThemeId(name, 'light');
+    blocks.push(emitBlock(lightId, lightCv.light));
+    if (entry.dark) {
+      const darkCv = entry.dark.cssVars;
+      if (!darkCv) continue;
+      const darkId = userThemeId(name, 'dark');
+      blocks.push(emitBlock(darkId, darkCv.dark ?? darkCv.light));
+    }
+  }
+  return blocks.join('\n\n');
+}
+
+// --- DOM injection ---
+
+/** Inject (or remove) the <style id="custom-themes"> node. Safe to
+ *  call multiple times — the second call replaces the previous body.
+ *  No-op outside a DOM environment (e.g. unit tests without jsdom). */
+export function injectCustomThemesStyle(cssBody: string): void {
+  if (typeof document === 'undefined') return;
+  let style = document.getElementById(STYLE_ID) as HTMLStyleElement | null;
+  if (!cssBody) {
+    if (style) style.remove();
+    return;
+  }
+  if (!style) {
+    style = document.createElement('style');
+    style.id = STYLE_ID;
+    // Append to head — must be after globals.css (which is the
+    // first <link> in <head>), otherwise our selectors lose the
+    // specificity race. With raw textContent + last position in
+    // <head> we always win over <link> stylesheets.
+    document.head.appendChild(style);
+  }
+  style.textContent = cssBody;
+}
+
+/** Top-level entry: read storage → generate CSS → inject. Called
+ *  once on newtab / options / popup startup. */
+export async function applyCustomThemes(): Promise<void> {
+  const map = await readCustomThemes();
+  injectCustomThemesStyle(buildCustomThemesStyle(map));
+}
+
+// --- Listing ---
+
+/** Drop-in replacement for listThemes() that also surfaces custom
+ *  themes. Used by the settings panel to populate the dropdown.
+ *  Custom themes appear AFTER built-in themes in insertion order. */
+export type ThemeListEntry = {
+  value: string;
+  label: string;
+  isCustom: boolean;
+};
+
+export async function listAllThemes(
+  builtIn: string[],
+  builtInLabels: Readonly<Record<string, string>>,
+): Promise<ThemeListEntry[]> {
+  const map = await readCustomThemes();
+  const out: ThemeListEntry[] = builtIn.map((t) => ({
+    value: t,
+    label: builtInLabels[t] ?? t,
+    isCustom: false,
+  }));
+  for (const name of Object.keys(map)) {
+    const entry = map[name];
+    if (!entry) continue;
+    out.push({ value: userThemeId(name, 'light'), label: name, isCustom: true });
+    if (entry.dark) {
+      out.push({ value: userThemeId(name, 'dark'), label: `${name} (Dark)`, isCustom: true });
+    }
+  }
+  return out;
+}

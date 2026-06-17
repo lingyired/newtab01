@@ -11,6 +11,7 @@ import { getBookmarkTree } from '../lib/chrome/bookmarks';
 import { initDebug, log, group, groupEnd } from '../lib/debug';
 import { applySettingsToDOM, installSettingsChangeListener } from '../features/settings/apply';
 import { applyTheme } from '../features/themes/switcher';
+import { applyCustomThemes } from '../features/themes/custom-themes';
 import { parseSplitParams, renderSplitView } from '../features/split/split-view';
 
 /** Initialize the new tab page */
@@ -35,7 +36,14 @@ export async function initApp(): Promise<void> {
     await initSettings();
     log('init', 'settings initialized');
 
-    // 1a. Listen for chrome.storage.onChanged so other tabs (or the popup)
+    // 1a. Inject any custom themes the user has previously imported via
+    // the settings panel (tweakcn JSON paste). Must happen BEFORE
+    // applyTheme() so the [data-theme="user-xxx"] selectors exist in
+    // <head> when the data-theme attribute is set.
+    await applyCustomThemes();
+    log('init', 'custom themes applied');
+
+    // 1b. Listen for chrome.storage.onChanged so other tabs (or the popup)
     // can update settings live here. applySettingsToDOM() is re-run on each
     // change, and settings-panel edits are also picked up because they
     // write through the same setSync path that fires the listener.

@@ -2,7 +2,7 @@
 // change notification. Used by options/app.ts, newtab/settings-panel.ts and
 // any future surface that needs to enumerate or apply themes.
 //
-// Adding a new theme (e.g. one copied from tweakcn):
+// Adding a new BUILT-IN theme (e.g. one copied from tweakcn):
 //   1. Append its id to THEMES below.
 //   2. Add a new file under styles/themes/ with the format
 //      `:root[data-theme="<id>"] { 8 shadcn variables }`. The 6 `--newtab-*`
@@ -11,10 +11,17 @@
 //   3. Add the file to the @import list at the top of styles/globals.css.
 //   4. Add a Chinese label in settings-panel.ts's THEME_LABELS map (English
 //      id is the fallback if no label is provided).
-// See docs/themes-from-tweakcn.md for a tweakcn-specific walkthrough.
+//   5. (Once runtime import lands) see docs/themes-from-tweakcn.md —
+//      prefer the import flow over adding a built-in.
+//
+// RUNTIME-IMPORTED themes (tweakcn JSON pasted in settings) are not in
+// this list — they live in chrome.storage.local and are merged into the
+// dropdown at render time via listAllThemes(). See
+// docs/superpowers/specs/2026-06-17-runtime-theme-import-design.md.
 
 import { getSetting } from '../../lib/storage/settings';
 import { log } from '../../lib/debug';
+import { listAllThemes, type ThemeListEntry } from './custom-themes';
 
 /**
  * Canonical list of built-in themes. Order here drives insertion order; the
@@ -46,9 +53,21 @@ export type ThemeId = (typeof THEMES)[number];
 /** Subscribe here to react to theme application (e.g. re-render widgets). */
 const listeners = new Set<(theme: string) => void>();
 
-/** Sorted list of available theme identifiers. */
+/** Sorted list of available BUILT-IN theme identifiers. */
 export function listThemes(): string[] {
   return [...THEMES].sort();
+}
+
+/** Async — returns built-in + custom themes merged, with labels and a
+ *  flag distinguishing the two. Use this from any UI that needs to
+ *  enumerate themes for the user (settings dropdown, etc.).
+ *
+ *  labels: a map of id → display label. Only used for built-ins.
+ *  Pass THEME_LABELS from settings-panel.ts. */
+export async function listAllThemesWithLabels(
+  labels: Readonly<Record<string, string>>,
+): Promise<ThemeListEntry[]> {
+  return listAllThemes([...THEMES], labels);
 }
 
 /**

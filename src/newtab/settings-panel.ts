@@ -2,7 +2,15 @@
 
 import { getSettings, getSetting, updateSetting, updateSettings } from '../lib/storage/settings';
 import type { Settings } from '../features/bookmarks/types';
-import { applyTheme, listThemes, resolveCssColor } from '../features/themes/switcher';
+import { applyTheme, listAllThemesWithLabels, resolveCssColor } from '../features/themes/switcher';
+import {
+  buildCustomThemesStyle,
+  injectCustomThemesStyle,
+  installCustomTheme,
+  readCustomThemes,
+  removeCustomTheme,
+  validateThemeJson,
+} from '../features/themes/custom-themes';
 import { applySettingChange, applyUserColorOverride } from '../features/settings/apply';
 import * as debug from '../lib/debug';
 import { renderColumns } from '../features/bookmarks/board';
@@ -251,7 +259,18 @@ function renderContent(container: HTMLElement): void {
       container.appendChild(renderLayoutTab());
       break;
     case 'appearance':
-      container.appendChild(renderAppearanceTab());
+      // renderAppearanceTab is async because it reads chrome.storage.local
+      // for the custom themes list. We render a placeholder synchronously,
+      // then swap the children in once the async work resolves — this keeps
+      // the rest of the panel responsive.
+      container.appendChild(renderAppearanceTabSyncPlaceholder());
+      void renderAppearanceTab().then((content) => {
+        // Only swap if the user hasn't navigated away in the meantime.
+        if (currentTab === 'appearance' && container.firstChild) {
+          container.textContent = '';
+          container.appendChild(content);
+        }
+      });
       break;
     case 'features':
       container.appendChild(renderFeaturesTab());
@@ -260,6 +279,13 @@ function renderContent(container: HTMLElement): void {
       container.appendChild(renderAdvancedTab());
       break;
   }
+}
+
+/** Empty shell rendered immediately when the user opens the appearance
+ *  tab, replaced by the real content once listAllThemesWithLabels
+ *  resolves. Avoids a flash of unstyled dropdown options. */
+function renderAppearanceTabSyncPlaceholder(): HTMLElement {
+  return el('div', 'sp-tab-content sp-tab-content--loading');
 }
 
 // --- Setting row helpers ---
@@ -549,11 +575,12 @@ function renderLayoutTab(): HTMLElement {
   return container;
 }
 
-function renderAppearanceTab(): HTMLElement {
+async function renderAppearanceTab(): Promise<HTMLElement> {
   const container = el('div', 'sp-tab-content');
 
-  const themeOptions = listThemes().map((t) => ({ value: t, label: THEME_LABELS[t] ?? t }));
-  container.appendChild(createRow('主题', createSelectInput('theme', themeOptions), 'theme', '切换新标签页的整体配色主题。'));
+  const allThemes = await listAllThemesWithLabels(THEME_LABELS);
+  const themeOptions = allThemes.map((t) => ({ value: t.value, label: t.label }));
+  container.appendChild(createRow('主题', createSelectInput('theme', themeOptions), 'theme', '切换新标签页的整体配色主题。自定义主题会出现在内置主题之后。'));
   container.appendChild(createRow('字体', createTextInput('font'), 'font', '书签链接使用的字体名称，例如 "PingFang SC"、Inter、Arial。'));
   container.appendChild(createRow('字号', createNumberInput('fontSize'), 'fontSize', '书签链接的字号（单位：px）。'));
   container.appendChild(createRow('字重', createNumberInput('fontWeight'), 'fontWeight', '书签链接的字重，常用值：400 正常、500 中等、600 半粗、700 粗体。'));
@@ -569,7 +596,200 @@ function renderAppearanceTab(): HTMLElement {
   container.appendChild(createRow('宽度', createNumberInput('width'), 'width', '新标签页主体区域的整体宽度（自动缩放时为百分比，否则为像素）。'));
   container.appendChild(createRow('水平位置', createNumberInput('hPos'), 'hPos', '主体区域在窗口内的水平位置比例，0 偏左、1 居中、2 偏右。'));
 
+  // --- Custom theme import (runtime tweakcn JSON paste) ---
+  container.appendChild(buildCustomThemeImportSection());
+
+  // --- Installed custom themes list ---
+  container.appendChild(await buildCustomThemeListSection());
+
   return container;
+}
+
+/** Build the "Import custom theme" section: textarea + Apply button +
+ *  status message. The section itself is a static shell; the handler
+ *  is bound lazily after render so it can re-render the tab on success. */
+function buildCustomThemeImportSection(): HTMLElement {
+  const section = el('section', 'sp-custom-import');
+  const heading = el('h3', 'sp-custom-heading');
+  heading.textContent = '导入自定义主题';
+  section.appendChild(heading);
+
+  const hint = el('p', 'sp-hint');
+  hint.textContent =
+    '把 tweakcn 主题的 JSON 粘贴到下方文本框，点击「应用」即可立即安装（持久保存到本地）。';
+  section.appendChild(hint);
+
+  const textarea = document.createElement('textarea');
+  textarea.id = 'sp-custom-theme-json';
+  textarea.rows = 8;
+  textarea.spellcheck = false;
+  textarea.placeholder =
+    '{ "$schema": "https://ui.shadcn.com/schema/registry-item.json", "name": "...", "type": "registry:style", "cssVars": { "theme": {...}, "light": {...}, "dark": {...} } }';
+  section.appendChild(textarea);
+
+  const actions = el('div', 'sp-actions');
+  const apply = document.createElement('button');
+  apply.type = 'button';
+  apply.id = 'sp-custom-theme-apply';
+  apply.className = 'sp-btn-primary';
+  apply.textContent = '应用';
+  actions.appendChild(apply);
+  section.appendChild(actions);
+
+  const status = el('div', 'sp-status');
+  status.id = 'sp-custom-theme-status';
+  status.setAttribute('role', 'status');
+  status.setAttribute('aria-live', 'polite');
+  section.appendChild(status);
+
+  // Wire up the Apply button. We re-render the appearance tab after
+  // every successful install/delete so the dropdown + list stay in sync.
+  apply.addEventListener('click', async () => {
+    const raw = textarea.value.trim();
+    if (!raw) {
+      setCustomThemeStatus(status, 'error', '请先粘贴 JSON');
+      return;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(raw);
+    } catch (e) {
+      setCustomThemeStatus(status, 'error', `JSON 解析失败: ${(e as Error).message}`);
+      return;
+    }
+    const existing = await readCustomThemes();
+    const result = validateThemeJson(parsed, existing);
+    if (!result.ok) {
+      setCustomThemeStatus(status, 'error', result.error);
+      return;
+    }
+    try {
+      await installCustomTheme(result.entry);
+    } catch (e) {
+      setCustomThemeStatus(
+        status,
+        'error',
+        `保存失败: ${(e as Error).message}（可能 local 存储已满）`,
+      );
+      return;
+    }
+    // Re-inject the <style id="custom-themes"> so the new theme is
+    // available immediately without reloading the tab.
+    const map = await readCustomThemes();
+    injectCustomThemesStyle(buildCustomThemesStyle(map));
+
+    // If the current theme is the one we just installed (or its dark
+    // sibling), re-apply so the palette refreshes.
+    const currentTheme = String(getSetting('theme'));
+    const lightId = `user-${result.entry.light.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+    const darkId = `${lightId}-dark`;
+    if (currentTheme === lightId || currentTheme === darkId) {
+      applyTheme(currentTheme);
+    }
+
+    // Clear textarea and refresh the appearance tab.
+    textarea.value = '';
+    const successMsg = result.isUpdate
+      ? `✓ 已更新 "${result.entry.light.name}"`
+      : `✓ 已安装 "${result.entry.light.name}"${result.entry.dark ? '（含深色变体）' : '（仅浅色）'}`;
+    if (result.warning) {
+      setCustomThemeStatus(status, 'warning', `${successMsg}\n⚠ ${result.warning}`);
+    } else {
+      setCustomThemeStatus(status, 'success', successMsg);
+    }
+    rerenderAppearanceTab();
+  });
+
+  return section;
+}
+
+/** Build the "Installed custom themes" list. One <li> per installed
+ *  name with a delete button. Empty state shown when no custom
+ *  themes are installed. */
+async function buildCustomThemeListSection(): Promise<HTMLElement> {
+  const section = el('section', 'sp-custom-list');
+  const heading = el('h3', 'sp-custom-heading');
+  heading.textContent = '已安装的自定义主题';
+  section.appendChild(heading);
+
+  const map = await readCustomThemes();
+  const names = Object.keys(map);
+
+  if (names.length === 0) {
+    const empty = el('div', 'sp-empty');
+    empty.textContent = '尚未安装自定义主题。';
+    section.appendChild(empty);
+    return section;
+  }
+
+  const ul = document.createElement('ul');
+  ul.id = 'sp-custom-theme-list';
+  for (const name of names) {
+    const entry = map[name];
+    if (!entry) continue;
+    const li = document.createElement('li');
+
+    const nameSpan = el('span', 'sp-custom-name');
+    nameSpan.textContent = name;
+    li.appendChild(nameSpan);
+
+    const meta = el('span', 'sp-custom-meta');
+    const date = new Date(entry.installedAt);
+    const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    meta.textContent = `安装于 ${dateStr} · ${entry.dark ? 'light + dark' : 'light only'}`;
+    li.appendChild(meta);
+
+    const del = document.createElement('button');
+    del.type = 'button';
+    del.className = 'sp-custom-delete';
+    del.setAttribute('aria-label', `Delete ${name}`);
+    del.textContent = '删除';
+    del.addEventListener('click', async () => {
+      const wasCurrent =
+        String(getSetting('theme')).startsWith('user-') &&
+        (String(getSetting('theme')) === deriveLightId(name) ||
+          String(getSetting('theme')) === deriveLightId(name) + '-dark');
+      await removeCustomTheme(name);
+      const fresh = await readCustomThemes();
+      injectCustomThemesStyle(buildCustomThemesStyle(fresh));
+      if (wasCurrent) {
+        applyTheme('default');
+        updateSetting('theme', 'default').catch((e) => debug.warn('settings', e));
+      }
+      rerenderAppearanceTab();
+    });
+    li.appendChild(del);
+
+    ul.appendChild(li);
+  }
+  section.appendChild(ul);
+  return section;
+}
+
+/** Mirrors the kebab logic in custom-themes.ts. Duplicated here to
+ *  avoid an async round-trip when computing the current-theme check
+ *  on a click handler — the logic is a one-liner and the source is
+ *  documented in the canonical kebabThemeId() above. */
+function deriveLightId(name: string): string {
+  return `user-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+}
+
+/** Re-render the appearance tab in place after a custom-theme install
+ *  or delete, so the dropdown + list reflect the new state. */
+function rerenderAppearanceTab(): void {
+  const content = document.getElementById('sp-content');
+  if (!content) return;
+  renderContent(content);
+}
+
+function setCustomThemeStatus(
+  el: HTMLElement,
+  kind: 'success' | 'warning' | 'error',
+  message: string,
+): void {
+  el.textContent = message;
+  el.classList.remove('sp-status--success', 'sp-status--warning', 'sp-status--error');
+  el.classList.add(`sp-status--${kind}`);
 }
 
 function renderFeaturesTab(): HTMLElement {

@@ -5,6 +5,23 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.41] - 2026-06-18
+
+### Features
+- **运行时主题导入 (runtime theme import)**：用户可以在 newtab 设置面板 → 外观 tab 把 tweakcn 主题 JSON 直接粘贴进文本框，点击「应用」即可立即安装并持久化。无需 build、无需修改 switcher.ts、无需手动添加 CSS 文件。
+  - 新文件 `src/features/themes/custom-themes.ts`（约 350 行）：validate + storage CRUD + CSS 生成 + DOM 注入
+  - `chrome.storage.local` 存 `customThemes` map，key 为 JSON 的 `name` 字段
+  - 启动时调 `applyCustomThemes()`，在 `applyTheme()` 之前注入 `<style id="custom-themes">` 到 `<head>`
+  - 严格校验：必须 `type === "registry:style"` + 8 个 shadcn 变量齐备
+  - 重复粘贴同名 → 覆盖更新（保留 `installedAt`、更新 `updatedAt`）
+  - 缺少 `cssVars.dark` → 黄色警告 + 只生成 light 变体
+  - 列表 UI：显示已安装的自定义主题（名称 + 安装日期 + light/dark 状态 + 删除按钮）
+  - 删除当前 active 的 custom 主题 → 自动 fallback 到 `default` 主题
+
+### Notes
+- 实现 spec 见 `docs/superpowers/specs/2026-06-17-runtime-theme-import-design.md`
+- 长期方向：移除全部内置主题，全部使用 tweakcn 导入（本期不动内置）
+
 ## [0.2.40] - 2026-06-18
 
 ### Features

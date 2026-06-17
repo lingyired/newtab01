@@ -799,3 +799,136 @@
 .sp-btn:hover {
   background-color: var(--muted);
 }
+
+/* Custom theme import section — tweakcn JSON paste UI.
+ * Lives at the bottom of the appearance tab. Mirrors the sp-* class
+ * vocabulary so it inherits panel spacing/typography. */
+.sp-custom-import,
+.sp-custom-list {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.sp-custom-heading {
+  margin: 0 0 8px;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.sp-hint {
+  margin: 0 0 10px;
+  font-size: 1.15rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+#sp-custom-theme-json {
+  width: 100%;
+  min-height: 140px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--muted);
+  color: var(--foreground);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.1rem;
+  line-height: 1.5;
+  resize: vertical;
+  box-sizing: border-box;
+}
+
+#sp-custom-theme-json:focus {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.sp-btn-primary {
+  padding: 6px 16px;
+  border: 1px solid var(--primary);
+  border-radius: 6px;
+  background-color: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 1.2rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+
+.sp-btn-primary:hover {
+  opacity: 0.85;
+}
+
+.sp-status {
+  min-height: 1.6em;
+  margin-top: 8px;
+  font-size: 1.15rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.sp-status--success {
+  color: color-mix(in srgb, var(--primary) 80%, black);
+}
+
+.sp-status--warning {
+  color: color-mix(in srgb, var(--ring) 80%, black);
+}
+
+.sp-status--error {
+  color: color-mix(in srgb, var(--foreground) 60%, #d4183d);
+}
+
+#sp-custom-theme-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+#sp-custom-theme-list li {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.sp-custom-name {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.sp-custom-meta {
+  flex: 1;
+  font-size: 1.1rem;
+  color: var(--muted-foreground);
+}
+
+.sp-custom-delete {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: background-color 0.1s;
+}
+
+.sp-custom-delete:hover {
+  background-color: var(--muted);
+}
+
+.sp-empty {
+  font-size: 1.15rem;
+  color: var(--muted-foreground);
+  font-style: italic;
+  padding: 8px 0;
+}
+
+/* Loading placeholder for the appearance tab while listAllThemes resolves. */
+.sp-tab-content--loading {
+  min-height: 200px;
+}
