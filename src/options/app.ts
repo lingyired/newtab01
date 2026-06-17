@@ -1,11 +1,16 @@
 // Options page application entry
-import { getSync, setSync } from '../lib/storage';
-import { defaultSettings, themeList, type AppSettings } from '../lib/settings';
+// Uses the unified settings store (src/lib/storage/settings.ts) — getSettings +
+// updateSetting. All chrome.storage.sync writes go through the canonical
+// `settings` object; per-key writes are no longer used.
+
+import { getSettings, getSetting, updateSetting } from '../lib/storage/settings';
+import type { Settings } from '../features/bookmarks/types';
 
 type OptionsTab = 'layout' | 'appearance' | 'features' | 'advanced';
 
+const THEME_LIST = ['default', 'slate', 'rose', 'dark'] as const;
+
 let currentTab: OptionsTab = 'layout';
-let settings: AppSettings = { ...defaultSettings };
 
 function el(tag: string, className?: string): HTMLElement {
   const element = document.createElement(tag);
@@ -15,12 +20,12 @@ function el(tag: string, className?: string): HTMLElement {
 
 // --- Setting row helpers ---
 
-function createSettingRow(label: string, input: HTMLElement, key: keyof AppSettings): HTMLElement {
+function createSettingRow(label: string, input: HTMLElement, key: keyof Settings): HTMLElement {
   const row = el('div', 'opt-row');
 
   const labelEl = el('label', 'opt-label');
   labelEl.textContent = label;
-  labelEl.setAttribute('for', `opt-${key}`);
+  labelEl.setAttribute('for', `opt-${String(key)}`);
 
   const inputWrap = el('div', 'opt-input');
 
@@ -29,10 +34,11 @@ function createSettingRow(label: string, input: HTMLElement, key: keyof AppSetti
   revertBtn.title = 'Revert to default';
   revertBtn.textContent = '↩';
   revertBtn.addEventListener('click', () => {
-    const defaultVal = defaultSettings[key];
+    const defaults = getDefaults();
+    const defaultVal = defaults[key];
     if (input instanceof HTMLInputElement) {
       if (input.type === 'checkbox') {
-        input.checked = defaultVal as boolean;
+        input.checked = Number(defaultVal) !== 0;
       } else {
         input.value = String(defaultVal);
       }
@@ -53,33 +59,33 @@ function createSettingRow(label: string, input: HTMLElement, key: keyof AppSetti
   return row;
 }
 
-function saveSetting(key: keyof AppSettings): void {
-  const input = document.getElementById(`opt-${key}`);
+function saveSetting(key: keyof Settings): void {
+  const input = document.getElementById(`opt-${String(key)}`);
   if (!input) return;
 
-  let value: unknown;
+  let value: Settings[keyof Settings];
   if (input instanceof HTMLInputElement) {
     if (input.type === 'checkbox') {
-      value = input.checked;
+      value = (input.checked ? 1 : 0) as Settings[keyof Settings];
     } else if (input.type === 'number') {
-      value = Number(input.value);
+      value = Number(input.value) as Settings[keyof Settings];
     } else if (input.type === 'color') {
-      value = input.value;
+      value = input.value as Settings[keyof Settings];
     } else {
-      value = input.value;
+      value = input.value as Settings[keyof Settings];
     }
   } else if (input instanceof HTMLSelectElement) {
-    value = input.value;
+    value = input.value as Settings[keyof Settings];
   } else if (input instanceof HTMLTextAreaElement) {
-    value = input.value;
+    value = input.value as Settings[keyof Settings];
+  } else {
+    return;
   }
 
-  settings = { ...settings, [key]: value };
-  void setSync(key, value);
+  void updateSetting(key, value);
 
-  // Apply theme change immediately
-  if (key === 'theme') {
-    applyTheme(value as string);
+  if (key === 'theme' && typeof value === 'string') {
+    applyTheme(value);
   }
 }
 
@@ -87,56 +93,103 @@ function applyTheme(theme: string): void {
   document.documentElement.setAttribute('data-theme', theme);
 }
 
-function createNumberInput(key: keyof AppSettings): HTMLInputElement {
+function createNumberInput(key: keyof Settings): HTMLInputElement {
   const input = document.createElement('input');
   input.type = 'number';
-  input.id = `opt-${key}`;
-  input.value = String(settings[key]);
+  input.id = `opt-${String(key)}`;
+  input.value = String(getSetting(key));
   input.addEventListener('change', () => saveSetting(key));
   return input;
 }
 
-function createTextInput(key: keyof AppSettings): HTMLInputElement {
+function createTextInput(key: keyof Settings): HTMLInputElement {
   const input = document.createElement('input');
   input.type = 'text';
-  input.id = `opt-${key}`;
-  input.value = String(settings[key]);
+  input.id = `opt-${String(key)}`;
+  input.value = String(getSetting(key));
   input.addEventListener('change', () => saveSetting(key));
   return input;
 }
 
-function createCheckboxInput(key: keyof AppSettings): HTMLInputElement {
+function createCheckboxInput(key: keyof Settings): HTMLInputElement {
   const input = document.createElement('input');
   input.type = 'checkbox';
-  input.id = `opt-${key}`;
-  input.checked = settings[key] as boolean;
+  input.id = `opt-${String(key)}`;
+  input.checked = Number(getSetting(key)) !== 0;
   input.addEventListener('change', () => saveSetting(key));
   return input;
 }
 
-function createColorInput(key: keyof AppSettings): HTMLInputElement {
+function createColorInput(key: keyof Settings): HTMLInputElement {
   const input = document.createElement('input');
   input.type = 'color';
-  input.id = `opt-${key}`;
-  input.value = String(settings[key]);
+  input.id = `opt-${String(key)}`;
+  input.value = String(getSetting(key));
   input.addEventListener('change', () => saveSetting(key));
   return input;
 }
 
-function createSelectInput(key: keyof AppSettings, options: { value: string; label: string }[]): HTMLSelectElement {
+function createSelectInput(key: keyof Settings, options: { value: string; label: string }[]): HTMLSelectElement {
   const select = document.createElement('select');
-  select.id = `opt-${key}`;
+  select.id = `opt-${String(key)}`;
+  const current = String(getSetting(key));
   for (const opt of options) {
     const option = document.createElement('option');
     option.value = opt.value;
     option.textContent = opt.label;
-    if (String(settings[key]) === opt.value) {
+    if (current === opt.value) {
       option.selected = true;
     }
     select.appendChild(option);
   }
   select.addEventListener('change', () => saveSetting(key));
   return select;
+}
+
+// --- Defaults (mirror of canonical Settings defaults) ---
+
+function getDefaults(): Settings {
+  return {
+    font: 'Sans-serif',
+    fontSize: 18,
+    fontWeight: 400,
+    theme: 'default',
+    fontColor: '#555555',
+    backgroundColor: '#ffffff',
+    backgroundImage: '',
+    highlightColor: '#e4f4ff',
+    highlightFontColor: '#000000',
+    shadowColor: '#57b0ff',
+    shadowBlur: 1,
+    highlightRound: 1,
+    fade: 1,
+    spacing: 1,
+    width: 1,
+    hPos: 1,
+    vMargin: 1,
+    slide: 1,
+    hideOptions: 0,
+    lock: 0,
+    showTop: 1,
+    showApps: 1,
+    showRecent: 1,
+    showClosed: 1,
+    showDevices: 1,
+    showRoot: 1,
+    showSearch: 1,
+    newtab: 0,
+    rememberOpen: 1,
+    autoClose: 0,
+    autoScale: 1,
+    css: '',
+    numberTop: 10,
+    numberClosed: 10,
+    numberRecent: 10,
+    lockColumns: 0,
+    columnWidth: 'auto',
+    align: 'left',
+    debug: 0,
+  };
 }
 
 // --- Tab content renderers ---
@@ -153,7 +206,7 @@ function renderLayoutTab(): HTMLElement {
     { value: 'right', label: 'Right' },
   ]), 'align'));
   container.appendChild(createSettingRow('Lock Columns', createCheckboxInput('lockColumns'), 'lockColumns'));
-  container.appendChild(createSettingRow('Show Top Level', createCheckboxInput('showTopLevel'), 'showTopLevel'));
+  container.appendChild(createSettingRow('Show Top Level', createCheckboxInput('showTop'), 'showTop'));
   container.appendChild(createSettingRow('Auto Scale', createCheckboxInput('autoScale'), 'autoScale'));
 
   return container;
@@ -162,10 +215,10 @@ function renderLayoutTab(): HTMLElement {
 function renderAppearanceTab(): HTMLElement {
   const container = el('div', 'opt-tab-content');
 
-  const themeOptions = themeList.map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }));
+  const themeOptions = THEME_LIST.map((t) => ({ value: t, label: t.charAt(0).toUpperCase() + t.slice(1) }));
   container.appendChild(createSettingRow('Theme', createSelectInput('theme', themeOptions), 'theme'));
   container.appendChild(createSettingRow('Font', createTextInput('font'), 'font'));
-  container.appendChild(createSettingRow('Text Color', createColorInput('textColor'), 'textColor'));
+  container.appendChild(createSettingRow('Text Color', createColorInput('fontColor'), 'fontColor'));
   container.appendChild(createSettingRow('Background Color', createColorInput('backgroundColor'), 'backgroundColor'));
 
   // Background image - file input
@@ -175,24 +228,24 @@ function renderAppearanceTab(): HTMLElement {
   bgInput.accept = 'image/*';
   bgInput.addEventListener('change', () => {
     const file = bgInput.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const dataUrl = reader.result as string;
-        settings = { ...settings, backgroundImage: dataUrl };
-        void setSync('backgroundImage', dataUrl);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const dataUrl = String(reader.result ?? '');
+      if (dataUrl) {
+        void updateSetting('backgroundImage', dataUrl);
+      }
+    };
+    reader.readAsDataURL(file);
   });
   container.appendChild(createSettingRow('Background Image', bgInput, 'backgroundImage'));
 
   container.appendChild(createSettingRow('Highlight Color', createColorInput('highlightColor'), 'highlightColor'));
-  container.appendChild(createSettingRow('Highlight Text Color', createColorInput('highlightTextColor'), 'highlightTextColor'));
+  container.appendChild(createSettingRow('Highlight Text Color', createColorInput('highlightFontColor'), 'highlightFontColor'));
   container.appendChild(createSettingRow('Shadow Blur', createNumberInput('shadowBlur'), 'shadowBlur'));
   container.appendChild(createSettingRow('Highlight Round', createNumberInput('highlightRound'), 'highlightRound'));
-  container.appendChild(createSettingRow('Fade Duration (ms)', createNumberInput('fadeMs'), 'fadeMs'));
-  container.appendChild(createSettingRow('Slide Duration (ms)', createNumberInput('slideMs'), 'slideMs'));
+  container.appendChild(createSettingRow('Fade (scale 0–2)', createNumberInput('fade'), 'fade'));
+  container.appendChild(createSettingRow('Slide (scale 0–2)', createNumberInput('slide'), 'slide'));
 
   return container;
 }
@@ -203,13 +256,13 @@ function renderFeaturesTab(): HTMLElement {
   container.appendChild(createSettingRow('Hide Options Button', createCheckboxInput('hideOptions'), 'hideOptions'));
   container.appendChild(createSettingRow('Number of Top Sites', createNumberInput('numberTop'), 'numberTop'));
   container.appendChild(createSettingRow('Number of Recent', createNumberInput('numberRecent'), 'numberRecent'));
-  container.appendChild(createSettingRow('Show Other Devices', createCheckboxInput('showOtherDevices'), 'showOtherDevices'));
-  container.appendChild(createSettingRow('Show Search Bar', createCheckboxInput('showSearchBar'), 'showSearchBar'));
-  container.appendChild(createSettingRow('Open in New Tab', createSelectInput('openInNewTab', [
-    { value: 'same', label: 'Same Tab' },
-    { value: 'foreground', label: 'New Foreground Tab' },
-    { value: 'background', label: 'New Background Tab' },
-  ]), 'openInNewTab'));
+  container.appendChild(createSettingRow('Show Other Devices', createCheckboxInput('showDevices'), 'showDevices'));
+  container.appendChild(createSettingRow('Show Search Bar', createCheckboxInput('showSearch'), 'showSearch'));
+  container.appendChild(createSettingRow('Open in New Tab', createSelectInput('newtab', [
+    { value: '0', label: 'Same Tab' },
+    { value: '1', label: 'New Foreground Tab' },
+    { value: '2', label: 'New Background Tab' },
+  ]), 'newtab'));
 
   return container;
 }
@@ -219,12 +272,12 @@ function renderAdvancedTab(): HTMLElement {
 
   // Custom CSS textarea
   const cssTextarea = document.createElement('textarea');
-  cssTextarea.id = 'opt-customCSS';
+  cssTextarea.id = 'opt-css';
   cssTextarea.className = 'opt-textarea';
-  cssTextarea.value = settings.customCSS;
+  cssTextarea.value = String(getSetting('css'));
   cssTextarea.placeholder = '/* Your custom CSS here */';
-  cssTextarea.addEventListener('change', () => saveSetting('customCSS'));
-  container.appendChild(createSettingRow('Custom CSS', cssTextarea, 'customCSS'));
+  cssTextarea.addEventListener('change', () => saveSetting('css'));
+  container.appendChild(createSettingRow('Custom CSS', cssTextarea, 'css'));
 
   // Import / Export
   const actionsRow = el('div', 'opt-actions');
@@ -243,14 +296,13 @@ function renderAdvancedTab(): HTMLElement {
       const reader = new FileReader();
       reader.onload = () => {
         try {
-          const imported = JSON.parse(reader.result as string) as Partial<AppSettings>;
-          settings = { ...defaultSettings, ...imported };
-          // Save all settings
-          const entries = Object.entries(settings) as [keyof AppSettings, unknown][];
+          const imported = JSON.parse(String(reader.result ?? '{}')) as Partial<Settings>;
+          const defaults = getDefaults();
+          const entries = Object.entries({ ...defaults, ...imported }) as [keyof Settings, Settings[keyof Settings]][];
           for (const [k, v] of entries) {
-            void setSync(k, v);
+            void updateSetting(k, v);
           }
-          applyTheme(settings.theme);
+          applyTheme(String(getSetting('theme')));
           renderContent();
         } catch {
           alert('Invalid settings file');
@@ -266,7 +318,7 @@ function renderAdvancedTab(): HTMLElement {
   exportBtn.className = 'opt-btn';
   exportBtn.textContent = 'Export Settings';
   exportBtn.addEventListener('click', () => {
-    const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+    const blob = new Blob([JSON.stringify(getSettings(), null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -333,23 +385,10 @@ function renderNav(): void {
   }
 }
 
-async function loadSettings(): Promise<AppSettings> {
-  const result = { ...defaultSettings } as Record<string, unknown>;
-  const keys = Object.keys(defaultSettings) as (keyof AppSettings)[];
-  for (const key of keys) {
-    const val = await getSync<unknown>(key);
-    if (val !== undefined) {
-      result[key] = val;
-    }
-  }
-  return result as unknown as AppSettings;
-}
-
 async function init(): Promise<void> {
-  settings = await loadSettings();
-  applyTheme(settings.theme);
+  applyTheme(String(getSetting('theme')));
   renderNav();
   renderContent();
 }
 
-init();
+void init();
