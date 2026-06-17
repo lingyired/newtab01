@@ -84,7 +84,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 新增 `lib/chrome/bookmarks.ts` 的 `getBookmark(id)` 包装。
 - 新增 `src/features/bookmarks/moved-out.ts` 模块。
 
-[Unreleased]: https://github.com/lingyired/newtab01/compare/v0.2.12...HEAD
+[Unreleased]: https://github.com/lingyired/newtab01/compare/v0.2.13...HEAD
+[0.2.13]: https://github.com/lingyired/newtab01/compare/v0.2.12...v0.2.13
 [0.2.12]: https://github.com/lingyired/newtab01/compare/v0.2.11...v0.2.12
 [0.2.11]: https://github.com/lingyired/newtab01/compare/v0.2.10...v0.2.11
 [0.2.10]: https://github.com/lingyired/newtab01/compare/v0.2.7...v0.2.10
