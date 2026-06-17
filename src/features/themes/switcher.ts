@@ -10,6 +10,7 @@
 //      map — the English fallback (capitalized id) is always available.
 
 import { getSetting } from '../../lib/storage/settings';
+import { log } from '../../lib/debug';
 
 /**
  * Canonical list of built-in themes. Order here drives insertion order; the
@@ -51,10 +52,7 @@ export function applyTheme(theme: string): void {
     prev = document.documentElement.getAttribute('data-theme');
     document.documentElement.setAttribute('data-theme', theme);
   }
-  // Direct console.log (not gated by debug module) so this is visible in
-  // the production build — this is the source of "theme change has no
-  // effect" reports and we need to confirm it actually fires.
-  console.log('[newtab01:theme] applyTheme', { from: prev, to: theme });
+  log('theme', 'applyTheme', { from: prev, to: theme });
   for (const cb of listeners) {
     cb(theme);
   }

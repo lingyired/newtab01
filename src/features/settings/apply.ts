@@ -7,6 +7,7 @@
 import type { Settings } from '../bookmarks/types';
 import { getSetting, replaceSettings } from '../../lib/storage/settings';
 import { applyTheme } from '../themes/switcher';
+import { log } from '../../lib/debug';
 
 const STYLE_ELEMENT_ID = 'dynamic-styles';
 const USER_CSS_ELEMENT_ID = 'user-css';
@@ -118,7 +119,7 @@ function scale(value: number, mid: number, max: number, min: number = 0): number
  */
 export function applySettingsToDOM(): void {
   const theme = String(getSetting('theme'));
-  console.log('[newtab01:apply] applySettingsToDOM', { theme });
+  log('apply', 'applySettingsToDOM', { theme });
   applyTheme(theme);
   rebuildDynamicStyles();
   rebuildUserCss();
@@ -130,7 +131,7 @@ export function applySettingsToDOM(): void {
  * updates before the dynamic-styles block is regenerated.
  */
 export function applySettingChange<K extends keyof Settings>(key: K): void {
-  console.log('[newtab01:apply] applySettingChange', { key, value: getSetting(key) });
+  log('apply', 'applySettingChange', { key, value: getSetting(key) });
   if (key === 'theme') {
     applyTheme(String(getSetting('theme')));
   }
@@ -158,12 +159,12 @@ export function installSettingsChangeListener(): void {
   // = 'newtab01.settings' (see lib/storage/index.ts and settings.ts).
   // Listening for the bare 'settings' key never matches.
   const FULL_KEY = 'newtab01.settings';
-  console.log('[newtab01:apply] installSettingsChangeListener (listening for', FULL_KEY + ')');
+  log('apply', 'installSettingsChangeListener (listening for)', FULL_KEY);
   chrome.storage.onChanged.addListener((changes, areaName) => {
-    console.log('[newtab01:apply] storage.onChanged fired', { areaName, keys: Object.keys(changes) });
+    log('apply', 'storage.onChanged fired', { areaName, keys: Object.keys(changes) });
     if (areaName !== 'sync') return;
     if (!changes[FULL_KEY]) {
-      console.log('[newtab01:apply] storage.onChanged ignored: key mismatch, expected', FULL_KEY);
+      log('apply', 'storage.onChanged ignored: key mismatch, expected', FULL_KEY);
       return;
     }
     const newValue = changes[FULL_KEY].newValue as Settings | undefined;

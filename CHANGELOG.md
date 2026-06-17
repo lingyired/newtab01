@@ -5,6 +5,12 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.25] - 2026-06-17
+
+### Changed
+- 把 0.2.24 临时加的直接 `console.log`（绕开 `lib/debug` 的 `enabled` gate）换回 `debug.log`，现在受 `?debug=1` URL override 与 dev-mode 默认 ON 控制，生产 build 默认静默。日志格式不变：`[newtab01:theme] applyTheme` / `[newtab01:apply] applySettingsToDOM` / `[newtab01:apply] applySettingChange` / `[newtab01:apply] storage.onChanged fired` / `[newtab01:settings-panel] saveSetting`。
+
+
 ## [0.2.24] - 2026-06-17
 
 ### Fixed
