@@ -110,7 +110,7 @@ export function renderFolder(node: BookmarkNode, target: HTMLElement, depth: num
     e.preventDefault();
     const items = getFolderMenuItems(node);
     if (items.length > 0) {
-      renderMenu(items, e.pageX, e.pageY);
+      renderMenu(items, e.pageX, e.pageY, header);
     }
   });
 

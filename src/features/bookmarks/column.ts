@@ -92,7 +92,7 @@ function addColumnContextMenu(target: HTMLElement, index: number): void {
     const items = getColumnMenuItems(index);
     if (items.length > 0) {
       e.preventDefault();
-      renderMenu(items, e.pageX, e.pageY);
+      renderMenu(items, e.pageX, e.pageY, target);
     }
   });
 }

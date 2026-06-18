@@ -7,9 +7,24 @@ import { openAllLinks } from './folder-actions-handler';
 /** Currently active menu element, if any */
 let activeMenu: HTMLUListElement | null = null;
 
-/** Render a popup context menu at given coordinates */
-export function renderMenu(items: (MenuItem | null)[], x: number, y: number): HTMLUListElement {
+/** Right-clicked element to highlight while the menu is open */
+let selectedTarget: HTMLElement | null = null;
+
+/** Render a popup context menu at given coordinates.
+ * `target` is the right-clicked element to highlight with `.selected`
+ * while the menu is open; class is cleared automatically on close. */
+export function renderMenu(
+  items: (MenuItem | null)[],
+  x: number,
+  y: number,
+  target?: HTMLElement,
+): HTMLUListElement {
   closeMenu();
+
+  if (target) {
+    target.classList.add('selected');
+    selectedTarget = target;
+  }
 
   const ul = document.createElement('ul');
   ul.classList.add('menu');
@@ -68,6 +83,10 @@ export function closeMenu(): void {
     activeMenu.parentNode.removeChild(activeMenu);
   }
   activeMenu = null;
+  if (selectedTarget) {
+    selectedTarget.classList.remove('selected');
+    selectedTarget = null;
+  }
   document.removeEventListener('click', onDocClick);
   document.removeEventListener('mousedown', onDocClick);
   document.removeEventListener('contextmenu', onDocClick);

@@ -5,6 +5,17 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.63] - 2026-06-18
+
+### Added
+- **右键菜单：高亮当前被作用的 item**。右键 folder header 或 column 空白区唤起 context menu 后，对应元素自动获得 `.selected` 类（folder 用 `--accent` / `--accent-foreground` + 2px `--ring` dotted 内嵌 ring；column 用 2px `--ring` dotted border 圈出整列），菜单关闭时自动清除——鼠标移到菜单上后用户仍能看清 menu 作用于哪个 item。
+  - `src/features/bookmarks/context-menu.ts` 新增模块级 `selectedTarget` 引用；`renderMenu(items, x, y, target?)` 第 4 参数为可选目标元素，调用方传入时自动加 class；`closeMenu()` 同步清除（被 click / mousedown / contextmenu / ESC 四条路径覆盖，调用方无需手动清理）。
+  - `src/features/bookmarks/folder.ts` 右键 handler 把 folder header 作为第 4 参数传入；`src/features/bookmarks/column.ts` 同样把 column div 作为第 4 参数传入——v0.2.62 暂定仅 folder 高亮，本版本按用户反馈扩展到 column，整列视觉锚点更明确。
+  - `styles/newtab.css` 新增 `#main a.selected` / `.column.selected` 规则：folder 复用 `--newtab-link-color-hover` / `--newtab-link-bg-hover`（主题 escape hatch 优先）+ `outline: 2px dotted var(--ring)` 内嵌 dotted ring；column 用 `border: 2px dotted var(--ring)` 圈出整列（column 已有 `box-sizing: border-box`，加 border 不影响布局）。dotted 风格主题一致、视觉克制不抢戏。5 套主题（Codex / MX-Brutalist / Cyberpunk / AstroVista / default）自动适配。
+
+### Changed
+- `manifest.json` 版本号同步 bump 到 0.2.63（之前只 bump 了 `package.json`，遗漏 `manifest.json` 导致 dist 里的版本号还是 0.2.62）。
+
 ## [0.2.62] - 2026-06-19
 
 ### Changed

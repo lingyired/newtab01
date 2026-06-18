@@ -114,6 +114,20 @@
   background-color: var(--newtab-link-bg-hover, var(--accent));
 }
 
+#main a.selected,
+#main a.selected:hover {
+  color: var(--newtab-link-color-hover, var(--accent-foreground));
+  background-color: var(--newtab-link-bg-hover, var(--accent));
+  outline: 2px dotted var(--ring);
+  outline-offset: -2px;
+}
+
+.column.selected {
+  border: 2px dotted var(--ring);
+  border-radius: calc(var(--radius) - 2px);
+  transition: background-color 0.1s;
+}
+
 #main a:active {
   /* v0.2.53: shadcn button has no :active override (the click is
    * so brief that :hover covers it). Keep the default state's
