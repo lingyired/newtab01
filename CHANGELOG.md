@@ -5,6 +5,19 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.56] - 2026-06-18
+
+### Fixed
+- **Codex 主题下 link 有"额外阴影"**（用户反馈 "codex 主题的 hover 和我们的 hover 有差异，我们明显额外多了一些阴影。这些也移除。只保留主题本身的效果"）。newtab.css `#main a` 里的 `box-shadow: var(--shadow-xs)` 在 Codex 主题下解析为：
+  - light: `0px 2px 4px 0px hsl(0 0% 0% / 0.05)`（5% 黑 drop，勉强可见）
+  - dark:  `0px 4px 8px 0px hsl(0 0% 0% / 0.25)`（25% 黑 drop，明显可见）
+  这个 drop shadow 不会因为 hover 而改变（hover 规则只改 bg / color），所以 hover 状态下 link 周围还拖着一个 4px 8px 的灰色阴影，对比 tweakcn Codex preview 里 flat 的按钮就是"额外阴影"。`:active` 同理，`:focus-visible` 的 stacked box-shadow 里也叠了一个 `var(--shadow-xs)`，focus 时 ring + drop shadow 一起出现也算"额外"。修复——给 default.css 末尾加 theme-scope rule：
+  - **`styles/themes/default.css`**: `:root[data-theme="default"] #main a, :root[data-theme="default-dark"] #main a { box-shadow: none; }` — specificity `(0, 2, 2)` 高于 `#main a` `(0, 1, 1)` 和 `#main a:hover/:active/:focus-visible` `(0, 1, 2)`，覆盖所有状态。`:focus-visible` 单独加一个 rule `box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent)` — 保留 shadcn 标准的 3px focus ring（键盘可访问性需要），去掉叠在 ring 后面的 `var(--shadow-xs)`。
+  - 其他主题（mx-brutalist / cyberpunk / astrovista）不受影响：mx-brutalist 有自己的 theme-scope rule 设 `box-shadow: var(--shadow-xs)`（brutalist 硬阴影签名），cyberpunk / astrovista 通过 `var(--shadow-xs)` 继承（neon glow / subtle drop）。
+
+### Architecture
+- Codex 的"主题本身效果"严格定义为：hover 切 `var(--accent)` 底 + `var(--accent-foreground)` 字。box-shadow / transform / border-color 等都不算。这与 shadcn button-outline 的 hover 行为一致（只动 bg + color）。v0.2.52 把 link 对齐到 shadcn Button 时，box-shadow 默认值仍保留（影响所有主题，包括 light theme 下 5% 黑 drop），v0.2.55 补全 `--shadow-xs` 后 Codex dark 下的 25% 黑 drop 变得可见。v0.2.56 显式在 Codex 主题下关掉。
+
 ## [0.2.55] - 2026-06-18
 
 ### Fixed
