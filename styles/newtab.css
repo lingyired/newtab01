@@ -59,45 +59,76 @@
 }
 
 /* ─── Links (bookmarks + folder headers) ─── */
-#main a {
+/* v0.2.59: the `#main` is wrapped in `:where()` so the selector's
+ * specificity is (0, 0, 1) — any class on the <a> with specificity
+ * (0, 1, 0) (a single class selector) wins the cascade. This is
+ * what lets the shadcn utility classes on the link (inline-flex,
+ * items-center, gap-2, w-full, h-9, px-4, py-2, text-sm,
+ * font-medium, whitespace-nowrap, no-underline, cursor-pointer,
+ * transition-all, etc.) actually take effect on the bookmark link.
+ *
+ * Without the :where wrap, `#main a` would have specificity (1, 0, 1)
+ * and the shadcn classes wouldn't win — every property in this
+ * rule would beat the class. The :where wrap makes the rule a
+ * "fallback" for elements that DON'T have a shadcn class (folder
+ * headers, which still rely on this rule for their layout).
+ *
+ * Properties kept here (apply to folder headers; link overrides
+ * via shadcn class):
+ *   - box-sizing: border-box — global layout invariant.
+ *   - display: flex / align-items: center — folder header layout.
+ *     Link overrides to inline-flex via .inline-flex class.
+ *   - width: 100% / max-width: 100% — column fill for both.
+ *   - font-size: 1.8em / line-height: 1.4 — folder header default
+ *     font size. Link overrides to 0.875rem via .text-sm class.
+ *   - text-decoration: none / cursor: pointer / white-space: nowrap
+ *     — common to both. Link overrides text-decoration via
+ *     .no-underline (same effect).
+ *   - padding: 0.45em 0.8em 0.45em 1.2em — folder header padding
+ *     (1.2em on the left to make room for the folder icon
+ *     triangle). Link overrides to px-4 py-2 via shadcn class
+ *     (symmetric padding, no left-bias).
+ *   - transition-property / duration / timing — folder header
+ *     uses the user's var(--newtab-fade-ms) (default 200ms).
+ *     Link's transition-all (150ms) wins on specificity.
+ *
+ * Properties REMOVED (link no longer needs them, .link-text inside
+ * handles text truncation):
+ *   - overflow: hidden / text-overflow: ellipsis — moved to
+ *     .link-text. Removing overflow: hidden from the link also
+ *     prevents potential clipping of the theme's box-shadow (e.g.
+ *     brutalist's 4px hard offset shadow). */
+:where(#main) a {
   box-sizing: border-box;
   display: flex;
   align-items: center;
   width: 100%;
   max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
   font-size: 1.8em;
   line-height: 1.4;
   text-decoration: none;
   cursor: pointer;
   white-space: nowrap;
   padding: 0.45em 0.8em 0.45em 1.2em;
-  /* v0.2.58: layout + transition only. All theme-aware properties
-   * (bg, color, border, radius, box-shadow, hover bg/color,
-   * focus-visible ring) are now sourced from shadcn utility
-   * classes on the element — see styles/shadcn-utilities.css.
-   * link.ts adds the shadcn classes to each <a>:
-   *   border border-input bg-background text-foreground shadow-xs
-   *   rounded-md hover:bg-accent hover:text-accent-foreground
-   *   focus-visible:ring-stacked
-   * The shadow stack on focus-visible is the .focus-visible:ring-
-   * stacked class (defined in shadcn-utilities.css), which keeps
-   * the theme's --shadow-xs under the 3px focus ring rather than
-   * replacing it — the v0.2.52 reason: brutalist's hard offset
-   * shadow would flicker on focus if replaced.
-   *
-   * The pre-v0.2.58 --newtab-link-* var escape hatches
-   * (--newtab-link-bg, --newtab-link-border, --newtab-link-radius,
-   * --newtab-link-weight, --newtab-link-shadow,
-   * --newtab-link-shadow-active, --newtab-link-color-hover,
-   * --newtab-link-bg-hover, --newtab-link-transform-active,
-   * --newtab-link-transition-duration) are GONE. Themes only need
-   * to provide the shadcn vars; the class names + the shadcn vars
-   * are the entire contract. */
+  /* transition kept for folder headers (no shadcn class). Link
+   * uses shadcn's transition-all (150ms) which wins on
+   * specificity. */
   transition-property: color, background-color, border-color, box-shadow, transform, opacity;
   transition-duration: var(--newtab-fade-ms);
   transition-timing-function: ease-out;
+}
+
+/* v0.2.59: link has `gap-2` class for icon-to-text spacing (0.5rem).
+ * .icon's margin-right would stack on top of gap-2, doubling the
+ * spacing. Override to 0 for bookmark links. Folder icons (which
+ * DON'T have a shadcn class on the parent and don't have gap-2)
+ * keep the margin-right so the icon-to-text spacing inside a
+ * folder header is the original 0.6em. The :not(.folder) targets
+ * the bookmark link specifically — the link has no class on the
+ * <a> itself, just the icon child, so we use the absence of
+ * `.folder` to distinguish. */
+:where(#main) a:not(.folder) .icon {
+  margin-right: 0;
 }
 
 /* ─── Icons ─── */

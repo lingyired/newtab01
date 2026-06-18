@@ -5,6 +5,56 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.59] - 2026-06-18
+
+### Refactored (shadcn button class 100% coverage)
+**v0.2.58 把 `#main a` 的视觉属性切到 shadcn class，但只覆盖了 9/33 个 class**（user: "这个是 Brutalist 主题的，好像丢失不少。我再发一下他们的 button 的 class：[完整的 33-class 列表]"）。v0.2.58 漏了 `inline-flex` / `items-center` / `justify-center` / `gap-2` / `h-9` / `px-4` / `py-2` / `text-sm` / `font-medium` / `whitespace-nowrap` / `no-underline` / `cursor-pointer` / `transition-all` / `outline-none` / `focus-visible:border-ring` / `focus-visible:ring-[3px]` / `focus-visible:ring-ring/50` / `disabled:pointer-events-none` / `disabled:opacity-50` / `aria-invalid:border-destructive` / `aria-invalid:ring-destructive/20` / `dark:aria-invalid:ring-destructive/40` / `dark:border-input` / `dark:bg-input/30` / `dark:hover:bg-input/50` / `[&_svg]:pointer-events-none` / `[&_svg]:shrink-0` / `[&_svg:not([class*='size-'])]:size-4`。少任何一个，shadcn 主题切换过来都不对。
+
+v0.2.59 补全到 33/33：
+
+**新架构合约（v0.2.58 → v0.2.59 强化版）**：
+- **shadcn class 名 = 规范**。每个 class 直接消费 shadcn var（`background-color: var(--background)` / `box-shadow: var(--shadow-xs)` / `border-color: var(--input)` 等），class 名 → var 的映射写一次、永久不动。
+- **CSS 变量 = newtab.css 与主题文件之间的接口**。newtab.css 不参与视觉，只用 `:where()` 包裹 `#main a`（specificity (0,0,1)）让任何 class（(0,1,0)）胜出。
+- **newtab.css `#main a` = layout fallback**（display、padding、font-size 等基础布局）。给没有 shadcn class 的元素（folder header）兜底；有 shadcn class 的元素（bookmark link）会被 class 覆盖，shadcn 值胜出。
+- **主题文件只声明 shadcn vars**。0 翻译层、0 `--newtab-*` 链接 namespace。
+- **加新主题 = 加 `styles/themes/<name>.css` + `globals.css` @import + 主题列表注册**。0 修改 newtab.css / 0 修改 link.ts / 0 修改 topbar.ts（输入框同步换 focus-visible）。
+
+具体改动：
+- **`styles/shadcn-utilities.css`**：从 ~80 个 class 扩展到 ~110 个。
+  - **新增**（按用途分组）：
+    - Display / flex: `.inline-flex`、`.flex`、`.shrink-0`
+    - Alignment: `.items-center`、`.justify-center`
+    - Gap: `.gap-2`
+    - Sizing: `.h-9`、`.w-full`、`.max-w-full`
+    - Padding: `.px-4`、`.py-2`、`.px-3`、`.py-1`
+    - Typography: `.text-sm`、`.text-base`、`.font-medium`
+    - Whitespace / overflow / text: `.whitespace-nowrap`、`.overflow-hidden`、`.text-ellipsis`、`.no-underline`
+    - Cursor: `.cursor-pointer`
+    - Outline: `.outline-none`
+    - Disabled / aria-invalid: `.disabled:pointer-events-none`、`.disabled:opacity-50`、`.aria-invalid:border-destructive`、`.aria-invalid:ring-destructive/20`
+    - Dark mode: `.dark:border-input`、`.dark:bg-input/30`、`.dark:hover:bg-input/50`、`.dark:aria-invalid:ring-destructive/40`（用 `[data-theme$="-dark"]` 属性选择器匹配所有以 `-dark` 结尾的暗色主题，替代 Tailwind 默认的 `.dark` 父类）
+    - SVG children: `.[&_svg]:pointer-events-none`、`.[&_svg]:shrink-0`、`.[&_svg:not([class*='size-'])]:size-4`
+  - **替换**：`.focus-visible:ring-stacked`（v0.2.58 自定义，stack 而非 replace）→ 三个标准 shadcn focus class（`.focus-visible:border-ring` + `.focus-visible:ring-[3px]` + `.focus-visible:ring-ring/50`，ring REPLACE box-shadow）。Brutalist 主题的 4px 硬偏移阴影在 focus 时会被 3px 透明 ring 替换（焦点离开后恢复）—— 这就是 shadcn Button 的标准行为，用户的 "100% shadcn" 要求。
+- **`src/features/bookmarks/link.ts`**：`<a>` 元素挂的 class 从 9 个扩到 33 个（user 给的完整 shadcn Button class set）+ `w-full`（bookmark 列填充）。
+- **`src/newtab/topbar.ts`**：search input 的 `focus-visible:ring-stacked` 替换为标准 shadcn focus triple（`focus-visible:border-ring` + `focus-visible:ring-[3px]` + `focus-visible:ring-ring/50`），和 link 行为一致。
+- **`styles/newtab.css`**：
+  - `#main a` → `:where(#main) a`（specificity 从 (1,0,1) 降到 (0,0,1)，让任何 (0,1,0) 的 class 胜出）。
+  - 移除 `overflow: hidden` / `text-overflow: ellipsis`（移到 `.link-text` 内部；避免 clip 主题的 box-shadow 如 brutalist 4px 硬偏移）。
+  - **保留** `display: flex` / `align-items: center` / `width: 100%` / `font-size: 1.8em` / `line-height: 1.4` / `text-decoration: none` / `cursor: pointer` / `white-space: nowrap` / `padding: 0.45em 0.8em 0.45em 1.2em` / `transition-*`（这些给 folder header 等没有 shadcn class 的元素用；link 会被 shadcn class 覆盖，folder 保持原 layout 不变）。
+  - 新增 `:where(#main) a:not(.folder) .icon { margin-right: 0; }` —— 只针对 bookmark link 覆盖 `.icon` 的 `margin-right: 0.6em`（link 有 `gap-2` 提供 0.5rem 间距，不叠加 margin）；folder icon 保留原 margin（folder 没有 gap-2，需要 margin 提供间距）。
+
+### Architecture
+- **新约定（v0.2.59 起的强制架构）**:
+  1. **shadcn class name 本身是规范**。`.bg-background` / `.shadow-xs` / `.hover:bg-accent` / `.focus-visible:ring-[3px]` 等就是 1:1 对应 shadcn 组件 API。
+  2. **CSS 变量是 class 与主题文件之间的接口**。class 直接消费 var（`background-color: var(--background)`），不经过任何中间 var 翻译。
+  3. **newtab.css 只写 layout fallback**。`:where(#main) a` 提供 `display: flex` / `padding: 0.45em 0.8em 0.45em 1.2em` / `font-size: 1.8em` 等基础布局，给没有 shadcn class 的元素（folder header）兜底；link 元素（有 shadcn class）会被 class 覆盖，shadcn 值胜出。
+  4. **主题文件只声明 shadcn vars**（8 required + 27 design tokens + 11 surface vars）—— 不再声明 `--newtab-*` 翻译 var。
+  5. **加新主题 = 加 `styles/themes/<name>.css` + `globals.css` @import + 主题列表注册**—— 不动 newtab.css、不动 link.ts、不动 topbar.ts。
+  6. **如果某个新主题需要新形状**（如 outline button），优先考虑加 shadcn class 到 DOM；如必须用 var 表达，**先在 shadcn-utilities.css 增加新 class**，再在主题文件声明 var—— 不要直接在主题文件里写 selector rule。
+  7. **避免 box-shadow 被 clip**：主题里用 `box-shadow: var(--shadow-xs)` 时（如 brutalist 的 4px 4px 0 0 硬偏移），link 元素不要加 `overflow: hidden`（shadcn 的 `overflow-hidden` 不会 clip 自身 box-shadow，但浏览器对 `overflow: hidden` + 外部 box-shadow 的渲染不一致，最好避开）。
+  8. **dark mode variant selector**：本项目用 `:root[data-theme$="-dark"]` 父选择器匹配所有以 `-dark` 结尾的暗色主题（如 `default-dark`、`mx-brutalist-dark`），不是 Tailwind 默认的 `.dark` class。所有 `.dark:*` utility class 都已经按这个模式写。
+- **v0.2.59 build**：dist/assets/newtab-CkuB4xaQ.css 20.34 kB / 8.84 kB gzipped（v0.2.58 的 20.32 kB / 8.81 kB，只增加 20 字节 —— 因为 v0.2.58 已经把 shadcn-utilities.css 打进 shared 的 manager chunk，这次新增 class 也都加在 manager chunk 里）；dist/assets/manager-F6Eny6Dn.css 22.38 kB / 3.58 kB gzipped（v0.2.58 的 20.55 kB / 3.33 kB，增长来自 ~30 个新 shadcn utility class）；JS 体量不变。
+
 ## [0.2.58] - 2026-06-18
 
 ### Refactored (架构重构：从 var 翻译层切到 shadcn class-based approach)

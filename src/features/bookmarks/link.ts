@@ -10,24 +10,95 @@ export function renderLink(node: BookmarkNode, target: HTMLElement): HTMLLIEleme
   const li = document.createElement('li');
   const a = document.createElement('a');
 
-  // v0.2.58: shadcn utility classes (see styles/shadcn-utilities.css).
-  // These are the theme-aware properties that used to live in
-  // newtab.css #main a as `var(--newtab-link-*, ...)` fallbacks. The
-  // class names + the theme's shadcn vars (--background, --accent,
-  // --shadow-xs, etc.) are the entire contract — no per-theme CSS
-  // overrides needed in newtab.css. The composition below matches
-  // shadcn's `button-outline` class minus the layout / padding
-  // pieces that #main a handles.
+  // v0.2.59: full shadcn Button class composition. v0.2.58 covered 9
+  // classes; this is the complete 33-class set the user pulled from
+  // shadcn, plus `w-full` for the bookmark column fill. The class
+  // names + the theme's shadcn vars (--background, --accent,
+  // --shadow-xs, --ring, etc.) are the entire contract — no
+  // per-theme CSS overrides needed in newtab.css. The composition
+  // below matches shadcn's `button-outline` class verbatim except
+  // for the bookmark-specific `w-full` addition.
+  //
+  // Classes covered:
+  //   layout     inline-flex shrink-0 items-center justify-center
+  //              gap-2 w-full h-9 px-4 py-2
+  //   typography text-sm font-medium whitespace-nowrap no-underline
+  //              cursor-pointer
+  //   surface    border border-input bg-background text-foreground
+  //              shadow-xs rounded-md
+  //   hover      hover:bg-accent hover:text-accent-foreground
+  //   focus      focus-visible:border-ring focus-visible:ring-[3px]
+  //              focus-visible:ring-ring/50
+  //   disabled   disabled:pointer-events-none disabled:opacity-50
+  //   aria       aria-invalid:border-destructive
+  //              aria-invalid:ring-destructive/20
+  //              dark:aria-invalid:ring-destructive/40
+  //   dark       dark:border-input dark:bg-input/30
+  //              dark:hover:bg-input/50
+  //   misc       transition-all outline-none
+  //   svg-children
+  //              [&_svg]:pointer-events-none [&_svg]:shrink-0
+  //              [&_svg:not([class*='size-'])]:size-4
+  //
+  // The v0.2.58 `focus-visible:ring-stacked` custom class is gone —
+  // replaced by the standard shadcn `focus-visible:border-ring` +
+  // `focus-visible:ring-[3px]` + `focus-visible:ring-ring/50` triple,
+  // which REPLACES the element's box-shadow with a 3px ring at 50%
+  // opacity during keyboard focus. Brutalist's hard offset shadow
+  // is replaced by the ring on focus (the standard shadcn behavior);
+  // it returns when focus leaves.
   a.classList.add(
+    // Layout — display, flex, alignment, gap
+    'inline-flex',
+    'shrink-0',
+    'items-center',
+    'justify-center',
+    'gap-2',
+    // Sizing — bookmark-specific width + shadcn button height
+    'w-full',
+    'h-9',
+    // Padding
+    'px-4',
+    'py-2',
+    // Typography
+    'text-sm',
+    'font-medium',
+    // Whitespace / text / cursor
+    'whitespace-nowrap',
+    'no-underline',
+    'cursor-pointer',
+    // Border / background / text color
     'border',
     'border-input',
     'bg-background',
     'text-foreground',
+    // Shadow / radius
     'shadow-xs',
     'rounded-md',
+    // Hover
     'hover:bg-accent',
     'hover:text-accent-foreground',
-    'focus-visible:ring-stacked',
+    // Focus-visible (shadcn standard: border-ring + 3px ring at 50%)
+    'focus-visible:border-ring',
+    'focus-visible:ring-[3px]',
+    'focus-visible:ring-ring/50',
+    // Disabled / aria-invalid
+    'disabled:pointer-events-none',
+    'disabled:opacity-50',
+    'aria-invalid:border-destructive',
+    'aria-invalid:ring-destructive/20',
+    'dark:aria-invalid:ring-destructive/40',
+    // Dark mode
+    'dark:border-input',
+    'dark:bg-input/30',
+    'dark:hover:bg-input/50',
+    // Transition / outline
+    'transition-all',
+    'outline-none',
+    // SVG children (no-op for <img> favicons, but matches shadcn verbatim)
+    '[&_svg]:pointer-events-none',
+    '[&_svg]:shrink-0',
+    "[&_svg:not([class*='size-'])]:size-4",
   );
 
   const url = node.url;

@@ -22,11 +22,17 @@ export function createTopbar(container: HTMLElement): void {
     searchInput.id = 'search-input';
     searchInput.placeholder = 'Search bookmarks... (⌘K)';
     searchInput.classList.add('search-input');
-    // v0.2.58: shadcn utility classes (see styles/shadcn-utilities.css).
+    // v0.2.59: shadcn utility classes (see styles/shadcn-utilities.css).
     // Same contract as the link: class name + theme's shadcn vars =
-    // entire visual treatment. The composition matches shadcn's
-    // shadcn input class minus the layout / padding pieces that
-    // .search-input in newtab.css handles.
+    // entire visual treatment. v0.2.58 used the custom
+    // `focus-visible:ring-stacked` class (which stacked a 3px ring
+    // over the theme's --shadow-xs). That custom class is removed in
+    // v0.2.59 — replaced by the standard shadcn focus-visible triple
+    // (`focus-visible:border-ring` + `focus-visible:ring-[3px]` +
+    // `focus-visible:ring-ring/50`) to match the link's focus
+    // behavior and shadcn standard. Box-shadow is REPLACED by the
+    // ring on focus; the theme's --shadow-xs returns when focus
+    // leaves.
     searchInput.classList.add(
       'border',
       'border-input',
@@ -38,7 +44,9 @@ export function createTopbar(container: HTMLElement): void {
       'placeholder:text-muted-foreground',
       'selection:bg-primary',
       'selection:text-primary-foreground',
-      'focus-visible:ring-stacked',
+      'focus-visible:border-ring',
+      'focus-visible:ring-[3px]',
+      'focus-visible:ring-ring/50',
     );
     searchInput.setAttribute('aria-label', 'Search bookmarks');
     searchInput.setAttribute('autocomplete', 'off');
