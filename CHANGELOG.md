@@ -5,6 +5,28 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.57-baseline] - 2026-06-18
+
+### Meta (分支重置：把 `main` 强制重置到 v0.2.57)
+
+`main` 分支 HEAD 从 v0.2.36 (`0fb4f88`) **强制重置**到 v0.2.57 (`68fa259`)，作为新的"稳定基线"。
+
+**为什么 v0.2.57 是基线**：
+1. v0.2.57 的 UI 是用户测试确认的"完美"状态——链接 40px 高、列宽 1/N 等分、长链接截断、box-sizing: border-box 正确、4 套 tweakcn 主题的 link hover 全部生效。
+2. v0.2.36 缺 v0.2.37 ~ v0.2.57 的 19 个主题化 hotfix，default 主题仍是手调 hex 基线（不是 tweakcn Codex 调色板）。
+3. v0.2.58 / v0.2.59 仍带 link 颜色与下划线回归，未通过完整视觉验证。
+4. v0.3.x 的 Vue 3 + Pinia + shadcn-vue 重构（`feat/vue-migration` 分支）被弃用——8 次 hotfix 后用户认为 Vue 重构"不明智"。
+
+**保留的冻结分支**（不删除，保留为历史 commit 索引）：
+- `feat/runtime-theme-import`：v0.2.57 → v0.2.59 的 runtime theme import 后期增量
+- `feat/vue-migration`：v0.3.0 → v0.3.12 的 Vue 重构实验
+
+**新功能 / hotfix 只在 `main` 上做**——不要 merge 任何 v0.3.x commit 进 main。CLAUDE.md §0.1 是分支策略的权威说明。
+
+**未决项**（v0.2.57 遗留）：
+- tweakcn 主题通过 runtime import 时，需重新粘贴 JSON 一次以补全 11 个 shadcn surface vars（Chrome storage 不会自动升级）。
+- Codex light 主题下 link 默认态保留 `var(--shadow-xs)` 极淡 drop shadow，视为"主题本身效果"。
+
 ## [0.2.57] - 2026-06-18
 
 ### Refactored (架构修复：CSS 变量作为 newtab.css 与主题文件的接口)

@@ -11,6 +11,29 @@
 
 **目录命名**：`newtab01`
 
+### 0.1 分支清单与版本基线（重要）
+
+> 本节是 AI 编码助手开始任何工作**前**必读的内容。分支策略与"哪个版本是基线"直接决定后续 commit 落在哪条线。
+
+| 分支 | 状态 | 用途 | 起点 commit |
+|------|------|------|------------|
+| **`main`** | 当前默认分支 | 已发布 / 稳定基线 | `68fa259` (v0.2.57) |
+| `feat/runtime-theme-import` | 🗄 冻结 | runtime theme import 后期增量（v0.2.57 → v0.2.59）| `68fa259` (v0.2.57) |
+| `feat/vue-migration` | 🗄 冻结 / 已弃 | Vue 3 + Pinia + shadcn-vue 重构实验（v0.3.0 → v0.3.12）| main @ v0.2.59 |
+
+**为什么 v0.2.57 是 `main` 的基线（而不是 v0.2.36 / v0.2.59）**
+
+1. **v0.2.57 的 UI 是"完美"状态**——用户测试确认视觉无回归：链接高度 40px（`h-10`）、列宽 1/N 等分、长链接截断、Tailwind preflight 正确开启（`box-sizing: border-box`）、shadcn-vue 的 `text-foreground no-underline hover:no-underline` class 在 BookmarkLink 落地、Codex / MX-Brutalist / Cyberpunk / AstroVista 4 套 tweakcn 主题的 link hover 全部生效且不破坏其他主题。
+2. **v0.2.36 缺主题化 hotfix**——v0.2.37 引入"theme style class"机制、v0.2.50 补全 27 design tokens、v0.2.53 / 54 / 55 / 56 / 57 一系列主题化修复均未在 main 上；v0.2.36 的 default 主题仍是手调 hex 基线，不是 tweakcn Codex 调色板。
+3. **v0.2.58 / v0.2.59 仍未完全通过测试**——v0.2.58 切到 shadcn class-based approach 后 link 颜色与下划线回归、v0.2.59 补全 class 集后用户仍未做完整视觉验证；v0.2.57 是"用户确认视觉 OK"的最后稳定点。
+4. **v0.3.x 已被弃用**——`feat/vue-migration` 在 v0.3.5 ~ v0.3.12 之间做了 8 次增量 hotfix（box-sizing / 链接颜色 / 列宽 / 主题 / 设置 UI / 布局 / 列高），最终用户决定 Vue 重构"不明智"（详见 `changes/v0.3.0-vue-migration-attempt.md`）。该分支不再维护，保留为历史参考。
+
+**已弃分支策略**：`feat/runtime-theme-import` 与 `feat/vue-migration` 暂时不删除，保留为历史 commit 索引。新功能 / hotfix **只**在 `main` 上做，不要 merge 任何 v0.3.x commit 进 main。
+
+**当前已知未决问题**（v0.2.57 遗留，**仅** main 上未解决）
+- **主题化兼容性**：tweakcn 主题通过 runtime import 时，需要重新粘贴 JSON 一次以确保 11 个 shadcn surface vars（`secondary` / `accent` / `destructive` / `card` / `popover` / `input` + foregrounds）写入 storage。Chrome extension storage 不会自动升级旧值。
+- **Codex light 主题下 link 默认态有极淡 drop shadow**（`var(--shadow-xs)` = `0px 2px 4px 0px hsl(0 0% 0% / 0.05)`）。按 shadcn Button 标准不主动 override 时会保留；用户已经接受此视觉，视为"主题本身效果"。
+
 ---
 
 ## 1. 目标与非目标
