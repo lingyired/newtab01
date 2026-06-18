@@ -73,6 +73,21 @@
   --popover: oklch(1.0000 0 0);
   --popover-foreground: oklch(0.1776 0 0);
   --input: oklch(0.9067 0 0);
+
+  /* v0.2.57: the link's drop shadow is the newtab.css base
+   * `box-shadow: var(--newtab-link-shadow, var(--shadow-xs))`. On
+   * Codex light `--shadow-xs` is a 5% black drop and on dark it's
+   * a 25% black drop, both clearly visible against the white /
+   * near-white card and reading as "extra" relative to the
+   * tweakcn preview (flat button). We declare the theme's intent
+   * via the var instead of a theme-scope rule in newtab.css —
+   * this is the v0.2.57 architectural contract: newtab.css
+   * reads `--newtab-link-shadow` for every link state (default,
+   * :hover, :active, :focus-visible), and each theme decides for
+   * itself whether it wants a drop. The only "effect" we keep is
+   * the shadcn hover swap to var(--accent) / var(--accent-
+   * foreground), matching the tweakcn preview. */
+  --newtab-link-shadow: none;
 }
 
 :root[data-theme="default-dark"] {
@@ -122,43 +137,11 @@
   --popover: oklch(0.1776 0 0);
   --popover-foreground: oklch(0.9911 0 0);
   --input: oklch(0.3211 0 0);
-}
 
-/* v0.2.56: remove the link's inherited `var(--shadow-xs)` drop
- * shadow on Codex (default + default-dark) to match the tweakcn
- * preview, which shows a flat button with no visible shadow. The
- * newtab.css #main a rule has `box-shadow: var(--shadow-xs)` baked
- * in (= 0px 2px 4px 0px / 0.05 black on light, 0px 4px 8px 0px /
- * 0.25 black on dark); on Codex dark the 25% black drop is clearly
- * visible and reads as "extra" relative to the theme's clean
- * typography-first look. The user's only "theme effect" is the
- * hover bg + color swap to var(--accent) / var(--accent-foreground);
- * everything else around the link is decoration we should drop.
- *
- * Specificity: :root[data-theme="default"] #main a is (0, 2, 2),
- * higher than #main a (0, 1, 1) and #main a:active / :hover /
- * :focus-visible (0, 1, 2) — so the box-shadow: none wins on every
- * state, including focus-visible. We re-add the focus ring on
- * :focus-visible below because accessibility still needs a visible
- * keyboard focus indicator.
- *
- * The hover state keeps the accent bg / accent-foreground swap from
- * newtab.css (it doesn't touch box-shadow, so the default's `none`
- * applies — flat). The :active state is also flat. The brutalist /
- * cyberpunk / astrovista themes are unaffected — each has its own
- * theme-scope rule (or relies on var(--shadow-xs) inheritance) for
- * their shadow treatment.
- */
-:root[data-theme="default"] #main a,
-:root[data-theme="default-dark"] #main a {
-  box-shadow: none;
-}
-
-:root[data-theme="default"] #main a:focus-visible,
-:root[data-theme="default-dark"] #main a:focus-visible {
-  /* Keep the shadcn 3px focus ring (accessibility). Drop the
-   * inherited `var(--shadow-xs)` from newtab.css's stacked
-   * box-shadow so the focus indicator is the ring alone, not the
-   * ring + a 25% black drop on dark. */
-  box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent);
+  /* v0.2.57: see light variant for the rationale. Codex dark
+   * inherits the same flat-link intent; the theme's own --shadow-xs
+   * is 4px 8px 0.25 black which is *very* visible on the near-
+   * black bg. Declared as a var so the architecture stays clean
+   * (no theme-scope rule in this file). */
+  --newtab-link-shadow: none;
 }

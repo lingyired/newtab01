@@ -117,10 +117,11 @@
 #main a:active {
   /* v0.2.53: shadcn button has no :active override (the click is
    * so brief that :hover covers it). Keep the default state's
-   * var(--shadow-xs) so the drop shadow doesn't flicker on press.
-   * The --newtab-link-transform-active var is still exported for
-   * themes that want a custom press animation. */
-  box-shadow: var(--newtab-link-shadow-active, var(--shadow-xs));
+   * --newtab-link-shadow so the drop shadow doesn't flicker on
+   * press. Chained fallback: --newtab-link-shadow-active (per-
+   * theme escape hatch for a custom press animation) → default
+   * state's --newtab-link-shadow → --shadow-xs. */
+  box-shadow: var(--newtab-link-shadow-active, var(--newtab-link-shadow, var(--shadow-xs)));
   transform: var(--newtab-link-transform-active, none);
 }
 
@@ -128,14 +129,18 @@
   /* v0.2.52: replace the v0.2.45-era `outline: 2px solid var(--primary)
    * + outline-offset: 2px` with the shadcn button focus-visible
    * treatment: border switches to var(--ring) and a 3px ring of
-   * color-mix(oklab, var(--ring) 50%, transparent) sits outside the
-   * drop shadow. Stacking with var(--shadow-xs) keeps the theme's
-   * drop shadow under the focus ring rather than replacing it
-   * (avoids a focus-time flicker on themes with strong --shadow-xs). */
+   * color-mix(oklab, var(--ring) 50%, transparent) sits outside
+   * the drop shadow. v0.2.57: the drop shadow is now sourced
+   * from --newtab-link-shadow (same var as default / :hover /
+   * :active) — themes that want no drop on hover (e.g. Codex)
+   * don't get a drop on focus either, themes that want a hard
+   * shadow (e.g. MX-Brutalist's 4px 4px 0 0) keep the shadow
+   * under the focus ring. The ring itself is always present
+   * for keyboard accessibility. */
   border-color: var(--ring);
   box-shadow:
     0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent),
-    var(--shadow-xs);
+    var(--newtab-link-shadow, var(--shadow-xs));
   outline: none;
 }
 

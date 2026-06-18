@@ -5,6 +5,42 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.57] - 2026-06-18
+
+### Refactored (架构修复：CSS 变量作为 newtab.css 与主题文件的接口)
+**v0.2.56 的修复方式破坏了主题可扩展性**（用户反馈 "如果那么多硬编码，那如何能适配多种不同的主题？"）。v0.2.56 在 `styles/themes/default.css` 末尾加了 theme-scope rule：
+```css
+:root[data-theme="default"] #main a { box-shadow: none; }
+:root[data-theme="default"] #main a:focus-visible { box-shadow: 0 0 0 3px ...; }
+```
+这个写法是反模式——每加一个需要"无 link shadow"的主题，就得在它的 `.css` 文件里复制粘贴一份 theme-scope rule，新加主题时改不到 newtab.css 根本写不出对称的样式。`mx-brutalist.css` 早就有同样的硬编码（`:root[data-theme="mx-brutalist"] #main a { border, radius, box-shadow }` + `:root[data-theme="mx-brutalist"] .search-input { border }`），v0.2.56 走的是同样的错误路线，**等于把 debt 翻倍**。
+
+正确的架构是 CSS 变量作为 newtab.css 与主题文件之间的接口：
+- **newtab.css** 只用 `var(--newtab-*, var(--shadcn-*))` 读取主题意图，不写针对具体选择器的 theme-scope rule。
+- **主题文件** 只声明变量（`--newtab-link-shadow: none` / `var(--shadow-xs)`），不写 theme-scope rule。
+- 加新主题 = 加一个 `styles/themes/xxx.css` + `globals.css` 末尾 `@import` 一行 + 主题列表注册。**零修改 newtab.css**。
+
+具体重构：
+- **`styles/newtab.css`**:
+  - `#main a:focus-visible` 的 stacked box-shadow 第二项 `var(--shadow-xs)` → `var(--newtab-link-shadow, var(--shadow-xs))`（focus 时的 drop shadow 跟随主题意图；Codex 想要"focus 也不要 drop"就在自己的 block 里写 `--newtab-link-shadow: none`，自动覆盖）。
+  - `#main a:active` 的 `var(--newtab-link-shadow-active, var(--shadow-xs))` → `var(--newtab-link-shadow-active, var(--newtab-link-shadow, var(--shadow-xs)))`（chain fallback：active 专属 escape hatch → default 状态的 var → shadcn 默认值；Codex 不写 `--newtab-link-shadow-active` 也能继承到 default 的 `none`）。
+- **`styles/themes/default.css`**:
+  - 末尾的 v0.2.56 theme-scope rule **整段删除**（specificity 0,2,2 那种硬编码的 `:root[data-theme="default"] #main a` 形式）。
+  - `default` + `default-dark` 两个 block 各加一行 `--newtab-link-shadow: none;`（主题意图通过变量声明）。
+- **`styles/themes/mx-brutalist.css`**:
+  - `mx-brutalist` + `mx-brutalist-dark` 两个 block 各加一行 `--newtab-link-shadow: var(--shadow-xs);`（主题的 brutalist hard offset shadow 是视觉签名，必须 opt-in）。
+  - 末尾的两个 theme-scope rule **整段删除**：
+    - `:root[data-theme="mx-brutalist"] #main a { border, radius, box-shadow }`：border (`1px solid var(--border)`) / radius (`calc(var(--radius) - 2px)`) 跟 newtab.css 默认值重复（`--border: oklch(0 0 0)` 纯黑，`--radius: 0` clamp 到 0），box-shadow 现在通过 var 注入。
+    - `:root[data-theme="mx-brutalist"] .search-input { border: 1px solid var(--border) }`：跟 newtab.css `.search-input` 的 border 默认值重复。
+  - 保留 v0.2.54 的 specificity 警示注释（"不要在 override 里设 background-color"），把那段注释挪到文件末尾作为"历史教训"。
+
+### Architecture
+- **新约定（v0.2.57 起的强制架构）**:
+  1. newtab.css 是唯一的"shape provider"——决定哪些属性用 var、var 的 fallback 是什么。所有 var-driven 属性都按 `var(--newtab-*, var(--shadcn-*))` 形式读取。
+  2. 主题文件是"value provider"——只声明 var，不写任何选择器 rule（除了 v0.2.57 之前已经存在的、无法用 var 表达的特殊处理，比如 brutalist 的 `.search-input` border-width 早期是 3px 那种 1px 以上的硬编码，但那在 v0.2.53 已经统一为 1px 后变成冗余了——新代码不要再加这种 rule）。
+  3. 加新主题时只动 `styles/themes/<name>.css` + `styles/globals.css` 的 `@import` + `src/features/themes/` 的注册——**不动 newtab.css / popup.css / options.css**。
+  4. 如果某个主题需要的属性**无法用现有 var 表达**（如 v0.2.57 之后出现的新形状需求），先在 newtab.css 增加一个 `var(--newtab-xxx, ...)` 占位符，所有主题都通过 var 注入——不要直接在主题文件里写针对具体选择器的 rule。
+
 ## [0.2.56] - 2026-06-18
 
 ### Fixed
