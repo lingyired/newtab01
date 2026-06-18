@@ -5,6 +5,21 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.52] - 2026-06-18
+
+### Changed
+- **link (button) / search-input 样式对齐 shadcn Button + Input class**（用户提供了两个完整 Tailwind class，要求"忽略一些布局相关的和字体大小相关的，但是其他的样式颜色那些你可以参考一下作为映射"）：
+  - **`styles/newtab.css:106`** `#main a` `border-radius: 0.6em` → `calc(var(--radius) - 2px)`（shadcn `rounded-md` 派生：内 border-radius 比 --radius 小 2px，让可见圆角坐在 radius 圆内）。MX-Brutalist 主题下 `var(--radius) = 0` → `calc(0 - 2px)` clamp 到 0。
+  - **`styles/newtab.css:129-142`** `#main a:focus-visible` 从 `outline: 2px solid var(--primary) + outline-offset: 2px` 改为 shadcn 标准的 `border-color: var(--ring) + box-shadow: 0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent), var(--shadow-xs)`。`outline: none` 避免双 focus 指示。`var(--shadow-xs)` 保留在 shadow 栈第二项，focus 时主题 drop shadow 仍在（避免 brutalist 主题 focus 时 drop shadow 闪烁）。
+  - **`styles/newtab.css:369`** `.search-input` `border-radius: var(--radius)` → `calc(var(--radius) - 2px)`（同上 rounded-md 派生）。
+  - **`styles/newtab.css:376`** `.search-input` `background-color: var(--newtab-surface)` → `transparent`（shadcn `bg-transparent`）。原本的 6% color-mix 灰色在 search bar 上读起来像"灰底输入框"；改 transparent 让 search bar 与 page bg 融合。Glassmorphism 主题需要带色 search bar 时通过 theme-scope rule 覆盖。
+  - **`styles/newtab.css:390-405`** `.search-input:focus / :focus-visible` 从 `border-color: var(--primary) + box-shadow: var(--shadow-xs), 0 0 0 2px var(--ring)`（2px ring）改为 shadcn 标准的 3px ring of `color-mix(oklab, var(--ring) 50%, transparent)` + 保留 `var(--shadow-xs)`。`outline: none`。
+  - **`styles/newtab.css:411-418`** 新增 `.search-input::selection { background-color: var(--primary); color: var(--primary-foreground); }`（shadcn `selection:bg-primary selection:text-primary-foreground`）。
+- **未引入的 shadcn 状态**（按 Simplicity First 暂不实现，等需要再加）：
+  - `disabled:pointer-events-none disabled:opacity-50`：search bar 不 disabled，link folder 也不需要。
+  - `aria-invalid:border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40`：未引入 `--destructive` 到 8 vars（不属于必要 surface），先不加。等出现 form validation 场景再补。
+  - `[&_svg]:size-4 / pointer-events-none / shrink-0`：link + folder header 的 svg 图标由各 element 自己的 .icon class 控制，不沿用 button 内部的 svg 处理。
+
 ## [0.2.51] - 2026-06-18
 
 ### Changed

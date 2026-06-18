@@ -85,20 +85,25 @@
    * row instead of a button. --newtab-link-bg is still the per-theme
    * escape hatch (brutalist / glassmorphism override it directly).
    *
-   * v0.2.51: box-shadow now reads var(--shadow-xs) — the shadcn
-   * .shadow-xs preset (equivalent to `box-shadow: var(--shadow-xs)`
-   * in Tailwind's full form: `0 0 0 0 transparent, 0 0 0 0 transparent,
-   * 0 0 0 0 transparent, 0 0 0 0 transparent, var(--shadow-xs)` —
-   * the four --tw-* layers are Tailwind internal and initial here,
-   * so we use the simpler form). Each theme defines its own
-   * --shadow-xs, so this single declaration picks up:
-   * - Codex/default: 0 1px 3px 0 hsl(0 0% 0% / 0.05) — hairline.
-   * - MX-Brutalist: 4px 4px 0 0 hsl(0 0% 0% / 0.50) — half-opacity
-   *   hard drop (the standard shadcn .shadow-xs brutalist value). */
+   * v0.2.52: align link styling with the shadcn button class
+   * (inline-flex shrink-0 ... border bg-background shadow-xs
+   *  hover:bg-accent hover:text-accent-foreground ...). We map the
+   *  theme-aware properties and skip the layout / typography ones
+   *  per user direction:
+   *  - `rounded-md` -> `calc(var(--radius) - 2px)` (shadcn
+   *    convention: the inner border-radius is 2px smaller than
+   *    --radius so the visible corner sits inside the radius circle).
+   *  - `border` + `bg-background` + `shadow-xs` are already covered
+   *    by the existing 1px border / var(--newtab-bg) (== --background) /
+   *    var(--shadow-xs) declarations below.
+   *  - hover / focus keep the newtab palette hooks
+   *    (--newtab-highlight / --newtab-link-color-hover /
+   *    --newtab-link-bg-hover) so themes still control the per-state
+   *    coloring without re-importing accent tokens. */
   padding: 0.45em 0.8em 0.45em 1.2em;
   background-color: var(--newtab-link-bg, var(--newtab-bg));
   border: var(--newtab-link-border, 1px solid var(--border));
-  border-radius: var(--newtab-link-radius, 0.6em);
+  border-radius: var(--newtab-link-radius, calc(var(--radius) - 2px));
   font-weight: var(--newtab-link-weight, normal);
   box-shadow: var(--newtab-link-shadow, var(--shadow-xs));
   cursor: pointer;
@@ -122,12 +127,18 @@
 }
 
 #main a:focus-visible {
-  /* Default focus ring is the theme's primary color, 2px solid with
-   * 2px offset. Themes with a heavy black border (brutalist) can
-   * override the width to keep the ring visually distinct from the
-   * link's own border. */
-  outline: var(--newtab-link-outline-focus, 2px solid var(--primary));
-  outline-offset: var(--newtab-link-outline-offset-focus, 2px);
+  /* v0.2.52: replace the v0.2.45-era `outline: 2px solid var(--primary)
+   * + outline-offset: 2px` with the shadcn button focus-visible
+   * treatment: border switches to var(--ring) and a 3px ring of
+   * color-mix(oklab, var(--ring) 50%, transparent) sits outside the
+   * drop shadow. Stacking with var(--shadow-xs) keeps the theme's
+   * drop shadow under the focus ring rather than replacing it
+   * (avoids a focus-time flicker on themes with strong --shadow-xs). */
+  border-color: var(--ring);
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent),
+    var(--shadow-xs);
+  outline: none;
 }
 
 /* ─── Icons ─── */
@@ -350,11 +361,19 @@
   font-size: 1.8em;
   border: 1px solid var(--border);
   /* v0.2.50: read the theme's --radius instead of hardcoding 8px.
-   * Codex-style themes get 0.5rem rounded corners, MX-Brutalist
-   * gets 0px (sharp corners). Tweaks to a theme's --radius now
-   * shape the search bar without any newtab-side code changes. */
-  border-radius: var(--radius);
-  background-color: var(--newtab-surface);
+   * v0.2.52: use shadcn's `rounded-md` derivation
+   * `calc(var(--radius) - 2px)` so the visible corner sits inside
+   * the radius circle (the 1px border eats the outer 1px of the
+   * radius). Codex-style themes get 0.5rem - 2px rounded corners,
+   * MX-Brutalist gets 0px (sharp corners). */
+  border-radius: calc(var(--radius) - 2px);
+  /* v0.2.52: switch from var(--newtab-surface) (a 6% color-mix
+   * toward the foreground) to transparent, matching the shadcn
+   * input class `bg-transparent`. The surface tint was nice as a
+   * link bg separator but reads as "grey box" on a search bar.
+   * Themes that want a tinted search bar (e.g. glassmorphism) can
+   * override the bg via a theme-scope rule. */
+  background-color: transparent;
   color: var(--foreground);
   /* Default: shadcn .shadow-xs preset from the active theme. Brutalist
    * themes (MX-Brutalist) override --shadow-xs to 4px 4px 0 0 hard
@@ -368,16 +387,34 @@
   z-index: 1;
 }
 
-.search-input:focus {
-  border-color: var(--primary);
-  /* Focus: keep the theme's .shadow-xs drop shadow + add the focus
-   * ring in front of it. Comma-stacking two box-shadows is standard
-   * CSS — the ring is drawn first so it appears in front. */
-  box-shadow: var(--shadow-xs), 0 0 0 2px var(--ring);
+.search-input:focus,
+.search-input:focus-visible {
+  /* v0.2.52: switch focus from the v0.2.50 `border-color: var(--primary)
+   * + box-shadow: var(--shadow-xs), 0 0 0 2px var(--ring)` (an ad-hoc
+   * ring composed of two stacked shadows) to the shadcn input
+   * focus-visible treatment: border switches to var(--ring) and a
+   * 3px ring of color-mix(oklab, var(--ring) 50%, transparent) sits
+   * outside the drop shadow. Stacking with var(--shadow-xs) keeps
+   * the theme's drop shadow visible during focus instead of
+   * replacing it (no flicker on heavy-shadow themes). */
+  border-color: var(--ring);
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent),
+    var(--shadow-xs);
+  outline: none;
 }
 
 .search-input::placeholder {
   color: var(--muted-foreground);
+}
+
+/* v0.2.52: shadcn input class `selection:bg-primary
+ * selection:text-primary-foreground`. Translates to the
+ * standard ::selection pseudo-element with the theme's primary
+ * colors. */
+.search-input::selection {
+  background-color: var(--primary);
+  color: var(--primary-foreground);
 }
 
 /* Search results — positioned absolute below the input */
