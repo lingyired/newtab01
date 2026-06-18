@@ -3,8 +3,7 @@
 
 import { getDragIds, getDropTarget, setDropTarget } from './drag-state';
 import { getColumns, addRow, addColumn } from './layout-ops';
-import { getMovedOut } from '../bookmarks/moved-out';
-import { pushSnapshot, type HistorySnapshot } from './history';
+import { captureSnapshot, pushSnapshot } from './history';
 import { getSetting } from '../../lib/storage/settings';
 import * as debug from '../../lib/debug';
 
@@ -113,12 +112,8 @@ async function captureAndDrop(
   target: HTMLElement,
   event: DragEvent,
 ): Promise<void> {
-  // Deep-clone columns; shallow-with-array-clone movedOut. getMovedOut
-  // returns the in-memory cache synchronously after first load.
-  const snapshot: HistorySnapshot = {
-    columns: getColumns().map((col) => col.slice()),
-    movedOut: cloneMovedOut(await getMovedOut()),
-  };
+  // Capture pre-drop snapshot (columns + movedOut, both cloned).
+  const snapshot = await captureSnapshot();
 
   if (dragIds.length === 1 && y !== null) {
     await addRow(dragIds[0]!, x, y);
@@ -131,15 +126,6 @@ async function captureAndDrop(
   }
 
   pushSnapshot(snapshot);
-}
-
-/** Shallow clone a moved-out map, cloning each parent's id array too. */
-function cloneMovedOut(map: Record<string, string[]>): Record<string, string[]> {
-  const out: Record<string, string[]> = {};
-  for (const [parentId, ids] of Object.entries(map)) {
-    out[parentId] = ids.slice();
-  }
-  return out;
 }
 
 /** Get the proper drop target element based on event coordinates */

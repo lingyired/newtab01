@@ -5,6 +5,26 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.68] - 2026-06-19
+
+### Fixed
+- **右键菜单 `Move column right` 一次性跳到最右边**。`context-menu.ts` 里调用 `addColumn(ids, index + 2)` 的 `+2` 是错的 —— `addColumn` 内部先把 ids 从原列移除，所以 splice 的位置应该基于**移除后的数组**。"右移 1 位" 在新数组里就是 `index + 1`，但之前传了 `index + 2`，配合 `Math.min(insertIndex, columns.length)` 的 clamp 永远落到最右端。改为 `index + 1` 后行为与 `Move column left`（用 `index - 1`，本就正确）对称。同时加了一段说明注释解释 +1 的语义，防回归。
+
+## [0.2.67] - 2026-06-19
+
+### Changed
+- **右键菜单隐藏 `Move folder up / down / left / right` 4 个 item**。用户反馈"移动目录的体验不好"，先用注释临时隐藏（不删逻辑代码），folder 右键菜单现只剩 `Remove folder` + `Create new column`。`src/features/bookmarks/context-menu.ts` 的 4 个 `items.push({ label: 'Move folder ...', ... })` 整体包在 `/* ... */` 块里 + 上方一段说明注释解释为何隐藏 / 怎么重新启用。`addRow` / `getCoords` 等底层代码原封不动，未来重新设计交互后删除注释块即可恢复显示。同时移除因此变成 unused 的 `const columns = getColumns();` 局部变量（`tsconfig.json:noUnusedLocals` 会触发编译错误）。
+
+## [0.2.66] - 2026-06-19
+
+### Added
+- **右键菜单的布局变更也支持 undo 回退**。topbar 的「回退操作」按钮现在覆盖 4 个右键菜单的列 / 目录操作，与 v0.2.61 的 drag-drop undo 共用同一个 `history` 栈和同一个按钮。
+  - 覆盖操作：`Create new column` / `Move column left` / `Move column right` / `Remove column` / `Remove folder` —— 用户在右键菜单触发后，topbar 出现 `[N]` 计数 badge，点击即完整恢复到操作前的 columns + movedOut 状态。
+  - `src/features/bookmarks/context-menu.ts` 新增内部 helper `withUndo(action)` —— 模式与 drag-drop 的 `captureAndDrop` 完全一致：先 `await captureSnapshot()` → 执行 layout mutation → `pushSnapshot(snapshot)`。只有 mutation 成功才 push，mutation 失败（抛错）栈保持干净。
+  - `src/features/drag-drop/history.ts` 新增并导出 `captureSnapshot()` helper —— 把 drop-handler 原有的 inline 克隆逻辑搬过来作为单一来源；drop-handler 改为调用该 helper，行为不变但去重了 `cloneMovedOut` 实现（现作为 `history.ts` 的导出函数复用）。
+  - `src/features/bookmarks/types.ts` 的 `MenuItem.action` 类型从 `() => void` 扩展为 `() => void | Promise<void>` —— 让 layout action 可以是 async 以便 `await` 内部的 `addColumn / removeRow` 等 Promise。
+  - 「Move folder up / down / left / right」（同右键菜单、调用 `addRow`）按 v0.2.66 用户列表未明确要求，**未接入 undo** —— 如需要可在一个后续小版本统一补齐，模式与列移动完全一致（`withUndo(() => void addRow(...))`）。
+
 ## [0.2.65] - 2026-06-18
 
 ### Changed

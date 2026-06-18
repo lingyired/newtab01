@@ -1,7 +1,13 @@
 // Context menu — dynamic popup menu for folders and columns
 
 import type { MenuItem } from './types';
-import { getCoords, addRow, addColumn, removeRow, removeColumn, getColumns } from '../drag-drop/layout-ops';
+// addRow is currently only used by the hidden "Move folder" menu items
+// (see the /* ... */ block in getFolderMenuItems below). Imported as a
+// commented-out slot so re-enabling those items only requires removing
+// the /* */ blocks — no extra import edits needed.
+// import { getCoords, addRow, addColumn, removeRow, removeColumn, getColumns } from '../drag-drop/layout-ops';
+import { getCoords, addColumn, removeRow, removeColumn, getColumns } from '../drag-drop/layout-ops';
+import { captureSnapshot, pushSnapshot } from '../drag-drop/history';
 import { openAllLinks } from './folder-actions-handler';
 import { createTab } from '../../lib/chrome/bookmarks';
 
@@ -16,6 +22,18 @@ const internalScheme = isEdge ? 'edge' : 'chrome';
 
 function openInternalPage(path: string): void {
   void createTab(`${internalScheme}://${path}`, true);
+}
+
+/**
+ * Wrap a context-menu layout action so the topbar undo button can revert it.
+ * Captures a pre-mutation snapshot, awaits the mutation, then pushes the
+ * snapshot onto the history stack so a single undo click restores the prior
+ * column layout and moved-out visibility.
+ */
+async function withUndo(action: () => Promise<void> | void): Promise<void> {
+  const snapshot = await captureSnapshot();
+  await action();
+  pushSnapshot(snapshot);
 }
 
 /** Render a popup context menu at given coordinates.
@@ -153,18 +171,23 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
   const lock = false; // Will be read from settings when integrated
   if (!lock) {
     const coords = getCoords(node.id);
-    const columns = getColumns();
 
     items.push(null); // separator
 
     items.push({
       label: 'Create new column',
-      action: () => {
-        addColumn([node.id]);
-      },
+      action: () => withUndo(() => {
+        void addColumn([node.id]);
+      }),
     });
 
     if (coords) {
+      // Move-folder UX was deemed insufficient — the 4 menu items below
+      // (Move folder up / down / left / right) are temporarily hidden
+      // while the interaction is redesigned. The layout-ops (addRow /
+      // getCoords) code paths remain untouched so they can be re-enabled
+      // by removing this comment block.
+      /*
       if (coords.y > 0) {
         items.push({
           label: 'Move folder up',
@@ -197,11 +220,12 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
           },
         });
       }
+      */
       items.push({
         label: 'Remove folder',
-        action: () => {
-          removeRow(coords.x, coords.y);
-        },
+        action: () => withUndo(() => {
+          void removeRow(coords.x, coords.y);
+        }),
       });
     }
   }
@@ -229,24 +253,29 @@ export function getColumnMenuItems(index: number): (MenuItem | null)[] {
     if (index > 0) {
       items.push({
         label: 'Move column left',
-        action: () => {
-          addColumn(ids, index - 1);
-        },
+        action: () => withUndo(() => {
+          void addColumn(ids, index - 1);
+        }),
       });
     }
     if (index < columns.length - 1) {
       items.push({
         label: 'Move column right',
-        action: () => {
-          addColumn(ids, index + 2);
-        },
+        action: () => withUndo(() => {
+          // addColumn removes the ids from their current column first,
+          // so the target splice index is in the post-removal array.
+          // "One step right" = (original index) + 1 in that new array.
+          // (Previously used index + 2, which overshoots — the column
+          // always jumped to the rightmost position.)
+          void addColumn(ids, index + 1);
+        }),
       });
     }
     items.push({
       label: 'Remove column',
-      action: () => {
-        removeColumn(index);
-      },
+      action: () => withUndo(() => {
+        void removeColumn(index);
+      }),
     });
   }
 

@@ -83,7 +83,12 @@ export interface Settings {
 /** Context menu item */
 export interface MenuItem {
   label: string;
-  action: () => void;
+  /**
+   * Click handler. May be sync or async — context-menu layout actions
+   * return a Promise so they can `await` the underlying layout mutation
+   * before the undo snapshot is pushed.
+   */
+  action: () => void | Promise<void>;
 }
 
 /** Drag state */
