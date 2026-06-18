@@ -11,26 +11,124 @@
  *
  * Uses OKLCH directly (manifest minimum_chrome_version is bumped to 111
  * in v0.2.41 to match globals.css color-mix + these OKLCH values).
- * No newtab-link overrides — the global link style applies.
+ *
+ * v0.2.55: extend the 8 shadcn color variables with the full set of
+ * tweakcn design tokens (radius, the shadow system, font families,
+ * letter-spacing, tracking, spacing) AND the 11 shadcn surface
+ * tokens (secondary / accent / destructive / card / popover / input
+ * + their foregrounds). The surface tokens are what the shadcn
+ * button + input hover / focus classes reference, so a theme that
+ * doesn't define them falls back to the initial values of the
+ * background-color / color properties (transparent + canvastext),
+ * and on a themed page like cyberpunk (dark purple bg with neon
+ * text) the hover state becomes invisible because nothing changes.
+ * Filled in verbatim from tweakcn. Orbitron / Fira Code / Rajdhani
+ * are the theme's signature font families; radius=0rem matches the
+ * sharp-cornered neon look.
  */
 :root[data-theme="cyberpunk"] {
+  /* Required 8 (validation gate for runtime imports). */
   --background: oklch(0.1418 0.0662 295.8049);
   --foreground: oklch(0.8803 0.2083 157.3340);
   --primary: oklch(0.6083 0.2973 312.1096);
-  --primary-foreground: #ffffff;
+  --primary-foreground: oklch(1.0000 0 0);
   --muted: oklch(0.2755 0.0276 284.4447);
   --muted-foreground: oklch(0.6324 0.0253 285.6550);
   --border: oklch(0.3740 0.0528 283.5546);
   --ring: oklch(0.6083 0.2973 312.1096);
+
+  /* Design tokens. cyberpunk ships radius=0rem (sharp corners) and
+   * a neon-glow shadow: 0 0 12px 2px magenta (#bc13fe) at 0.30 / 0.60
+   * opacity. The glow comes from the offset-x/y being 0 and a
+   * generous blur + spread, which gives the diffuse "neon" look
+   * rather than a directional drop shadow. */
+  --radius: 0rem;
+  --shadow-color: #bc13fe;
+  --shadow-opacity: 0.6;
+  --shadow-blur: 12px;
+  --shadow-spread: 2px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 0px;
+  --shadow-2xs: 0px 0px 12px 2px hsl(283.1489 99.1561% 53.5294% / 0.30);
+  --shadow-xs: 0px 0px 12px 2px hsl(283.1489 99.1561% 53.5294% / 0.30);
+  --shadow-sm: 0px 0px 12px 2px hsl(283.1489 99.1561% 53.5294% / 0.60), 0px 1px 2px 1px hsl(283.1489 99.1561% 53.5294% / 0.60);
+  --shadow: 0px 0px 12px 2px hsl(283.1489 99.1561% 53.5294% / 0.60), 0px 1px 2px 1px hsl(283.1489 99.1561% 53.5294% / 0.60);
+  --shadow-md: 0px 0px 12px 2px hsl(283.1489 99.1561% 53.5294% / 0.60), 0px 2px 4px 1px hsl(283.1489 99.1561% 53.5294% / 0.60);
+  --shadow-lg: 0px 0px 12px 2px hsl(283.1489 99.1561% 53.5294% / 0.60), 0px 4px 6px 1px hsl(283.1489 99.1561% 53.5294% / 0.60);
+  --shadow-xl: 0px 0px 12px 2px hsl(283.1489 99.1561% 53.5294% / 0.60), 0px 8px 10px 1px hsl(283.1489 99.1561% 53.5294% / 0.60);
+  --shadow-2xl: 0px 0px 12px 2px hsl(283.1489 99.1561% 53.5294% / 1.50);
+  --font-sans: 'Orbitron', sans-serif;
+  --font-mono: 'Fira Code', monospace;
+  --font-serif: 'Rajdhani', sans-serif;
+  --letter-spacing: 0.1em;
+  --tracking-normal: 0.15em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. accent = neon red
+   * (oklch(0.6354 0.2541 15.4582)) so link hover on the dark purple
+   * bg gives a sharp red highlight that contrasts with the rest of
+   * the neon palette. secondary = cyan (oklch(0.7392 0.1576
+   * 235.3407)) — used by muted button variants. input matches card
+   * (slightly lighter than the page bg). */
+  --secondary: oklch(0.7392 0.1576 235.3407);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --accent: oklch(0.6354 0.2541 15.4582);
+  --accent-foreground: oklch(1.0000 0 0);
+  --destructive: oklch(0.6317 0.2544 21.7529);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(0.2310 0.0366 280.8134);
+  --card-foreground: oklch(0.9551 0 0);
+  --popover: oklch(0.1418 0.0662 295.8049);
+  --popover-foreground: oklch(0.8803 0.2083 157.3340);
+  --input: oklch(0.2310 0.0366 280.8134);
 }
 
 :root[data-theme="cyberpunk-dark"] {
+  /* Required 8. */
   --background: oklch(0.1149 0 0);
   --foreground: oklch(0.8803 0.2083 157.3340);
   --primary: oklch(0.6083 0.2973 312.1096);
-  --primary-foreground: #ffffff;
+  --primary-foreground: oklch(1.0000 0 0);
   --muted: oklch(0.2178 0 0);
   --muted-foreground: oklch(0.5693 0 0);
   --border: oklch(0.3211 0 0);
   --ring: oklch(0.6083 0.2973 312.1096);
+
+  /* Design tokens. Dark variant: shadow-color is bright red
+   * (#ff0055) instead of magenta, with bigger blur (20px) and
+   * spread (4px) for a hotter glow against the near-black bg. */
+  --radius: 0rem;
+  --shadow-color: #ff0055;
+  --shadow-opacity: 0.8;
+  --shadow-blur: 20px;
+  --shadow-spread: 4px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 0px;
+  --shadow-2xs: 0px 0px 20px 4px hsl(340 100% 50% / 0.40);
+  --shadow-xs: 0px 0px 20px 4px hsl(340 100% 50% / 0.40);
+  --shadow-sm: 0px 0px 20px 4px hsl(340 100% 50% / 0.80), 0px 1px 2px 3px hsl(340 100% 50% / 0.80);
+  --shadow: 0px 0px 20px 4px hsl(340 100% 50% / 0.80), 0px 1px 2px 3px hsl(340 100% 50% / 0.80);
+  --shadow-md: 0px 0px 20px 4px hsl(340 100% 50% / 0.80), 0px 2px 4px 3px hsl(340 100% 50% / 0.80);
+  --shadow-lg: 0px 0px 20px 4px hsl(340 100% 50% / 0.80), 0px 4px 6px 3px hsl(340 100% 50% / 0.80);
+  --shadow-xl: 0px 0px 20px 4px hsl(340 100% 50% / 0.80), 0px 8px 10px 3px hsl(340 100% 50% / 0.80);
+  --shadow-2xl: 0px 0px 20px 4px hsl(340 100% 50% / 2.00);
+  --font-sans: 'Orbitron', sans-serif;
+  --font-mono: 'Fira Code', monospace;
+  --font-serif: 'Rajdhani', sans-serif;
+  --letter-spacing: 0.15em;
+  --tracking-normal: 0.15em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. */
+  --secondary: oklch(0.7392 0.1576 235.3407);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --accent: oklch(0.6354 0.2541 15.4582);
+  --accent-foreground: oklch(1.0000 0 0);
+  --destructive: oklch(0.6317 0.2544 21.7529);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(0.1591 0 0);
+  --card-foreground: oklch(1.0000 0 0);
+  --popover: oklch(0.1149 0 0);
+  --popover-foreground: oklch(0.8803 0.2083 157.3340);
+  --input: oklch(0.1591 0 0);
 }

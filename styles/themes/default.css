@@ -10,8 +10,20 @@
  * an arbitrary hand-picked set of OKLCH values; aligning with tweakcn
  * means users can paste the same JSON at runtime and get a
  * pixel-equivalent result. See docs/themes-from-tweakcn.md.
+ *
+ * v0.2.55: extend the 8 shadcn color variables with the full set of
+ * tweakcn design tokens that drive our UI elements: radius, the
+ * shadow system, font families, letter-spacing, tracking, spacing,
+ * and the shadcn surface tokens (accent / input / secondary /
+ * destructive / card / popover + their foregrounds). The surface
+ * tokens are what the shadcn button + input hover / focus classes
+ * reference, so a theme that doesn't define them falls back to the
+ * globals.css slate defaults — and on a light / white-bg theme like
+ * Codex, the slate accent (`oklch(0.97 0 0)`) is too close to white
+ * for link hover to be visible. Filled in verbatim from tweakcn.
  */
 :root[data-theme="default"] {
+  /* Required 8 (validation gate for runtime imports). */
   --background: oklch(1.0000 0 0);
   --foreground: oklch(0.1776 0 0);
   --primary: oklch(0.5286 0.1734 254.9750);
@@ -20,4 +32,94 @@
   --muted-foreground: oklch(0.5103 0 0);
   --border: oklch(0.9067 0 0);
   --ring: oklch(0.5286 0.1734 254.9750);
+
+  /* Design tokens. Codex sets radius=0.375rem (≈ 6px) which means
+   * the inner border-radius of the rounded-md derivation ends up
+   * around 4px — matches the link "card" look. --shadow-xs uses a
+   * subtle 2px 4px drop at 0.05 opacity. */
+  --radius: 0.375rem;
+  --shadow-color: #000000;
+  --shadow-opacity: 0.1;
+  --shadow-blur: 4px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 2px;
+  --shadow-2xs: 0px 2px 4px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0px 2px 4px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0px 2px 4px 0px hsl(0 0% 0% / 0.10), 0px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0px 2px 4px 0px hsl(0 0% 0% / 0.10), 0px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0px 2px 4px 0px hsl(0 0% 0% / 0.10), 0px 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0px 2px 4px 0px hsl(0 0% 0% / 0.10), 0px 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0px 2px 4px 0px hsl(0 0% 0% / 0.10), 0px 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0px 2px 4px 0px hsl(0 0% 0% / 0.25);
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-mono: JetBrains Mono, Menlo, monospace;
+  --font-serif: Georgia, serif;
+  --letter-spacing: -0.01em;
+  --tracking-normal: -0.01em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. accent = primary (blue) so link hover
+   * shows a clear blue tint over the white card. input matches
+   * border (light gray). */
+  --secondary: oklch(0.9551 0 0);
+  --secondary-foreground: oklch(0.5286 0.1734 254.9750);
+  --accent: oklch(0.5286 0.1734 254.9750);
+  --accent-foreground: oklch(1.0000 0 0);
+  --destructive: oklch(0.5899 0.2134 27.6715);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(0.9761 0 0);
+  --card-foreground: oklch(0.1776 0 0);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.1776 0 0);
+  --input: oklch(0.9067 0 0);
+}
+
+:root[data-theme="default-dark"] {
+  /* Required 8. */
+  --background: oklch(0.1776 0 0);
+  --foreground: oklch(0.9911 0 0);
+  --primary: oklch(0.5286 0.1734 254.9750);
+  --primary-foreground: oklch(0.9911 0 0);
+  --muted: oklch(0.2520 0 0);
+  --muted-foreground: oklch(0.7058 0 0);
+  --border: oklch(0.3211 0 0);
+  --ring: oklch(0.5286 0.1734 254.9750);
+
+  /* Design tokens. Dark variant uses a deeper shadow (4px 8px at
+   * 0.25-0.50 opacity) and the same 6px radius. */
+  --radius: 0.375rem;
+  --shadow-color: #000000;
+  --shadow-opacity: 0.5;
+  --shadow-blur: 8px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 4px;
+  --shadow-2xs: 0px 4px 8px 0px hsl(0 0% 0% / 0.25);
+  --shadow-xs: 0px 4px 8px 0px hsl(0 0% 0% / 0.25);
+  --shadow-sm: 0px 4px 8px 0px hsl(0 0% 0% / 0.50), 0px 1px 2px -1px hsl(0 0% 0% / 0.50);
+  --shadow: 0px 4px 8px 0px hsl(0 0% 0% / 0.50), 0px 1px 2px -1px hsl(0 0% 0% / 0.50);
+  --shadow-md: 0px 4px 8px 0px hsl(0 0% 0% / 0.50), 0px 2px 4px -1px hsl(0 0% 0% / 0.50);
+  --shadow-lg: 0px 4px 8px 0px hsl(0 0% 0% / 0.50), 0px 4px 6px -1px hsl(0 0% 0% / 0.50);
+  --shadow-xl: 0px 4px 8px 0px hsl(0 0% 0% / 0.50), 0px 8px 10px -1px hsl(0 0% 0% / 0.50);
+  --shadow-2xl: 0px 4px 8px 0px hsl(0 0% 0% / 1.25);
+  --font-sans: Inter, system-ui, sans-serif;
+  --font-mono: JetBrains Mono, Menlo, monospace;
+  --font-serif: Georgia, serif;
+  --letter-spacing: -0.01em;
+  --tracking-normal: -0.01em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. */
+  --secondary: oklch(0.2520 0 0);
+  --secondary-foreground: oklch(0.5286 0.1734 254.9750);
+  --accent: oklch(0.5286 0.1734 254.9750);
+  --accent-foreground: oklch(0.9911 0 0);
+  --destructive: oklch(0.5899 0.2134 27.6715);
+  --destructive-foreground: oklch(0.9911 0 0);
+  --card: oklch(0.2178 0 0);
+  --card-foreground: oklch(0.9911 0 0);
+  --popover: oklch(0.1776 0 0);
+  --popover-foreground: oklch(0.9911 0 0);
+  --input: oklch(0.3211 0 0);
 }

@@ -5,6 +5,17 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.55] - 2026-06-18
+
+### Fixed
+- **default / cyberpunk / astrovista 三个主题的 link hover 也都不生效**（用户反馈 "也要修复一下其他几个主题的 hover，我发现其他的主题的 hover 也不生效"）。v0.2.53 给 mx-brutalist.css 补全了 11 个 shadcn surface vars（`secondary` / `accent` / `destructive` / `card` / `popover` / `input` + 各自 foreground）后 mx-brutalist hover 正常；v0.2.53 同时也给 `globals.css` 加了同样 11 个 vars 的 shadcn slate 兜底，期望"没补全主题的 hover 仍能看到"。但 default / cyberpunk / astrovista 三个主题在 v0.2.53 期间**没补**这 11 个 surface vars。globals.css 也只定义了 `--newtab-highlight: var(--accent)` 等 alias，**没有** `--accent` / `--accent-foreground` / `--secondary` 等 var 的 `:` 兜底。后果：`#main a:hover` 里的 `var(--accent)` / `var(--accent-foreground)` 解析为 `unset`，CSS 引擎 fallback 到 background-color / color 属性的**初始值**（`transparent` + `canvastext`），与 default state 几乎无差异 → hover 视觉上看不出来。修复——按 tweakcn JSON verbatim 补全 11 个 surface vars：
+  - **`styles/themes/default.css`**：light (`--accent: oklch(0.5286 0.1734 254.9750)` 蓝) + dark 两套。同时把 default 主题的 27 个 design tokens（radius、shadow 系统、fonts、tracking、spacing）一并补全——之前只有 8 个 vars，Codex 主题应有的 0.375rem radius + 2px 4px 0.05 阴影 + Inter 字体 都没传过来。
+  - **`styles/themes/cyberpunk.css`**：light (`--accent: oklch(0.6354 0.2541 15.4582)` 霓虹红，dark purple bg 上对比强烈) + dark (--shadow-color 改 `#ff0055` 亮红，--shadow-blur 12px → 20px) 两套。补全 27 design tokens：radius=0rem 配 sharp neon look，Orbitron / Fira Code / Rajdhani 字体家族，neon glow shadow (0 0 12px 2px magenta / red)。
+  - **`styles/themes/astrovista.css`**：light (`--accent: oklch(0.9119 0.0222 243.8174)` 浅蓝，cool-white bg 上有清晰 blue tint) + dark (`--accent: oklch(0.3380 0.0589 267.5867)` 深蓝，near-black bg 上对比明显) 两套。补全 27 design tokens：radius=0.5rem + subtle 1px 3px shadow + Outfit / Fira Code / Merriweather 字体。
+
+### Architecture
+- v0.2.53 给 mx-brutalist 补 11 vars + 给 globals.css 加 shadcn slate 兜底时，假设"globals.css 兜底够用了"。但 globals.css 当时**没**在 `:where(:root)` 定义 11 个 surface vars（只有 alias `--newtab-highlight: var(--accent)` 等）——`var(--accent)` 在没定义的情况下解析为 unset，fallback 到属性初始值。globals.css 这次没改是因为默认主题（default.css）已经完整定义了 11 vars，覆盖了 globals.css 兜底。v0.2.55 给所有 4 个内置主题都补全，runtime import 走 `custom-themes.ts:73-116` 的 `THEME_VARS_OPTIONAL` 已包含 11 surface vars（v0.2.53 加的）— 用户从 tweakcn paste 进来的主题直接有这 11 vars，无需操作。
+
 ## [0.2.54] - 2026-06-18
 
 ### Fixed

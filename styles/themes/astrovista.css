@@ -1,34 +1,134 @@
 /*
- * AstroVista theme — clean, orange-accented, professional.
- * Source: https://tweakcn.com/r/themes/cmlk6zefr000004lbe9jygsqc
+ * AstroVista theme — clean, professional. Source:
+ *   https://tweakcn.com/r/themes/cmlk6zefr000004lbe9jygsqc
  *
- * Light: cool-white bg with near-black text and orange accent
- * Dark:  near-black bg with near-white text and the same orange accent
+ * Light: cool-white bg with near-black text and a soft blue accent
+ * Dark:  near-black bg with near-white text and a deeper blue accent
  *
- * Uses OKLCH directly (manifest minimum_chrome_version is bumped to 111
- * in v0.2.41 to match globals.css color-mix + these OKLCH values).
- * tweakcn ships a 0.5rem radius and 0em letter-spacing — we don't pass
- * those through to newtab01 (newtab's link/column geometry is fixed),
- * only the 8 shadcn color variables.
+ * The orange primary (oklch(0.6420 0.1691 38.5815)) drives the focus
+ * ring; the blue accent drives link hover. Both are soft on purpose
+ * — the theme is meant to recede, not to dominate. radius=0.5rem
+ * and a 0em letter-spacing match shadcn defaults.
+ *
+ * Uses OKLCH directly (manifest minimum_chrome_version is bumped to
+ * 111 in v0.2.41 to match globals.css color-mix + these OKLCH
+ * values).
+ *
+ * v0.2.55: extend the 8 shadcn color variables with the full set of
+ * tweakcn design tokens (radius, the shadow system, font families,
+ * letter-spacing, tracking, spacing) AND the 11 shadcn surface
+ * tokens (secondary / accent / destructive / card / popover / input
+ * + their foregrounds). The surface tokens are what the shadcn
+ * button + input hover / focus classes reference, so a theme that
+ * doesn't define them falls back to the initial values of the
+ * background-color / color properties (transparent + canvastext),
+ * and on a themed page like AstroVista (cool white bg with a soft
+ * blue accent) the hover state becomes invisible because the
+ * fallback accent doesn't differ enough from the page bg. Filled
+ * in verbatim from tweakcn.
  */
 :root[data-theme="astrovista"] {
+  /* Required 8 (validation gate for runtime imports). */
   --background: oklch(0.9383 0.0042 236.4993);
   --foreground: oklch(0.3211 0 0);
   --primary: oklch(0.6420 0.1691 38.5815);
-  --primary-foreground: #ffffff;
+  --primary-foreground: oklch(1.0000 0 0);
   --muted: oklch(0.9846 0.0017 247.8389);
   --muted-foreground: oklch(0.5510 0.0234 264.3637);
   --border: oklch(0.8452 0 0);
   --ring: oklch(0.6397 0.1720 36.4421);
+
+  /* Design tokens. AstroVista ships shadcn defaults for radius
+   * (0.5rem) and shadow (subtle 1px 3px drop), so the visual feel
+   * is calm. Outfit / Fira Code / Merriweather are the signature
+   * font families. */
+  --radius: 0.5rem;
+  --shadow-color: #1a1a1a;
+  --shadow-opacity: 0.1;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 1px;
+  --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.05);
+  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.05);
+  --shadow-sm: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.10), 0px 1px 2px -1px hsl(0 0% 10.1961% / 0.10);
+  --shadow: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.10), 0px 1px 2px -1px hsl(0 0% 10.1961% / 0.10);
+  --shadow-md: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.10), 0px 2px 4px -1px hsl(0 0% 10.1961% / 0.10);
+  --shadow-lg: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.10), 0px 4px 6px -1px hsl(0 0% 10.1961% / 0.10);
+  --shadow-xl: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.10), 0px 8px 10px -1px hsl(0 0% 10.1961% / 0.10);
+  --shadow-2xl: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.25);
+  --font-sans: Outfit, sans-serif;
+  --font-mono: Fira Code, monospace;
+  --font-serif: Merriweather, serif;
+  --letter-spacing: 0em;
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. accent = soft blue
+   * (oklch(0.9119 0.0222 243.8174)) which on a cool-white page bg
+   * (oklch 0.9383) reads as a slightly deeper blue tint on hover —
+   * subtle but visible. secondary = muted indigo
+   * (oklch(0.4138 0.0846 259.8759)) for muted button variants. */
+  --secondary: oklch(0.4138 0.0846 259.8759);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --accent: oklch(0.9119 0.0222 243.8174);
+  --accent-foreground: oklch(0.3791 0.1378 265.5222);
+  --destructive: oklch(0.6368 0.2078 25.3313);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0.3211 0 0);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.3211 0 0);
+  --input: oklch(0.9700 0.0029 264.5420);
 }
 
 :root[data-theme="astrovista-dark"] {
+  /* Required 8. */
   --background: oklch(0.2178 0 0);
   --foreground: oklch(0.9219 0 0);
   --primary: oklch(0.6420 0.1691 38.5815);
-  --primary-foreground: #ffffff;
+  --primary-foreground: oklch(1.0000 0 0);
   --muted: oklch(0.2850 0 0);
   --muted-foreground: oklch(0.5999 0 0);
   --border: oklch(0.3290 0 0);
   --ring: oklch(0.6397 0.1720 36.4421);
+
+  /* Design tokens. Same shadow stack as light (subtle 1px 3px at
+   * 0.10 opacity) — AstroVista dark is calm, not high-contrast. */
+  --radius: 0.5rem;
+  --shadow-color: #1a1a1a;
+  --shadow-opacity: 0.1;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 1px;
+  --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.05);
+  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.05);
+  --shadow-sm: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.10), 0px 1px 2px -1px hsl(0 0% 10.1961% / 0.10);
+  --shadow: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.10), 0px 1px 2px -1px hsl(0 0% 10.1961% / 0.10);
+  --shadow-md: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.10), 0px 2px 4px -1px hsl(0 0% 10.1961% / 0.10);
+  --shadow-lg: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.10), 0px 4px 6px -1px hsl(0 0% 10.1961% / 0.10);
+  --shadow-xl: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.10), 0px 8px 10px -1px hsl(0 0% 10.1961% / 0.10);
+  --shadow-2xl: 0px 1px 3px 0px hsl(0 0% 10.1961% / 0.25);
+  --font-sans: Outfit, sans-serif;
+  --font-mono: Fira Code, monospace;
+  --font-serif: Merriweather, serif;
+  --letter-spacing: 0em;
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. Dark accent = deeper blue
+   * (oklch(0.3380 0.0589 267.5867)) which on a near-black page bg
+   * (oklch 0.2178) reads as a clear blue tint on hover. */
+  --secondary: oklch(0.3743 0.0726 258.5213);
+  --secondary-foreground: oklch(0.9219 0 0);
+  --accent: oklch(0.3380 0.0589 267.5867);
+  --accent-foreground: oklch(0.8823 0.0571 254.1284);
+  --destructive: oklch(0.6368 0.2078 25.3313);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(0.2435 0 0);
+  --card-foreground: oklch(0.9219 0 0);
+  --popover: oklch(0.2435 0 0);
+  --popover-foreground: oklch(0.9219 0 0);
+  --input: oklch(0.3092 0 0);
 }
