@@ -121,16 +121,24 @@
 }
 
 /* Theme-scope link treatment — only active when this theme is
- * selected. Selector specificity: 0,2,1 beats #main a (0,1,1) in
+ * selected. Selector specificity: 0,2,2 beats #main a (0,1,1) in
  * newtab.css. v0.2.53: the only thing we override on top of the
- * default #main a styles is the border (kept at 1px to match shadcn
- * rather than the v0.2.48 3px neobrutalist assumption). The drop
- * shadow + radius + bg all read from the theme's own vars. */
+ * default #main a styles is the border + radius + drop shadow
+ * (each carries a meaningful theme difference: 1px pure black
+ * border, 0 radius, 4px 4px 0 0 hard black shadow).
+ *
+ * IMPORTANT: we DO NOT set `background-color` here. If we did, the
+ * override's (0,2,2) specificity would beat #main a:hover (0,1,1)
+ * and the link would never get the shadcn-style hover (background
+ * = var(--accent), color = var(--accent-foreground)). newtab.css
+ * already sets background-color to `var(--newtab-link-bg,
+ * var(--newtab-bg))` on #main a and `var(--newtab-link-bg-hover,
+ * var(--accent))` on :hover, so omitting it here lets the theme
+ * accent drive hover automatically. */
 :root[data-theme="mx-brutalist"] #main a,
 :root[data-theme="mx-brutalist-dark"] #main a {
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  background-color: var(--newtab-bg);
   box-shadow: var(--shadow-xs);
 }
 

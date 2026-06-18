@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.54] - 2026-06-18
+
+### Fixed
+- **MX-Brutalist 主题下 link hover 无效果**（用户反馈 "但是链接的 hover 没了，hover 没效果"）。v0.2.53 在 `styles/themes/mx-brutalist.css` 的 link override 里写了 `background-color: var(--newtab-bg)`。该 override 选择器 `:root[data-theme="mx-brutalist"] #main a` 的 specificity 是 `(0, 2, 2)`（`:root` 伪类 + `[data-theme]` 属性 + `#main` ID + `a` 类型），而 newtab.css 的 `#main a:hover` specificity 是 `(0, 1, 1)`。CSS cascade 中 override 永远胜出，hover 时的 `background-color: var(--accent)` 永远不会生效。修复：删除 `mx-brutalist.css:133` 的 `background-color: var(--newtab-bg)` 行（与 newtab.css 默认 `var(--newtab-link-bg, var(--newtab-bg))` 冗余），加注释说明"不要在 override 里设 background-color，否则会锁死 hover"。default state 行为不变，hover 现在能切到 `var(--accent)` + `var(--accent-foreground)`（MX-Brutalist light = 橙黄底 + 深绿字；dark = 浅黄底 + 深绿字）。
+
 ## [0.2.53] - 2026-06-18
 
 ### Removed (全面移除"借鉴"装饰，使用主题自己的风格)
