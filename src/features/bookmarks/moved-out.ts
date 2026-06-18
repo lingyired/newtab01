@@ -79,7 +79,9 @@ export function filterChildren(
   parentId: string,
   children: BookmarkNode[],
   movedOut: MovedOutMap,
+  inBookmarkBarContext = false,
 ): BookmarkNode[] {
+  if (inBookmarkBarContext) return children;
   if (DEFAULT_ROOT_IDS.has(parentId)) return children;
   const hidden = movedOut[parentId];
   if (!hidden || hidden.length === 0) return children;

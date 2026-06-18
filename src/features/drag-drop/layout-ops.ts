@@ -6,7 +6,8 @@ import type { Settings } from '../bookmarks/types';
 import { getLocal, setLocal } from '../../lib/storage';
 import { getSetting } from '../../lib/storage/settings';
 import { renderColumns } from '../bookmarks/board';
-import { recordMovedOutForIds } from '../bookmarks/moved-out';
+import { recordMovedOutForIds, unmarkMovedOut, SPECIAL_IDS as MOVED_OUT_SPECIAL_IDS, DEFAULT_ROOT_IDS } from '../bookmarks/moved-out';
+import { getBookmark } from '../../lib/chrome/bookmarks';
 import * as debug from '../../lib/debug';
 
 const LAYOUT_KEY = 'layout';
@@ -228,12 +229,29 @@ export async function removeRow(xPos: number, yPos: number): Promise<void> {
     return;
   }
   const removed = columns[xPos]!.splice(yPos, 1);
-  debug.log('layout', 'removeRow', { xPos, yPos, removed: removed[0] });
+  const removedId = removed[0];
+  debug.log('layout', 'removeRow', { xPos, yPos, removed: removedId });
 
-  // Remove empty column if more than 1
   if (columns[xPos]!.length === 0 && columns.length > 1) {
     columns.splice(xPos, 1);
   }
 
+  await restoreMovedOutForRemovedId(removedId);
   await saveLayout();
+}
+
+async function restoreMovedOutForRemovedId(id: string | undefined): Promise<void> {
+  if (!id) return;
+  if (MOVED_OUT_SPECIAL_IDS.has(id)) return;
+  if (DEFAULT_ROOT_IDS.has(id)) return;
+  if (!/^\d+$/.test(id)) return;
+  try {
+    const node = await getBookmark(id);
+    const parentId = node?.parentId;
+    if (parentId && parentId !== '0') {
+      await unmarkMovedOut(parentId, id);
+    }
+  } catch (err) {
+    console.error('[newtab01] restoreMovedOutForRemovedId failed for', id, err);
+  }
 }

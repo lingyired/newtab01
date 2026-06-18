@@ -5,6 +5,13 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.65] - 2026-06-18
+
+### Changed
+- **拖出去的目录可以找回来 + 收藏夹栏始终保持完整树**。
+  - **收藏夹栏完整树**：`filterChildren` 新增 `inBookmarkBarContext` 参数。当一个 folder 是从收藏夹栏所在的列渲染（`column.ts:renderColumn` 判断 `ids.includes('1')`），整条 render chain（`renderFolder` → `renderChildrenInto` → `renderNodeInto` → `filterChildren`）传 `true`，跳过 moved-out 过滤。效果：拖 A 到 col 2 后再拖 A 的子 B 到 col 3，A 在收藏夹栏 view 里依然能看到 B（不管 B 是不是在 col 3）。Other Bookmarks（id="2"）继续走原有 `DEFAULT_ROOT_IDS` 直通路径，不变。
+  - **右键删除恢复**：`layout-ops.ts:removeRow` 在删行后调 `unmarkMovedOut(parent, id)`，把该 folder 从它物理 parent 的 moved-out 列表里移除。效果：右键删 col 3 里的 B 之后，B 重新出现在 A 的展开视图里（之前是孤儿）。`restoreMovedOutForRemovedId` 跳过特殊 folder / 根 folder / 非数字 id，错误 console.error 不抛。
+
 ## [0.2.64] - 2026-06-18
 
 ### Fixed

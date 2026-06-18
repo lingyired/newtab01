@@ -15,12 +15,14 @@ export async function renderColumn(index: number, target: HTMLElement, columns: 
   if (!ids || ids.length === 0) return;
   debug.log('render', 'renderColumn', { index, ids, showRoot: !!getSetting('showRoot') });
 
+  const inBookmarkBarContext = ids.includes('1');
+
   // Single folder with showRoot=false: render children directly
   if (ids.length === 1 && !getSetting('showRoot')) {
     const node = await resolveNode(ids[0]!);
     if (node) {
       const children = await getChildren(node);
-      const ul = renderAllNodes(children);
+      const ul = renderAllNodes(children, inBookmarkBarContext);
       target.appendChild(ul);
       addColumnContextMenu(target, index);
     }
@@ -35,22 +37,25 @@ export async function renderColumn(index: number, target: HTMLElement, columns: 
   }
 
   if (nodes.length > 0) {
-    const ul = renderAllNodes(nodes);
+    const ul = renderAllNodes(nodes, inBookmarkBarContext);
     target.appendChild(ul);
     addColumnContextMenu(target, index);
   }
 }
 
 /** Render an array of bookmark nodes into a ul */
-export function renderAllNodes(nodes: BookmarkNode[]): HTMLUListElement {
+export function renderAllNodes(
+  nodes: BookmarkNode[],
+  inBookmarkBarContext: boolean,
+): HTMLUListElement {
   const ul = document.createElement('ul');
 
   if (nodes.length === 0) {
     const emptyNode: BookmarkNode = { id: 'empty', title: '< Empty >', type: 'empty' };
-    renderNode(emptyNode, ul, 0);
+    renderNode(emptyNode, ul, 0, inBookmarkBarContext);
   } else {
     for (const node of nodes) {
-      renderNode(node, ul, 0);
+      renderNode(node, ul, 0, inBookmarkBarContext);
     }
   }
 
@@ -58,9 +63,14 @@ export function renderAllNodes(nodes: BookmarkNode[]): HTMLUListElement {
 }
 
 /** Render a single bookmark node (folder or link) */
-function renderNode(node: BookmarkNode, target: HTMLElement, depth: number): void {
+function renderNode(
+  node: BookmarkNode,
+  target: HTMLElement,
+  depth: number,
+  inBookmarkBarContext: boolean,
+): void {
   if (node.children) {
-    renderFolder(node, target, depth);
+    renderFolder(node, target, depth, inBookmarkBarContext);
   } else {
     renderLink(node, target);
   }

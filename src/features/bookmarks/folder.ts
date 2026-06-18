@@ -17,7 +17,12 @@ import * as debug from '../../lib/debug';
 const OPEN_PREFIX = 'open.';
 
 /** Render a folder node as li with header and collapsible children */
-export function renderFolder(node: BookmarkNode, target: HTMLElement, depth: number): HTMLLIElement {
+export function renderFolder(
+  node: BookmarkNode,
+  target: HTMLElement,
+  depth: number,
+  inBookmarkBarContext: boolean,
+): HTMLLIElement {
   const li = document.createElement('li');
   li.dataset.nodeId = node.id;
   li.dataset.depth = String(depth);
@@ -62,8 +67,8 @@ export function renderFolder(node: BookmarkNode, target: HTMLElement, depth: num
       getChildren(node).then(async (children) => {
         if (header.classList.contains('open')) {
           const movedOut = await getMovedOut();
-          const filtered = filterChildren(node.id, children, movedOut);
-          renderChildrenInto(filtered, li, depth + 1);
+          const filtered = filterChildren(node.id, children, movedOut, inBookmarkBarContext);
+          renderChildrenInto(filtered, li, depth + 1, inBookmarkBarContext);
         }
       });
     }
@@ -73,7 +78,7 @@ export function renderFolder(node: BookmarkNode, target: HTMLElement, depth: num
   header.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     if (target.closest('.folder-action-btn')) return;
-    toggleFolder(node, header, li, depth);
+    toggleFolder(node, header, li, depth, inBookmarkBarContext);
   });
 
   // Keyboard support
@@ -81,7 +86,7 @@ export function renderFolder(node: BookmarkNode, target: HTMLElement, depth: num
     if (e.key === 'Enter') {
       const target = e.target as HTMLElement;
       if (!target.closest('.folder-action-btn')) {
-        toggleFolder(node, header, li, depth);
+        toggleFolder(node, header, li, depth, inBookmarkBarContext);
       }
     }
   });
@@ -119,7 +124,13 @@ export function renderFolder(node: BookmarkNode, target: HTMLElement, depth: num
 }
 
 /** Toggle folder open/close state */
-async function toggleFolder(node: BookmarkNode, header: HTMLAnchorElement, li: HTMLLIElement, depth: number): Promise<void> {
+async function toggleFolder(
+  node: BookmarkNode,
+  header: HTMLAnchorElement,
+  li: HTMLLIElement,
+  depth: number,
+  inBookmarkBarContext: boolean,
+): Promise<void> {
   const isOpen = header.classList.contains('open');
 
   if (isOpen) {
@@ -156,8 +167,8 @@ async function toggleFolder(node: BookmarkNode, header: HTMLAnchorElement, li: H
       const rawChildren = await getChildren(node);
       if (header.classList.contains('open')) {
         const movedOut = await getMovedOut();
-        const children = filterChildren(node.id, rawChildren, movedOut);
-        renderChildrenInto(children, li, depth + 1);
+        const children = filterChildren(node.id, rawChildren, movedOut, inBookmarkBarContext);
+        renderChildrenInto(children, li, depth + 1, inBookmarkBarContext);
       }
     }
   }
@@ -185,16 +196,21 @@ function autoCloseSiblings(li: HTMLLIElement, depth: number): void {
 }
 
 /** Render children into a wrapper div */
-function renderChildrenInto(children: BookmarkNode[], li: HTMLLIElement, depth: number): void {
+function renderChildrenInto(
+  children: BookmarkNode[],
+  li: HTMLLIElement,
+  depth: number,
+  inBookmarkBarContext: boolean,
+): void {
   const ul = document.createElement('ul');
 
   if (children.length === 0) {
     // Show empty state
     const emptyNode: BookmarkNode = { id: 'empty', title: '< Empty >', type: 'empty' };
-    renderNodeInto(emptyNode, ul, depth);
+    renderNodeInto(emptyNode, ul, depth, inBookmarkBarContext);
   } else {
     for (const child of children) {
-      renderNodeInto(child, ul, depth);
+      renderNodeInto(child, ul, depth, inBookmarkBarContext);
     }
   }
 
@@ -205,9 +221,14 @@ function renderChildrenInto(children: BookmarkNode[], li: HTMLLIElement, depth: 
 }
 
 /** Render a single node into a target (delegates to link or folder) */
-function renderNodeInto(node: BookmarkNode, target: HTMLElement, depth: number): void {
+function renderNodeInto(
+  node: BookmarkNode,
+  target: HTMLElement,
+  depth: number,
+  inBookmarkBarContext: boolean,
+): void {
   if (node.children) {
-    renderFolder(node, target, depth);
+    renderFolder(node, target, depth, inBookmarkBarContext);
   } else {
     renderLink(node, target);
   }
