@@ -5,6 +5,14 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.64] - 2026-06-18
+
+### Fixed
+- **右键菜单的浏览器内部页面跳转在 Edge 上失败**。`context-menu.ts` 里 3 个 `window.open('chrome://...')` 调用(Edit bookmarks / History / Clear browsing data)在 Edge 浏览器上抛 `Not allowed to load local resource` —— Edge 拿到 `chrome://` 后会转成 `edge://` 但 `window.open` 路径被部分 Chromium 版本拦掉。
+  - 新增 `openInternalPage(path)` helper,通过 `navigator.userAgent` 检测 Edge(`/Edg\//`),自动用 `edge://` 还是 `chrome://` scheme。
+  - 改用 `chrome.tabs.create` (`lib/chrome/bookmarks.ts` 里的 `createTab` 封装)替代 `window.open` —— 这是 extension context 打开内部页面的官方路径,在 Chrome / Edge / Brave / Opera 上都稳定。
+  - 三处调用全部走 `openInternalPage('bookmarks/?id=' + node.id)` / `'history'` / `'settings/clearBrowserData'`。
+
 ## [0.2.63] - 2026-06-18
 
 ### Added

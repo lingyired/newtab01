@@ -3,12 +3,20 @@
 import type { MenuItem } from './types';
 import { getCoords, addRow, addColumn, removeRow, removeColumn, getColumns } from '../drag-drop/layout-ops';
 import { openAllLinks } from './folder-actions-handler';
+import { createTab } from '../../lib/chrome/bookmarks';
 
 /** Currently active menu element, if any */
 let activeMenu: HTMLUListElement | null = null;
 
 /** Right-clicked element to highlight while the menu is open */
 let selectedTarget: HTMLElement | null = null;
+
+const isEdge = /Edg\//.test(navigator.userAgent);
+const internalScheme = isEdge ? 'edge' : 'chrome';
+
+function openInternalPage(path: string): void {
+  void createTab(`${internalScheme}://${path}`, true);
+}
 
 /** Render a popup context menu at given coordinates.
  * `target` is the right-clicked element to highlight with `.selected`
@@ -117,7 +125,7 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
     items.push({
       label: 'Clear browsing data',
       action: () => {
-        window.open('chrome://settings/clearBrowserData', '_blank');
+        openInternalPage('settings/clearBrowserData');
       },
     });
   }
@@ -126,7 +134,7 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
     items.push({
       label: 'History',
       action: () => {
-        window.open('chrome://history', '_blank');
+        openInternalPage('history');
       },
     });
   }
@@ -136,7 +144,7 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
     items.push({
       label: 'Edit bookmarks',
       action: () => {
-        window.open('chrome://bookmarks/?id=' + node.id, '_blank');
+        openInternalPage('bookmarks/?id=' + node.id);
       },
     });
   }
