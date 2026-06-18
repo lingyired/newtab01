@@ -9,19 +9,6 @@ interface FrameState {
   error: boolean;
 }
 
-const toolbarStyles = `
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 12px;
-  background: var(--muted);
-  border-bottom: 1px solid var(--border);
-  font-size: 12px;
-  color: var(--foreground);
-  position: relative;
-  z-index: 10;
-`;
-
 const toolbarBtnStyles = `
   padding: 4px 8px;
   font-size: 11px;
@@ -69,36 +56,11 @@ function validateLayout(urls: string[], mode: SplitMode): boolean {
   const requiredCounts: Record<SplitMode, number> = {
     '2h': 2,
     '2v': 2,
-    '3grid': 3,
+    '3H': 3,
     '4grid': 4,
   };
   const required = requiredCounts[mode];
   return urls.length >= 2 && urls.length <= (required ?? 4);
-}
-
-function createToolbar(): HTMLElement {
-  const toolbar = document.createElement('div');
-  toolbar.className = 'split-toolbar';
-  toolbar.style.cssText = toolbarStyles;
-
-  const label = document.createElement('span');
-  label.textContent = 'Split View';
-  label.style.cssText = 'font-weight: 500;';
-  toolbar.appendChild(label);
-
-  const spacer = document.createElement('span');
-  spacer.style.cssText = 'flex: 1;';
-  toolbar.appendChild(spacer);
-
-  const closeAllBtn = document.createElement('button');
-  closeAllBtn.textContent = 'Close All';
-  closeAllBtn.style.cssText = toolbarBtnStyles;
-  closeAllBtn.addEventListener('click', () => {
-    window.close();
-  });
-  toolbar.appendChild(closeAllBtn);
-
-  return toolbar;
 }
 
 function createIframe(url: string, slot: HTMLElement): FrameState {
@@ -252,20 +214,16 @@ export function renderSplitView(urls: string[], layout: SplitLayout): HTMLElemen
     return error;
   }
 
-  const wrapper = document.createElement('div');
-  wrapper.style.cssText = `
-    width: 100vw;
-    height: 100vh;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-  `;
-
+  // Container fills the entire viewport (no top toolbar — the browser
+  // tab title is the only "header" users see; see app.ts:initApp for
+  // how document.title is set from parseSplitParams).
   const container = createLayoutContainer(layout.mode);
+  container.style.position = 'fixed';
+  container.style.inset = '0';
 
   for (let i = 0; i < validUrls.length; i++) {
     const url = validUrls[i]!;
-    const slot = createFrameSlot(i, layout.mode);
+    const slot = createFrameSlot(i);
 
     const frame = createIframe(url, slot);
     const frameToolbar = createFrameToolbar(url, frame.iframe, slot);
@@ -281,14 +239,10 @@ export function renderSplitView(urls: string[], layout: SplitLayout): HTMLElemen
     container.appendChild(slot);
   }
 
-  const toolbar = createToolbar();
-  wrapper.appendChild(toolbar);
-  wrapper.appendChild(container);
-
-  return wrapper;
+  return container;
 }
 
-export function parseSplitParams(): { urls: string[]; layout: SplitLayout } | null {
+export function parseSplitParams(): { urls: string[]; layout: SplitLayout; title?: string } | null {
   const params = new URLSearchParams(window.location.search);
   if (params.get('split') !== '1') return null;
 
@@ -300,11 +254,24 @@ export function parseSplitParams(): { urls: string[]; layout: SplitLayout } | nu
 
   if (!urlsParam || !layoutParam) return null;
 
+  let title: string | undefined;
+  const titleParam = hashParams.get('title');
+  if (titleParam) {
+    try {
+      const decoded = decodeURIComponent(titleParam).trim();
+      if (decoded) title = decoded;
+    } catch {
+      // Malformed percent-encoding — ignore and fall through with no title.
+    }
+  }
+
   try {
     const urls: string[] = JSON.parse(decodeURIComponent(urlsParam));
     const mode = layoutParam as SplitMode;
-    if (!['2h', '2v', '3grid', '4grid'].includes(mode)) return null;
-    return { urls, layout: { mode } };
+    if (!['2h', '2v', '3H', '4grid'].includes(mode)) return null;
+    const result: { urls: string[]; layout: SplitLayout; title?: string } = { urls, layout: { mode } };
+    if (title !== undefined) result.title = title;
+    return result;
   } catch {
     return null;
   }

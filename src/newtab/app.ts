@@ -81,7 +81,10 @@ export async function initApp(): Promise<void> {
     // Check if split mode (?split=1 with hash+JSON params - see CLAUDE.md section 4.1)
     const parsed = parseSplitParams();
     if (parsed) {
-      log('init', 'entering split view mode', { urlCount: parsed.urls.length, layout: parsed.layout.mode });
+      log('init', 'entering split view mode', { urlCount: parsed.urls.length, layout: parsed.layout.mode, title: parsed.title });
+      if (parsed.title) {
+        document.title = parsed.title;
+      }
       const view = renderSplitView(parsed.urls, parsed.layout);
       root.replaceWith(view);
       groupEnd();

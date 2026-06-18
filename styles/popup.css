@@ -1,9 +1,27 @@
-/* Popup page specific styles */
-body {
+/* Popup page specific styles
+ *
+ * The html+body are sized via inline `style="..."` in popup.html (so the
+ * dimensions are applied the instant the parser hits the <html>/<body>
+ * tag, before any <link> stylesheet or module script can run). This is
+ * necessary because Chrome sizes the action popup to the documentElement
+ * (<html>), not <body>: with `html { width: 100vw }` from globals.css
+ * the popup was collapsing to ~30-50px (100vw in a popup is a circular
+ * reference Chrome resolves to the initial content's min-content width).
+ *
+ * The class-based rules below mirror the inline styles as a safety net
+ * (in case someone edits the HTML and drops the inline style) and to
+ * also cover cases where a future <html>/<body> element appears in
+ * another popup-style surface.
+ */
+html.popup-html,
+body.popup-body {
   width: 400px;
   height: 500px;
   margin: 0;
   padding: 0;
+}
+
+body.popup-body {
   overflow: hidden;
 }
 
@@ -89,6 +107,8 @@ body {
 }
 
 .picker-title {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -138,6 +158,8 @@ body {
 }
 
 .picker-folder-title {
+  flex: 1;
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -146,6 +168,10 @@ body {
 .picker-folder-children {
   display: flex;
   flex-direction: column;
+}
+
+.picker-folder-children[hidden] {
+  display: none;
 }
 
 /* Layout section */

@@ -5,6 +5,26 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.58] - 2026-06-19
+
+### Changed
+- **Split View: 移除顶部 toolbar**。`src/features/split/split-view.ts` 的 `createToolbar()` 函数（"Split View" 标签 + "Close All" 按钮 + 32px 高的灰色条）整段删除，`renderSplitView()` 改为直接返回 grid container（`position: fixed; inset: 0;`）而不再用 flex column wrapper 包裹 toolbar。顶部 32px 空间让给 iframe grid，让 split view 视觉上"只剩网页"。
+- **Split View: 浏览器 tab 标题动态化**。`SplitEngine.open()` 新增可选 `title?: string` 第 3 参数；`iframe-engine.ts` 把 title 写入 URL hash (`#urls=...&title=...`)；`split-view.ts:parseSplitParams()` 解析后由 `app.ts:initApp()` 写入 `document.title`。两个来源：
+  - **从 newtab folder 打开** — `folder-actions-handler.ts:openSplit()` 传 `node.title`，split view tab 显示 folder 名称（如 "我的书签"）。
+  - **从扩展图标 popup 打开** — `popup/app.ts:buildPopupTitle()` 提取每个 URL 的根域名（hostname 取最后两段，"www.weibo.com" → "weibo.com"），用 ` | ` 拼成 "weibo.com | v2ex.com"。**已知限制**：没有 Public Suffix List，"bbc.co.uk" 会被错误截成 "co.uk"；如需精确 eTLD+1 需要额外引入 PSL 库。
+- **Split View: `3grid` → `3H`，且 layout 改为 3 列等分**。`SplitMode` 联合类型、`layoutConfigs`、`validateLayout`、`parseSplitParams`、folder-actions 默认 layout 选择、popup layout picker 的 mode 与 label（"3 Grid" → "3 Horizontal"）、`styles/newtab.css` 的 `.split-3grid` → `.split-3H`。新 3H = 3 列等分（`grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr;`，三格水平排开）。旧 3H 的 "1+2 横向" 实现（`1fr 1fr / 1fr 1fr` + 首项 `grid-row: span 2` + areas `main/side-top/side-bottom`）整段移除——`split-layout.ts:createFrameSlot` 里的 `if (mode === '3H' && index === 0)` 分支删掉，所有 slot 走同一条 cssText；`styles/newtab.css` 的 `.split-3H iframe:nth-child(3) { grid-column: 1 / -1; }` 删掉。**注意**：`.split-2h` / `.split-2v` / `.split-3H` / `.split-4grid` 这 4 个 CSS class 在 newtab.css 里是 dead code（当前 split-view 用 inline style 渲染，没人 apply 这些 class），但保持命名一致以防以后复用。
+- **Popup: 调换 Tab 顺序，默认 Open Tabs**。`src/popup/app.ts` 把 `Open Tabs` 放到 tab bar 第一位（左侧），`Bookmarks` 放第二位；`currentTab` 初值从 `'bookmarks'` 改为 `'open-tabs'`，打开 popup 默认显示当前已打开的标签列表。
+- **Popup: Bookmarks 文件夹默认展开**。`src/popup/bookmark-picker.ts` 移除 `children.hidden = true`（folder 默认渲染为展开态），初始箭头从 `▶` 改为 `▼`。点击 header 仍可折叠/展开。
+
+### Fixed
+- **Popup: Bookmarks 文件夹展开/折叠不生效**。`styles/popup.css` 的 `.picker-folder-children` 设了 `display: flex; flex-direction: column;`，把 HTML `hidden` 属性默认的 `display: none` 覆盖掉了（`hidden` 是 UA stylesheet 规则，特异性 (0,0,0) 输给 author class (0,1,0)）。修法：加 `.picker-folder-children[hidden] { display: none; }`，class + attribute selector 特异性 (0,2,0) 覆盖前面的 flex 规则。`bookmark-picker.ts` 的 `children.hidden = !children.hidden` 不动。
+- **Popup 宽度异常**。根因是 `styles/globals.css` 给 `<html>` 设了 `width: 100vw` —— Chrome 测量 action popup 大小时看的是 `documentElement`（即 `<html>`），不是 `<body>`。在 popup 上下文里 `100vw` 是 popup 自己的宽度（循环引用），Chrome 把它 resolve 成初始内容固有 min-width ≈ 30-50px，所以 body 即便设了 400px 也救不回来。`body.popup-body` 单修不够，因为 popup 的尺寸锚点在 `<html>`。
+  - **真修**：
+    1. `popup.html` 的 `<html>` 和 `<body>` 都加 inline `style="width:400px; height:500px; margin:0; padding:0;"`（`<body>` 额外加 `overflow:hidden`）。inline style 在 HTML parser 命中标签瞬间就生效，比 `<link>` CSS 早，确保 Chrome 测 popup 尺寸时 html 已经是 400px。
+    2. `popup.html` 加 `class="popup-html"` / `class="popup-body"`，`styles/popup.css` 加 `html.popup-html, body.popup-body { width: 400px; height: 500px; margin: 0; padding: 0 }` 作为备份（防止以后有人删掉 inline style）。
+    3. 顺手删掉 `<meta name="viewport" content="width=device-width">` —— popup 不是移动端，这玩意儿把 layout viewport 锁到设备宽度，反而帮倒忙。
+  - **顺手修**：`styles/popup.css` 的 `.picker-title` 和 `.picker-folder-title` 加 `flex: 1; min-width: 0;`，让 400px popup 内的长书签/文件夹名正确触发 `text-overflow: ellipsis`。
+
 ## [0.2.57-baseline] - 2026-06-18
 
 ### Meta (分支重置：把 `main` 强制重置到 v0.2.57)

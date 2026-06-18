@@ -7,12 +7,18 @@ export class IframeSplitEngine implements SplitEngine {
   readonly id = 'iframe' as const;
   readonly displayName = 'Iframe Split';
 
-  async open(urls: string[], layout: SplitLayout): Promise<SplitHandle> {
+  async open(urls: string[], layout: SplitLayout, title?: string): Promise<SplitHandle> {
     const encodedUrls = encodeURIComponent(JSON.stringify(urls));
-    const hash = `#urls=${encodedUrls}&layout=${layout.mode}`;
+    const hashParams = new URLSearchParams();
+    hashParams.set('urls', encodedUrls);
+    hashParams.set('layout', layout.mode);
+    if (title) {
+      hashParams.set('title', title);
+    }
+    const hash = `#${hashParams.toString()}`;
     const splitUrl = `chrome-extension://${chrome.runtime.id}/newtab.html?split=1${hash}`;
 
-    debug.log('split', 'iframe open', { urlCount: urls.length, layout: layout.mode, splitUrl });
+    debug.log('split', 'iframe open', { urlCount: urls.length, layout: layout.mode, title, splitUrl });
     const tab = await createTab(splitUrl, true);
 
     return {

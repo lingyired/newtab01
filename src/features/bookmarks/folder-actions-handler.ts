@@ -69,7 +69,7 @@ export async function openSplit(node: BookmarkNode): Promise<void> {
 
   // Pick layout by URL count (cap at 4 to match SplitMode's max)
   const mode: SplitLayout['mode'] =
-    urls.length <= 2 ? '2h' : urls.length <= 3 ? '3grid' : '4grid';
+    urls.length <= 2 ? '2h' : urls.length <= 3 ? '3H' : '4grid';
   const layout: SplitLayout = { mode };
   const slicedUrls = urls.slice(0, 4);
 
@@ -78,5 +78,6 @@ export async function openSplit(node: BookmarkNode): Promise<void> {
   // Delegate URL+layout encoding to the split engine (CLAUDE.md § 4).
   // The engine knows the wire format (hash+JSON), builds the new-tab URL,
   // and the new tab's app.ts:initApp reads it back via parseSplitParams().
-  await splitManager.open(slicedUrls, layout);
+  // The folder name becomes the browser tab title of the split view.
+  await splitManager.open(slicedUrls, layout, undefined, node.title);
 }

@@ -85,7 +85,7 @@
 ### 2.4 扩展图标快捷分屏
 - 点击工具栏图标 → 弹出 popup（`popup.html` 独立页面，内含 shadcn `Dialog` 风格的全屏布局）
 - 两个 Tab：**Bookmarks** / **Open Tabs**
-- 用户勾选 2-4 个 URL → 选 layout（`2h` / `2v` / `3grid` / `4grid`）
+- 用户勾选 2-4 个 URL → 选 layout（`2h` / `2v` / `3H` / `4grid`）
 - 点击 **Open Split** → 调分屏引擎在新标签页以 `?split=1` 参数渲染分屏视图
 - 与文件夹分屏共用同一引擎
 
@@ -116,7 +116,7 @@
 
 ```ts
 // src/features/split-engine/types.ts
-export type SplitMode = '2h' | '2v' | '3grid' | '4grid';
+export type SplitMode = '2h' | '2v' | '3H' | '4grid';
 
 export interface SplitLayout {
   mode: SplitMode;

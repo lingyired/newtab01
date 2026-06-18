@@ -1,11 +1,11 @@
 // Layout picker for Popup split screen
 import type { SplitMode } from '../features/split/types';
 
-const LAYOUTS: { mode: SplitMode; label: string; grid: string }[] = [
-  { mode: '2h', label: '2 Horizontal', grid: '"a b" / 1fr 1fr' },
-  { mode: '2v', label: '2 Vertical', grid: '"a" "b" / 1fr' },
-  { mode: '3grid', label: '3 Grid', grid: '"a b" "a c" / 1fr 1fr' },
-  { mode: '4grid', label: '4 Grid', grid: '"a b" "c d" / 1fr 1fr' },
+const LAYOUTS: { mode: SplitMode; label: string; grid: string; areas: string[] }[] = [
+  { mode: '2h', label: '2 Horizontal', grid: '"a b" / 1fr 1fr', areas: ['a', 'b'] },
+  { mode: '2v', label: '2 Vertical', grid: '"a" "b" / 1fr', areas: ['a', 'b'] },
+  { mode: '3H', label: '3 Horizontal', grid: '"a b c" / 1fr 1fr 1fr', areas: ['a', 'b', 'c'] },
+  { mode: '4grid', label: '4 Grid', grid: '"a b" "c d" / 1fr 1fr', areas: ['a', 'b', 'c', 'd'] },
 ];
 
 export class LayoutPicker {
@@ -32,10 +32,11 @@ export class LayoutPicker {
       preview.className = 'layout-preview';
       preview.style.grid = layout.grid;
 
-      const count = layout.mode === '2h' || layout.mode === '2v' ? 2 : layout.mode === '3grid' ? 3 : 4;
+      const count = layout.mode === '2h' || layout.mode === '2v' ? 2 : layout.mode === '3H' ? 3 : 4;
       for (let i = 0; i < count; i++) {
         const cell = document.createElement('div');
         cell.className = 'layout-cell';
+        cell.style.gridArea = layout.areas[i]!;
         preview.appendChild(cell);
       }
 

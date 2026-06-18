@@ -91,7 +91,7 @@ export class BookmarkPicker {
 
       const arrow = document.createElement('span');
       arrow.className = 'picker-arrow';
-      arrow.textContent = '▶';
+      arrow.textContent = '▼';
 
       const folderTitle = document.createElement('span');
       folderTitle.className = 'picker-folder-title';
@@ -102,7 +102,6 @@ export class BookmarkPicker {
 
       const children = document.createElement('div');
       children.className = 'picker-folder-children';
-      children.hidden = true;
 
       header.addEventListener('click', () => {
         children.hidden = !children.hidden;

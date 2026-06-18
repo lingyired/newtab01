@@ -15,9 +15,9 @@ const layoutConfigs: Record<SplitMode, { gridTemplate: string; areas: string[] }
     gridTemplate: 'grid-template-columns: 1fr; grid-template-rows: 1fr 1fr;',
     areas: ['top', 'bottom'],
   },
-  '3grid': {
-    gridTemplate: 'grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;',
-    areas: ['main', 'side-top', 'side-bottom'],
+  '3H': {
+    gridTemplate: 'grid-template-columns: 1fr 1fr 1fr; grid-template-rows: 1fr;',
+    areas: ['left', 'center', 'right'],
   },
   '4grid': {
     gridTemplate: 'grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;',
@@ -39,26 +39,15 @@ export function createLayoutContainer(mode: SplitMode): HTMLElement {
   return container;
 }
 
-export function createFrameSlot(index: number, mode: SplitMode): HTMLElement {
+export function createFrameSlot(index: number): HTMLElement {
   const slot = document.createElement('div');
   slot.className = 'split-frame-slot';
   slot.dataset.slotIndex = String(index);
-
-  // For 3grid, first item spans 2 rows
-  if (mode === '3grid' && index === 0) {
-    slot.style.cssText = `
-      grid-row: span 2;
-      background: var(--background);
-      position: relative;
-      overflow: hidden;
-    `;
-  } else {
-    slot.style.cssText = `
-      background: var(--background);
-      position: relative;
-      overflow: hidden;
-    `;
-  }
+  slot.style.cssText = `
+    background: var(--background);
+    position: relative;
+    overflow: hidden;
+  `;
 
   return slot;
 }

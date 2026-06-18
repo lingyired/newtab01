@@ -595,13 +595,9 @@
   grid-template-rows: 1fr 1fr;
 }
 
-.split-3grid {
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;
-}
-
-.split-3grid iframe:nth-child(3) {
-  grid-column: 1 / -1;
+.split-3H {
+  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-rows: 1fr;
 }
 
 .split-4grid {
