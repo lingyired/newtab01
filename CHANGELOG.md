@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.62] - 2026-06-19
+
+### Changed
+- **Popup: Bookmarks 文件夹默认仅第一层展开**。`src/popup/bookmark-picker.ts` 把 folder 默认展开条件从"全展开"改为 `depth === 0`：只有顶层 folder 默认展开（`▼`，`children.hidden = false`），嵌套 folder 默认折叠（`▶`，`children.hidden = true`）。点击 header 仍可手动 toggle。
+
 ## [0.2.61] - 2026-06-19
 
 ### Added
