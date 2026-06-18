@@ -70,16 +70,19 @@
   --popover-foreground: oklch(0.1759 0.0275 161.2531);
   --input: oklch(1.0000 0 0);
 
-  /* v0.2.57: the brutalist hard offset shadow (4px 4px 0 0 black)
-   * IS the visual signature of this theme, so we explicitly opt
-   * in to a link drop shadow via --newtab-link-shadow. newtab.css
-   * reads this var on every link state (default, :hover, :active,
-   * :focus-visible); declaring it here means the brutalist
-   * hard shadow shows up everywhere a link can be, not just on
-   * the default state. The 0px radius and 1px black border come
-   * "for free" from newtab.css's existing var-driven defaults
-   * (--radius, --border), so no theme-scope rule is needed. */
-  --newtab-link-shadow: var(--shadow-xs);
+  /* v0.2.58: NO --newtab-link-shadow override. The brutalist
+   * hard offset shadow (4px 4px 0 0 black) comes through
+   * automatically because the theme's own --shadow-xs is
+   * defined that way, and link.ts applies the shadcn
+   * `shadow-xs` class which reads var(--shadow-xs) directly.
+   * Pre-v0.2.58 architecture needed an explicit per-theme
+   * `--newtab-link-shadow: var(--shadow-xs)` to override the
+   * v0.2.57 escape hatch; the v0.2.58 class-based approach
+   * eliminates that layer entirely. The 0px radius and 1px
+   * black border are also automatic — the shadcn `rounded-md`
+   * and `border border-input` classes derive from the theme's
+   * --radius (0) and --border (oklch(0 0 0)) without any
+   * theme-scope rule. */
 }
 
 :root[data-theme="mx-brutalist-dark"] {
@@ -130,11 +133,11 @@
   --popover-foreground: oklch(0.9809 0.0260 91.6197);
   --input: oklch(0.2642 0.0387 160.3481);
 
-  /* v0.2.57: same brutalist hard shadow on dark — the 4px 4px
-   * 0 0 warm-cream drop (this theme's --shadow-color is
-   * hsl(45 100% 80%)) is the dark-variant signature. Declared
-   * via the var; no theme-scope rule. */
-  --newtab-link-shadow: var(--shadow-xs);
+  /* v0.2.58: same story as light — no --newtab-link-shadow
+   * override needed. The dark brutalist hard offset shadow
+   * (4px 4px 0 0 warm cream — this theme's --shadow-color is
+   * hsl(45 100% 80%)) flows through the shadcn `shadow-xs`
+   * class via var(--shadow-xs). */
 }
 
 /* v0.2.57: removed the link + .search-input theme-scope rules

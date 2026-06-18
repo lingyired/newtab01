@@ -3,6 +3,7 @@
 @import './themes/mx-brutalist.css';
 @import './themes/cyberpunk.css';
 @import './themes/astrovista.css';
+@import './shadcn-utilities.css';
 
 /*
  * Base CSS variables live in :where(:root) so their specificity is 0.

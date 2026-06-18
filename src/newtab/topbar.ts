@@ -22,6 +22,24 @@ export function createTopbar(container: HTMLElement): void {
     searchInput.id = 'search-input';
     searchInput.placeholder = 'Search bookmarks... (⌘K)';
     searchInput.classList.add('search-input');
+    // v0.2.58: shadcn utility classes (see styles/shadcn-utilities.css).
+    // Same contract as the link: class name + theme's shadcn vars =
+    // entire visual treatment. The composition matches shadcn's
+    // shadcn input class minus the layout / padding pieces that
+    // .search-input in newtab.css handles.
+    searchInput.classList.add(
+      'border',
+      'border-input',
+      'bg-transparent',
+      'text-foreground',
+      'shadow-xs',
+      'rounded-md',
+      'transition-colors',
+      'placeholder:text-muted-foreground',
+      'selection:bg-primary',
+      'selection:text-primary-foreground',
+      'focus-visible:ring-stacked',
+    );
     searchInput.setAttribute('aria-label', 'Search bookmarks');
     searchInput.setAttribute('autocomplete', 'off');
     searchInput.setAttribute('spellcheck', 'false');

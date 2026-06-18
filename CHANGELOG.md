@@ -5,6 +5,41 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.58] - 2026-06-18
+
+### Refactored (架构重构：从 var 翻译层切到 shadcn class-based approach)
+**v0.2.57 的 `--newtab-link-shadow` var 模式仍然走的是 "newtab.css selector→var→theme var" 翻译层**（用户反馈 "新版本的 Codex 主题不是 flat link 风格；是不是还有硬编码没处理。或者是不是不要使用 CSS 的转换，而是直接使用它们的 class name 更好，否则我觉得无法 100% 适配所有的主题"）。翻译层的根本问题：视觉样式的可能性是无限的，每个主题组合都不同，var 永远 cover 不完——Codex 的 flat、brutalist 的 hard offset、cyberpunk 的 neon glow 已经是 3 种 var，未来再加入 outline / ghost / link 等按钮变体，var 数量会爆炸。v0.2.58 直接放弃翻译层，让 shadcn class name 本身成为规范——主题只提供 shadcn vars，class 自动消费。
+
+**新架构合约**：
+- **newtab.css** 不再写任何 theme-aware 属性在 `#main a` / `.search-input` 上。`#main a` 只剩 layout（display、width、padding、font-size、line-height、text-overflow、cursor、transition），`.search-input` 只剩 layout（width、padding、font-size、outline、position、z-index）。**所有视觉属性（bg、color、border、radius、shadow、hover、focus）都由 class 决定**。
+- **shadcn-utilities.css** 镜像 shadcn/Tailwind utility class 集。`.bg-background`、`.text-foreground`、`.border`、`.border-input`、`.shadow-xs`、`.rounded-md`、`.hover:bg-accent`、`.hover:text-accent-foreground` 等。每个 class 直接消费 shadcn var（`background-color: var(--background)` / `box-shadow: var(--shadow-xs)` / `border-color: var(--input)` 等），class name → var 的映射写一次、永久不动。
+- **DOM 元素**（`link.ts` / `topbar.ts`）创建时直接挂 shadcn class，**不再依赖 newtab.css 的 selector 规则来拿视觉样式**。
+- **主题文件** 只声明 8 required + 27 design tokens + 11 surface vars。**`--newtab-link-*` 翻译 var 全部删除**（Codex 不再需要 `--newtab-link-shadow: none` —— 它的 `--shadow-xs` 默认值 `0px 0px 0px 0px hsl(0 0% 0% / 0)` = 无 drop shadow；brutalist 不再需要 `--newtab-link-shadow: var(--shadow-xs)` —— 它的 `--shadow-xs` 默认值 `0px 4px 0px 0px hsl(0 0% 0% / 0.25)` = 4px 硬偏移，自动通过 `.shadow-xs` class 消费）。
+- **加新主题 = 加一个 `styles/themes/xxx.css` + `globals.css` 末尾 `@import` 一行 + 主题列表注册。0 修改 newtab.css / 0 修改 link.ts / 0 修改 topbar.ts**。
+
+具体改动：
+- **新建 `styles/shadcn-utilities.css`**（约 175 行）：包含完整 shadcn utility class 集 + 自定义 `.focus-visible:ring-stacked`。顶部 30+ 行注释说明 class 名字本身是规范、var 是 newtab.css 与主题文件之间的接口（v0.2.57 留下的语法但 class 直接消费、newtab.css 不参与）。
+  - 关键 class：`.bg-background`、`.text-foreground`、`.border` (1px solid var(--border))、`.border-input`、`.bg-transparent`、`.shadow-xs` (var(--shadow-xs))、`.rounded-md` (calc(var(--radius) - 2px))、`.hover:bg-accent`、`.hover:text-accent-foreground`、`.placeholder:text-muted-foreground`、`.selection:bg-primary`、`.selection:text-primary-foreground`、`.transition-colors` (150ms ease-out) 等。
+  - **自定义 `.focus-visible:ring-stacked`**：shadcn 默认 `focus-visible:ring-1` 是 `box-shadow: 0 0 0 1px var(--ring)`，会 **REPLACE** 现有的 box-shadow，导致 brutalist 主题的 `4px 4px 0 0` 硬阴影在 focus 时消失（flicker）。`ring-stacked` 把 focus ring 叠在 `--shadow-xs` 上面（stack 而非 replace），保留 v0.2.52 的 brutalist focus 行为。
+- **`styles/globals.css`**：第 6 行加入 `@import './shadcn-utilities.css';`（在 theme imports 之后、`:where(:root)` 块之前；cascade 顺序：theme vars → shadcn utility classes → consumer styles）。
+- **`styles/newtab.css`**：
+  - `#main a` (line 61-101)：**只剩 layout**。删除 `color: var(--newtab-text)`、`background-color: var(--newtab-link-bg, var(--newtab-bg))`、`border: var(--newtab-link-border, 1px solid var(--border))`、`border-radius: var(--newtab-link-radius, calc(var(--radius) - 2px))`、`font-weight: var(--newtab-link-weight, normal)`、`box-shadow: var(--newtab-link-shadow, var(--shadow-xs))`，整段 `:hover` / `:active` / `:focus-visible` 规则删除。
+  - `.search-input` (line 317-343)：**只剩 layout**。删除 border、border-radius、background-color、color、box-shadow、transition、`:focus`、`:focus-visible`、`:placeholder`、`:selection` 规则。
+- **`src/features/bookmarks/link.ts`** (line 21-31)：创建 `<a>` 后挂 9 个 shadcn class：`border border-input bg-background text-foreground shadow-xs rounded-md hover:bg-accent hover:text-accent-foreground focus-visible:ring-stacked`。
+- **`src/newtab/topbar.ts`** (line 30-42)：创建 `<input>` 后挂 11 个 shadcn class：`border border-input bg-transparent text-foreground shadow-xs rounded-md transition-colors placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground focus-visible:ring-stacked`。
+- **`styles/themes/default.css`**：删除 `--newtab-link-shadow: none;`（light + dark 两个 block）。Codex 主题的 flat 效果来自它的 `--shadow-xs` 默认值 `0px 0px 0px 0px hsl(0 0% 0% / 0)`（tweakcn JSON 里就 0），无需 opt-out。
+- **`styles/themes/mx-brutalist.css`**：删除 `--newtab-link-shadow: var(--shadow-xs);`（light + dark 两个 block）。brutalist 的 `4px 4px 0 0` 硬阴影通过 `--shadow-xs` 默认值 + `.shadow-xs` class 自动消费，无需 opt-in。注释更新为 "v0.2.58: NO --newtab-link-shadow override"。
+
+### Architecture
+- **新约定（v0.2.58 起的强制架构）**:
+  1. **shadcn class name 本身是规范**——`.bg-background` / `.shadow-xs` / `.hover:bg-accent` 等就是 1:1 对应 shadcn 组件 API。
+  2. **CSS 变量是 class 与主题文件之间的接口**——class 直接消费 var（`background-color: var(--background)`），不经过任何中间 var 翻译。
+  3. **newtab.css 只写 layout**（display、width、padding、font-size、line-height 等）——所有视觉样式（bg、color、border、radius、shadow、hover、focus）由 DOM 上的 shadcn class 决定。
+  4. **主题文件只声明 shadcn vars**（8 required + 27 design tokens + 11 surface vars）——不再声明 `--newtab-link-*` 翻译 var。
+  5. **加新主题 = 加 `styles/themes/<name>.css` + `globals.css` @import + 主题列表注册**——不动 newtab.css、不动 link.ts、不动 topbar.ts。
+  6. **如果某个新主题需要新形状**（如 outline button），优先考虑加 shadcn class 到 DOM；如必须用 var 表达，**先在 shadcn-utilities.css 增加新 class**，再在主题文件声明 var——不要直接在主题文件里写 selector rule。
+- **v0.2.58 build**：dist/assets/newtab-D1tvh9h3.css 20.32 kB / 8.81 kB gzipped，dist/assets/manager-D44liEWX.css 20.55 kB / 3.33 kB gzipped（CSS 体量比 v0.2.57 略增，因为 shadcn utilities 是一次性 class 集合；JS 体量不变）。
+
 ## [0.2.57] - 2026-06-18
 
 ### Refactored (架构修复：CSS 变量作为 newtab.css 与主题文件的接口)

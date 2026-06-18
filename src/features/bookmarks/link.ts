@@ -10,6 +10,26 @@ export function renderLink(node: BookmarkNode, target: HTMLElement): HTMLLIEleme
   const li = document.createElement('li');
   const a = document.createElement('a');
 
+  // v0.2.58: shadcn utility classes (see styles/shadcn-utilities.css).
+  // These are the theme-aware properties that used to live in
+  // newtab.css #main a as `var(--newtab-link-*, ...)` fallbacks. The
+  // class names + the theme's shadcn vars (--background, --accent,
+  // --shadow-xs, etc.) are the entire contract — no per-theme CSS
+  // overrides needed in newtab.css. The composition below matches
+  // shadcn's `button-outline` class minus the layout / padding
+  // pieces that #main a handles.
+  a.classList.add(
+    'border',
+    'border-input',
+    'bg-background',
+    'text-foreground',
+    'shadow-xs',
+    'rounded-md',
+    'hover:bg-accent',
+    'hover:text-accent-foreground',
+    'focus-visible:ring-stacked',
+  );
+
   const url = node.url;
   if (url) {
     a.href = url;

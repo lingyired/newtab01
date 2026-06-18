@@ -1,0 +1,185 @@
+/*
+ * Shadcn utility classes — v0.2.58 architectural reset.
+ *
+ * Why this file exists
+ * --------------------
+ * Pre-v0.2.58, newtab.css hardcoded selectors like
+ *
+ *   #main a {
+ *     background-color: var(--newtab-link-bg, var(--newtab-bg));
+ *     border:           var(--newtab-link-border, 1px solid var(--border));
+ *     box-shadow:       var(--newtab-link-shadow, var(--shadow-xs));
+ *   }
+ *   #main a:hover {
+ *     background-color: var(--newtab-link-bg-hover, var(--accent));
+ *     color:            var(--newtab-link-color-hover, var(--accent-foreground));
+ *   }
+ *
+ * with a `--newtab-link-*` translation layer. That translation
+ * can't cover 100% of all themes — each theme's default / hover /
+ * active / focus visual style is unique, and inventing a var per
+ * visual property (--newtab-link-shadow-hover, --newtab-link-
+ * shadow-active, --newtab-link-shadow-focus, ...) scales linearly
+ * with our guesses, not with the actual variety of shadcn themes.
+ *
+ * The class-based approach used here uses shadcn's class names
+ * DIRECTLY on the element:
+ *
+ *   <a class="... border border-input bg-background text-foreground
+ *             shadow-xs rounded-md hover:bg-accent
+ *             hover:text-accent-foreground focus-visible:ring-stacked">
+ *
+ * The class name IS the contract. The theme only needs to provide
+ * the shadcn vars (which it already does for every tweakcn import),
+ * and any shadcn-compatible theme renders correctly with no
+ * per-theme newtab-side plumbing. v0.2.57 made the same
+ * observation about var-driven theming; v0.2.58 takes it the rest
+ * of the way by removing the --newtab-link-* escape-hatch layer
+ * entirely.
+ *
+ * Conventions
+ * -----------
+ * - Class names match shadcn / Tailwind verbatim. The CSS escapes
+ *   the `:` in the class name with a backslash (`hover\:bg-accent`)
+ *   per the CSS spec; HTML / JS just uses the unescaped form
+ *   (`'hover:bg-accent'`) and the browser handles the matching.
+ * - All theme-aware values read from shadcn vars directly. NO
+ *   `--newtab-*` vars — those were the translation layer we just
+ *   removed.
+ * - One exception: `focus-visible:ring-stacked` is our own
+ *   invention. shadcn's default `focus-visible:ring-1` REPLACES
+ *   the box-shadow with a 1px ring, which would make brutalist's
+ *   hard offset shadow flicker on focus. The stacked variant
+ *   keeps the theme's --shadow-xs under the 3px focus ring,
+ *   matching the v0.2.52 behavior. Use this class for any
+ *   element that has a shadow on default and a focus indicator.
+ * - Only add a class here if an element actually needs it. Don't
+ *   pre-generate the full Tailwind surface for hypothetical
+ *   consumers. New utility classes should be added when an
+ *   element requires them.
+ */
+
+/* ─── Background colors ─── */
+.bg-background { background-color: var(--background); }
+.bg-foreground { background-color: var(--foreground); }
+.bg-primary { background-color: var(--primary); }
+.bg-primary-foreground { background-color: var(--primary-foreground); }
+.bg-secondary { background-color: var(--secondary); }
+.bg-secondary-foreground { background-color: var(--secondary-foreground); }
+.bg-accent { background-color: var(--accent); }
+.bg-accent-foreground { background-color: var(--accent-foreground); }
+.bg-muted { background-color: var(--muted); }
+.bg-muted-foreground { background-color: var(--muted-foreground); }
+.bg-card { background-color: var(--card); }
+.bg-card-foreground { background-color: var(--card-foreground); }
+.bg-popover { background-color: var(--popover); }
+.bg-popover-foreground { background-color: var(--popover-foreground); }
+.bg-input { background-color: var(--input); }
+.bg-destructive { background-color: var(--destructive); }
+.bg-destructive-foreground { background-color: var(--destructive-foreground); }
+.bg-transparent { background-color: transparent; }
+
+/* ─── Text colors ─── */
+.text-background { color: var(--background); }
+.text-foreground { color: var(--foreground); }
+.text-primary { color: var(--primary); }
+.text-primary-foreground { color: var(--primary-foreground); }
+.text-secondary-foreground { color: var(--secondary-foreground); }
+.text-accent { color: var(--accent); }
+.text-accent-foreground { color: var(--accent-foreground); }
+.text-muted-foreground { color: var(--muted-foreground); }
+.text-card-foreground { color: var(--card-foreground); }
+.text-popover-foreground { color: var(--popover-foreground); }
+.text-input-foreground { color: var(--input-foreground); }
+.text-destructive-foreground { color: var(--destructive-foreground); }
+
+/* ─── Border (shadcn border + border-{color} variants) ─── */
+.border { border-width: 1px; border-style: solid; border-color: var(--border); }
+.border-input { border-color: var(--input); }
+.border-border { border-color: var(--border); }
+.border-ring { border-color: var(--ring); }
+.border-primary { border-color: var(--primary); }
+.border-accent { border-color: var(--accent); }
+.border-destructive { border-color: var(--destructive); }
+
+/* ─── Border radius (shadcn rounded-{sm,md,lg} derives from --radius) ─── */
+.rounded-sm { border-radius: calc(var(--radius) - 4px); }
+.rounded-md { border-radius: calc(var(--radius) - 2px); }
+.rounded-lg { border-radius: var(--radius); }
+.rounded { border-radius: 0.25rem; }
+.rounded-none { border-radius: 0; }
+.rounded-full { border-radius: 9999px; }
+
+/* ─── Box shadow (shadcn shadow-{2xs,xs,sm,...,2xl} = var(--shadow-*)) ─── */
+.shadow-2xs { box-shadow: var(--shadow-2xs); }
+.shadow-xs { box-shadow: var(--shadow-xs); }
+.shadow-sm { box-shadow: var(--shadow-sm); }
+.shadow { box-shadow: var(--shadow); }
+.shadow-md { box-shadow: var(--shadow-md); }
+.shadow-lg { box-shadow: var(--shadow-lg); }
+.shadow-xl { box-shadow: var(--shadow-xl); }
+.shadow-2xl { box-shadow: var(--shadow-2xl); }
+.shadow-none { box-shadow: none; }
+
+/* ─── Hover state. CSS escapes the `:` in the class name with
+ *     backslash; HTML / JS use the unescaped form ('hover:bg-accent')
+ *     and the browser handles the matching. ─── */
+.hover\:bg-background:hover { background-color: var(--background); }
+.hover\:bg-foreground:hover { background-color: var(--foreground); }
+.hover\:bg-primary:hover { background-color: var(--primary); }
+.hover\:bg-primary-foreground:hover { background-color: var(--primary-foreground); }
+.hover\:bg-secondary:hover { background-color: var(--secondary); }
+.hover\:bg-secondary-foreground:hover { background-color: var(--secondary-foreground); }
+.hover\:bg-accent:hover { background-color: var(--accent); }
+.hover\:bg-accent-foreground:hover { background-color: var(--accent-foreground); }
+.hover\:bg-muted:hover { background-color: var(--muted); }
+.hover\:bg-card:hover { background-color: var(--card); }
+.hover\:bg-popover:hover { background-color: var(--popover); }
+.hover\:bg-destructive:hover { background-color: var(--destructive); }
+.hover\:bg-transparent:hover { background-color: transparent; }
+
+.hover\:text-background:hover { color: var(--background); }
+.hover\:text-foreground:hover { color: var(--foreground); }
+.hover\:text-primary:hover { color: var(--primary); }
+.hover\:text-primary-foreground:hover { color: var(--primary-foreground); }
+.hover\:text-secondary-foreground:hover { color: var(--secondary-foreground); }
+.hover\:text-accent-foreground:hover { color: var(--accent-foreground); }
+.hover\:text-muted-foreground:hover { color: var(--muted-foreground); }
+.hover\:text-card-foreground:hover { color: var(--card-foreground); }
+.hover\:text-destructive-foreground:hover { color: var(--destructive-foreground); }
+
+.hover\:shadow-none:hover { box-shadow: none; }
+.hover\:shadow-xs:hover { box-shadow: var(--shadow-xs); }
+.hover\:shadow-sm:hover { box-shadow: var(--shadow-sm); }
+.hover\:shadow-md:hover { box-shadow: var(--shadow-md); }
+
+/* ─── Focus-visible state (our own stacked variant — see file header) ─── */
+.focus-visible\:ring-stacked:focus-visible {
+  border-color: var(--ring);
+  box-shadow:
+    0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent),
+    var(--shadow-xs);
+  outline: none;
+}
+
+/* ─── Transitions ─── */
+.transition-colors {
+  transition-property: color, background-color, border-color, box-shadow;
+  transition-timing-function: ease-out;
+  transition-duration: 150ms;
+}
+.transition-shadow {
+  transition-property: box-shadow;
+  transition-timing-function: ease-out;
+  transition-duration: 150ms;
+}
+.transition-all {
+  transition-property: all;
+  transition-timing-function: ease-out;
+  transition-duration: 150ms;
+}
+
+/* ─── Placeholder & selection (for inputs) ─── */
+.placeholder\:text-muted-foreground::placeholder { color: var(--muted-foreground); }
+.selection\:bg-primary::selection { background-color: var(--primary); }
+.selection\:text-primary-foreground::selection { color: var(--primary-foreground); }

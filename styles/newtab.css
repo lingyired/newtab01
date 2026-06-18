@@ -70,78 +70,34 @@
   font-size: 1.8em;
   line-height: 1.4;
   text-decoration: none;
-  color: var(--newtab-text);
-  /* All per-theme link style is driven by --newtab-link-* variables
-   * with sensible fallbacks inline. A theme that wants a different
-   * link treatment (brutalist, neumorphic, glassmorphism, etc.) just
-   * overrides the variables it cares about in its own theme file —
-   * no JS mapping needed. Adding `transform` to the transition list
-   * is a no-op for the default (transform is always none) but lets
-   * themed variants animate the press interaction. */
-  /* link bg defaults to page bg (matches Codex: white-on-white with a
-   * 1px border and a hairline shadow). --newtab-link-bg is still the
-   * per-theme escape hatch (brutalist / glassmorphism override it
-   * directly).
-   *
-   * v0.2.53: align link styling with the shadcn button class
-   * (border bg-background shadow-xs hover:bg-accent
-   *  hover:text-accent-foreground). All theme-aware properties
-   *  (background / border / radius / box-shadow) read from the
-   *  theme's shadcn vars directly; the --newtab-link-* vars remain
-   *  as per-theme escape hatches only. */
-  padding: 0.45em 0.8em 0.45em 1.2em;
-  background-color: var(--newtab-link-bg, var(--newtab-bg));
-  border: var(--newtab-link-border, 1px solid var(--border));
-  border-radius: var(--newtab-link-radius, calc(var(--radius) - 2px));
-  font-weight: var(--newtab-link-weight, normal);
-  box-shadow: var(--newtab-link-shadow, var(--shadow-xs));
   cursor: pointer;
   white-space: nowrap;
+  padding: 0.45em 0.8em 0.45em 1.2em;
+  /* v0.2.58: layout + transition only. All theme-aware properties
+   * (bg, color, border, radius, box-shadow, hover bg/color,
+   * focus-visible ring) are now sourced from shadcn utility
+   * classes on the element — see styles/shadcn-utilities.css.
+   * link.ts adds the shadcn classes to each <a>:
+   *   border border-input bg-background text-foreground shadow-xs
+   *   rounded-md hover:bg-accent hover:text-accent-foreground
+   *   focus-visible:ring-stacked
+   * The shadow stack on focus-visible is the .focus-visible:ring-
+   * stacked class (defined in shadcn-utilities.css), which keeps
+   * the theme's --shadow-xs under the 3px focus ring rather than
+   * replacing it — the v0.2.52 reason: brutalist's hard offset
+   * shadow would flicker on focus if replaced.
+   *
+   * The pre-v0.2.58 --newtab-link-* var escape hatches
+   * (--newtab-link-bg, --newtab-link-border, --newtab-link-radius,
+   * --newtab-link-weight, --newtab-link-shadow,
+   * --newtab-link-shadow-active, --newtab-link-color-hover,
+   * --newtab-link-bg-hover, --newtab-link-transform-active,
+   * --newtab-link-transition-duration) are GONE. Themes only need
+   * to provide the shadcn vars; the class names + the shadcn vars
+   * are the entire contract. */
   transition-property: color, background-color, border-color, box-shadow, transform, opacity;
-  transition-duration: var(--newtab-link-transition-duration, var(--newtab-fade-ms));
+  transition-duration: var(--newtab-fade-ms);
   transition-timing-function: ease-out;
-}
-
-#main a:hover {
-  /* v0.2.53: shadcn button-outline hover is `hover:bg-accent
-   * hover:text-accent-foreground` — background-color + color only.
-   * No border-color change, no transform, no box-shadow change.
-   * v0.2.52's box-shadow glow (`0 0 var(--newtab-shadow-blur)
-   * var(--newtab-highlight)`) and transform translate were
-   * v0.2.45-era "borrowed" hover effects that don't match shadcn;
-   * removed. */
-  color: var(--newtab-link-color-hover, var(--accent-foreground));
-  background-color: var(--newtab-link-bg-hover, var(--accent));
-}
-
-#main a:active {
-  /* v0.2.53: shadcn button has no :active override (the click is
-   * so brief that :hover covers it). Keep the default state's
-   * --newtab-link-shadow so the drop shadow doesn't flicker on
-   * press. Chained fallback: --newtab-link-shadow-active (per-
-   * theme escape hatch for a custom press animation) → default
-   * state's --newtab-link-shadow → --shadow-xs. */
-  box-shadow: var(--newtab-link-shadow-active, var(--newtab-link-shadow, var(--shadow-xs)));
-  transform: var(--newtab-link-transform-active, none);
-}
-
-#main a:focus-visible {
-  /* v0.2.52: replace the v0.2.45-era `outline: 2px solid var(--primary)
-   * + outline-offset: 2px` with the shadcn button focus-visible
-   * treatment: border switches to var(--ring) and a 3px ring of
-   * color-mix(oklab, var(--ring) 50%, transparent) sits outside
-   * the drop shadow. v0.2.57: the drop shadow is now sourced
-   * from --newtab-link-shadow (same var as default / :hover /
-   * :active) — themes that want no drop on hover (e.g. Codex)
-   * don't get a drop on focus either, themes that want a hard
-   * shadow (e.g. MX-Brutalist's 4px 4px 0 0) keep the shadow
-   * under the focus ring. The ring itself is always present
-   * for keyboard accessibility. */
-  border-color: var(--ring);
-  box-shadow:
-    0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent),
-    var(--newtab-link-shadow, var(--shadow-xs));
-  outline: none;
 }
 
 /* ─── Icons ─── */
@@ -362,62 +318,28 @@
   width: 100%;
   padding: 11px 18px;
   font-size: 1.8em;
-  border: 1px solid var(--border);
-  /* v0.2.50: read the theme's --radius instead of hardcoding 8px.
-   * v0.2.52: use shadcn's `rounded-md` derivation
-   * `calc(var(--radius) - 2px)` so the visible corner sits inside
-   * the radius circle (the 1px border eats the outer 1px of the
-   * radius). Codex-style themes get 0.5rem - 2px rounded corners,
-   * MX-Brutalist gets 0px (sharp corners). */
-  border-radius: calc(var(--radius) - 2px);
-  /* v0.2.52: switch from var(--newtab-surface) (a 6% color-mix
-   * toward the foreground) to transparent, matching the shadcn
-   * input class `bg-transparent`. The surface tint was nice as a
-   * link bg separator but reads as "grey box" on a search bar.
-   * Themes that want a tinted search bar (e.g. glassmorphism) can
-   * override the bg via a theme-scope rule. */
-  background-color: transparent;
-  color: var(--foreground);
-  /* Default: shadcn .shadow-xs preset from the active theme. Brutalist
-   * themes (MX-Brutalist) override --shadow-xs to 4px 4px 0 0 hard
-   * color at 0.50 opacity, so the search bar picks up the brutalist
-   * signature automatically — no theme-scope override needed in
-   * this file. */
-  box-shadow: var(--shadow-xs);
   outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
   position: relative;
   z-index: 1;
-}
-
-.search-input:focus,
-.search-input:focus-visible {
-  /* v0.2.52: switch focus from the v0.2.50 `border-color: var(--primary)
-   * + box-shadow: var(--shadow-xs), 0 0 0 2px var(--ring)` (an ad-hoc
-   * ring composed of two stacked shadows) to the shadcn input
-   * focus-visible treatment: border switches to var(--ring) and a
-   * 3px ring of color-mix(oklab, var(--ring) 50%, transparent) sits
-   * outside the drop shadow. Stacking with var(--shadow-xs) keeps
-   * the theme's drop shadow visible during focus instead of
-   * replacing it (no flicker on heavy-shadow themes). */
-  border-color: var(--ring);
-  box-shadow:
-    0 0 0 3px color-mix(in oklab, var(--ring) 50%, transparent),
-    var(--shadow-xs);
-  outline: none;
-}
-
-.search-input::placeholder {
-  color: var(--muted-foreground);
-}
-
-/* v0.2.52: shadcn input class `selection:bg-primary
- * selection:text-primary-foreground`. Translates to the
- * standard ::selection pseudo-element with the theme's primary
- * colors. */
-.search-input::selection {
-  background-color: var(--primary);
-  color: var(--primary-foreground);
+  /* v0.2.58: layout only. All theme-aware properties (border,
+   * border-radius, background-color, color, box-shadow,
+   * transition, focus ring, placeholder color, selection
+   * color) are now sourced from shadcn utility classes on the
+   * element — see styles/shadcn-utilities.css. topbar.ts adds
+   * the shadcn classes to the <input>:
+   *   border border-input bg-transparent text-foreground shadow-xs
+   *   rounded-md transition-colors placeholder:text-muted-foreground
+   *   selection:bg-primary selection:text-primary-foreground
+   *   focus-visible:ring-stacked
+   *
+   * The focus-visible ring is the .focus-visible:ring-stacked
+   * class (defined in shadcn-utilities.css), which stacks a
+   * 3px ring of color-mix(oklab, var(--ring) 50%, transparent)
+   * ON TOP of the theme's --shadow-xs so the search bar keeps
+   * its drop shadow during focus (no flicker on heavy-shadow
+   * themes). The input's transition-duration is the shadcn
+   * default 150ms; if the project needs a longer animation it
+   * can override via a custom class or extend .transition-colors. */
 }
 
 /* Search results — positioned absolute below the input */
