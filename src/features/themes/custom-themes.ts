@@ -60,10 +60,16 @@ type RequiredThemeVar = (typeof THEME_VARS)[number];
  *     --tracking-widest` — letter spacing tokens
  *  - `--spacing` — base spacing unit
  *
- *  We deliberately do NOT carry through `chart-*`, `sidebar-*`,
- *  `card*`, `popover*`, `secondary`, `accent`, `destructive`, or
- *  `input` — newtab01 doesn't render those surfaces. Carrying them
- *  would just bloat the <style> block. */
+ *  We deliberately do NOT carry through `chart-*` or `sidebar-*`
+ *  because newtab01 doesn't render those surfaces. The other shadcn
+ *  surface tokens (secondary / accent / destructive / card / popover
+ *  / input + their foregrounds) ARE carried through — v0.2.53 added
+ *  them because shadcn Button + Input reference them in their base
+ *  classes (button hover uses `bg-accent text-accent-foreground`;
+ *  input border uses `border-input`). Before the expansion our link
+ *  hover fell back to `--newtab-highlight` (a 15% color-mix toward
+ *  --primary, a newtab-only derivative) which the user explicitly
+ *  asked to replace with the theme's own style. */
 const THEME_VARS_OPTIONAL = [
   'radius',
   'shadow-color',
@@ -91,6 +97,22 @@ const THEME_VARS_OPTIONAL = [
   'tracking-wider',
   'tracking-widest',
   'spacing',
+  // v0.2.53: shadcn surface tokens that the button/input class
+  // strings reference. `accent` + `accent-foreground` drive link
+  // hover; `input` drives search-input border color; the rest are
+  // kept for symmetry so a user importing a tweakcn theme gets the
+  // full visual identity (cards, popovers, destructive states).
+  'secondary',
+  'secondary-foreground',
+  'accent',
+  'accent-foreground',
+  'destructive',
+  'destructive-foreground',
+  'card',
+  'card-foreground',
+  'popover',
+  'popover-foreground',
+  'input',
 ] as const;
 type OptionalThemeVar = (typeof THEME_VARS_OPTIONAL)[number];
 

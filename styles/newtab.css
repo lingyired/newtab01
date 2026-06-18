@@ -79,27 +79,16 @@
    * is a no-op for the default (transform is always none) but lets
    * themed variants animate the press interaction. */
   /* link bg defaults to page bg (matches Codex: white-on-white with a
-   * 1px border and a hairline shadow). The generic --newtab-surface
-   * is a 6% color-mix toward the foreground, which reads as gray on
-   * the default light theme and made every link look like a filled
-   * row instead of a button. --newtab-link-bg is still the per-theme
-   * escape hatch (brutalist / glassmorphism override it directly).
+   * 1px border and a hairline shadow). --newtab-link-bg is still the
+   * per-theme escape hatch (brutalist / glassmorphism override it
+   * directly).
    *
-   * v0.2.52: align link styling with the shadcn button class
-   * (inline-flex shrink-0 ... border bg-background shadow-xs
-   *  hover:bg-accent hover:text-accent-foreground ...). We map the
-   *  theme-aware properties and skip the layout / typography ones
-   *  per user direction:
-   *  - `rounded-md` -> `calc(var(--radius) - 2px)` (shadcn
-   *    convention: the inner border-radius is 2px smaller than
-   *    --radius so the visible corner sits inside the radius circle).
-   *  - `border` + `bg-background` + `shadow-xs` are already covered
-   *    by the existing 1px border / var(--newtab-bg) (== --background) /
-   *    var(--shadow-xs) declarations below.
-   *  - hover / focus keep the newtab palette hooks
-   *    (--newtab-highlight / --newtab-link-color-hover /
-   *    --newtab-link-bg-hover) so themes still control the per-state
-   *    coloring without re-importing accent tokens. */
+   * v0.2.53: align link styling with the shadcn button class
+   * (border bg-background shadow-xs hover:bg-accent
+   *  hover:text-accent-foreground). All theme-aware properties
+   *  (background / border / radius / box-shadow) read from the
+   *  theme's shadcn vars directly; the --newtab-link-* vars remain
+   *  as per-theme escape hatches only. */
   padding: 0.45em 0.8em 0.45em 1.2em;
   background-color: var(--newtab-link-bg, var(--newtab-bg));
   border: var(--newtab-link-border, 1px solid var(--border));
@@ -114,15 +103,24 @@
 }
 
 #main a:hover {
-  color: var(--newtab-link-color-hover, var(--newtab-highlight-text));
-  background-color: var(--newtab-link-bg-hover, var(--newtab-highlight));
-  border-color: var(--newtab-link-border-color-hover, var(--primary));
-  box-shadow: var(--newtab-link-shadow-hover, 0 0 var(--newtab-shadow-blur) var(--newtab-highlight));
-  transform: var(--newtab-link-transform-hover, none);
+  /* v0.2.53: shadcn button-outline hover is `hover:bg-accent
+   * hover:text-accent-foreground` — background-color + color only.
+   * No border-color change, no transform, no box-shadow change.
+   * v0.2.52's box-shadow glow (`0 0 var(--newtab-shadow-blur)
+   * var(--newtab-highlight)`) and transform translate were
+   * v0.2.45-era "borrowed" hover effects that don't match shadcn;
+   * removed. */
+  color: var(--newtab-link-color-hover, var(--accent-foreground));
+  background-color: var(--newtab-link-bg-hover, var(--accent));
 }
 
 #main a:active {
-  box-shadow: var(--newtab-link-shadow-active, none);
+  /* v0.2.53: shadcn button has no :active override (the click is
+   * so brief that :hover covers it). Keep the default state's
+   * var(--shadow-xs) so the drop shadow doesn't flicker on press.
+   * The --newtab-link-transform-active var is still exported for
+   * themes that want a custom press animation. */
+  box-shadow: var(--newtab-link-shadow-active, var(--shadow-xs));
   transform: var(--newtab-link-transform-active, none);
 }
 

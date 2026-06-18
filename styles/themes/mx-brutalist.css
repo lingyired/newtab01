@@ -1,26 +1,30 @@
 /*
  * MX-Brutalist theme — neo-brutalist with hard black borders, no
  * radius, green primary. tweakcn JSON: cmllfu8oc000004l1a0tidj2g
- * (Victor Hugo Avelar Ossorio). v0.2.48: re-fetched directly from
- * tweakcn and the brutalist link treatment was re-introduced as a
- * theme-scope override on #main a (was removed in v0.2.45 so all
- * built-in themes shared the same 8-vars-only baseline).
+ * (Victor Hugo Avelar Ossorio). All variables below are verbatim
+ * from the tweakcn light + dark blocks (fetched at build time).
  *
- * v0.2.50: extends the 8 shadcn color variables with the full set of
- * tweakcn design tokens (radius, the shadow system, font families,
- * letter-spacing, tracking, spacing) so runtime-imported themes also
- * keep their visual identity. The light + dark shadow stacks are
- * verbatim from the tweakcn JSON: the dark variant's --shadow-color
- * is hsl(45 100% 80%) (warm cream against the deep green
- * background) instead of the light variant's hsl(0 0% 0%).
+ * v0.2.53: stripped all the v0.2.48 / v0.2.50 neobrutalist
+ * decorations that I borrowed from dribbble and assumed were
+ * shadcn standard — they were not. The user asked to use the
+ * theme's style directly:
+ * - border 3px -> 1px (shadcn Button / Input use a 1px border)
+ * - hover translate(-2px, -2px) + 6px 6px 0 0 shadow: removed
+ *   (shadcn button hover only changes background-color +
+ *   color, never transform or shadow)
+ * - active translate(0, 0): removed (shadcn button has no :active
+ *   override; we keep the default state's var(--shadow-xs))
  *
- * The 8 shadcn variables + the design tokens below are exactly what
- * we expose as a `theme` block. The 6 --newtab-* variables are
- * derived from the 8 in globals.css so they need no per-theme work.
+ * The visual signature for the brutalist look is now carried
+ * entirely by the theme's --shadow-xs (= 4px 4px 0 0 hard black
+ * drop at 0.50 opacity) which is exactly what tweakcn's JSON
+ * ships, and the 1px border. Together they read as brutalist
+ * because of the hard offset shadow; the border thickness doesn't
+ * need to be 3px.
  */
 
 :root[data-theme="mx-brutalist"] {
-  /* Required 8 — validation gate for runtime imports. */
+  /* Required 8 (validation gate for runtime imports). */
   --background: oklch(0.9923 0.0104 91.4994);
   --foreground: oklch(0.1759 0.0275 161.2531);
   --primary: oklch(0.5687 0.1498 151.9380);
@@ -30,7 +34,7 @@
   --border: oklch(0 0 0);
   --ring: oklch(0.5687 0.1498 151.9380);
 
-  /* Tweakcn design tokens — verbatim from the JSON. */
+  /* v0.2.50: radius, shadow system, fonts, tracking, spacing. */
   --radius: 0px;
   --shadow-color: hsl(0, 0%, 0%);
   --shadow-opacity: 1;
@@ -52,6 +56,19 @@
   --letter-spacing: 0.02em;
   --tracking-normal: 0.04em;
   --spacing: 0.25rem;
+
+  /* v0.2.53: shadcn surface tokens. Verbatim from tweakcn JSON. */
+  --secondary: oklch(0.6088 0.2498 29.2339);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --accent: oklch(0.7721 0.1727 64.1585);
+  --accent-foreground: oklch(0.1759 0.0275 161.2531);
+  --destructive: oklch(0.5799 0.2380 29.2339);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0.1759 0.0275 161.2531);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.1759 0.0275 161.2531);
+  --input: oklch(1.0000 0 0);
 }
 
 :root[data-theme="mx-brutalist-dark"] {
@@ -65,7 +82,7 @@
   --border: oklch(0.9809 0.0260 91.6197);
   --ring: oklch(0.7951 0.1631 68.6392);
 
-  /* Tweakcn design tokens — same as light, except the shadow color
+  /* v0.2.50: same shadow system as light, except the shadow color
    * is hsl(45 100% 80%) (warm cream) instead of pure black. */
   --radius: 0px;
   --shadow-color: hsl(45, 100%, 80%);
@@ -88,57 +105,46 @@
   --letter-spacing: 0.04em;
   --tracking-normal: 0.04em;
   --spacing: 0.25rem;
+
+  /* v0.2.53: shadcn surface tokens. */
+  --secondary: oklch(0.6489 0.2370 26.9728);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --accent: oklch(0.7951 0.1631 68.6392);
+  --accent-foreground: oklch(0.1292 0.0270 165.3808);
+  --destructive: oklch(0.6280 0.2577 29.2339);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(0.2283 0.0445 158.2398);
+  --card-foreground: oklch(0.9809 0.0260 91.6197);
+  --popover: oklch(0.2283 0.0445 158.2398);
+  --popover-foreground: oklch(0.9809 0.0260 91.6197);
+  --input: oklch(0.2642 0.0387 160.3481);
 }
 
 /* Theme-scope link treatment — only active when this theme is
- * selected. Selector specificity: 0,2,1 beats #main a (0,1,1) and
- * #main a:hover (0,1,1) from newtab.css, so the brutalist border /
- * transform win the cascade without re-introducing the generic
- * --newtab-link-* variables that v0.2.45 retired.
- *
- * v0.2.50: border-radius and box-shadow now read from the theme's
- * --radius (0px) and --shadow variables — so the same override works
- * for both the light and dark variants (which differ only in
- * --shadow-color, picked up automatically). 3px hard border stays
- * hardcoded because tweakcn doesn't define an input border width
- * token; 2-3px is the typical neo-brutalist signature.
- *
- * Hover: classic neo-brutalist "press" — slide up-left by 2px and
- * grow the shadow to 6px 6px so it visibly "lifts" out of the page. */
+ * selected. Selector specificity: 0,2,1 beats #main a (0,1,1) in
+ * newtab.css. v0.2.53: the only thing we override on top of the
+ * default #main a styles is the border (kept at 1px to match shadcn
+ * rather than the v0.2.48 3px neobrutalist assumption). The drop
+ * shadow + radius + bg all read from the theme's own vars. */
 :root[data-theme="mx-brutalist"] #main a,
 :root[data-theme="mx-brutalist-dark"] #main a {
-  border: 3px solid var(--border);
+  border: 1px solid var(--border);
   border-radius: var(--radius);
   background-color: var(--newtab-bg);
-  /* v0.2.51: use var(--shadow-xs) for consistency with the global
-   * "everything is .shadow-xs" rule. The theme's --shadow-xs is
-   * `4px 4px 0px 0px hsl(<shadow-color> / 0.50)` (0.50 opacity, per
-   * the tweakcn JSON). The full-opacity --shadow is reserved for
-   * explicit heavy-shadow use cases elsewhere if we add them. */
   box-shadow: var(--shadow-xs);
 }
 
-:root[data-theme="mx-brutalist"] #main a:hover,
-:root[data-theme="mx-brutalist-dark"] #main a:hover {
-  transform: translate(-2px, -2px);
-  /* The hover shadow color matches the theme's --shadow-color (black
-   * in light, cream in dark) and uses --shadow-blur / --shadow-
-   * spread from the theme to stay consistent. */
-  box-shadow: 6px 6px 0 0 var(--shadow-color);
-}
+/* v0.2.53: hover + active overrides removed — shadcn button hover
+ * only changes background-color and color (handled by newtab.css
+ * with var(--accent) / var(--accent-foreground)), and shadcn button
+ * has no :active override at all. */
 
-:root[data-theme="mx-brutalist"] #main a:active,
-:root[data-theme="mx-brutalist-dark"] #main a:active {
-  transform: translate(0, 0);
-  box-shadow: var(--shadow-xs);
-}
-
-/* Search input — apply the same brutalist 3px hard border + var(--shadow)
- * to the topbar's search box so the whole UI shares one visual
- * language. The 1px default border in newtab.css is overridden here.
- * border-radius: var(--radius) is already 0 in this theme (declared
- * above), so no explicit 0 needed. */
+/* Search input — apply the same 1px hard border so the whole UI
+ * shares one visual language. border-radius: var(--radius) is
+ * already 0 in this theme (declared above), so no explicit 0
+ * needed. The 1px border matches the v0.2.52 shadcn input
+ * convention; the brutalist signature comes from var(--shadow-xs). */
 :root[data-theme="mx-brutalist"] .search-input,
 :root[data-theme="mx-brutalist-dark"] .search-input {
-  border: 3px solid var(--border);
+  border: 1px solid var(--border);
 }

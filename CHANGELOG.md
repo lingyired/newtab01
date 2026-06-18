@@ -5,6 +5,35 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.53] - 2026-06-18
+
+### Removed (全面移除"借鉴"装饰，使用主题自己的风格)
+用户反馈"不需要从其他地方借鉴，直接使用主题的风格。请全面检查一下，有借鉴的地方都移除，使用主题的风格"。v0.2.48 / v0.2.50 我加的 neobrutalist 装饰（从 dribbble 风格参考借鉴）和 v0.2.45 之前的 `--newtab-highlight` 派生 hover 风格都**不是** tweakcn / shadcn 主题风格的元素。系统全面移除：
+
+- **`styles/themes/mx-brutalist.css`**:
+  - link + search-input `border: 3px solid` → `1px solid`（v0.2.48 借鉴的 2-3px neobrutalist 硬边；shadcn 实际是 1px，brutalist 视觉签名由 `var(--shadow-xs)` = `4px 4px 0 0` 撑起）。
+  - link `:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0 0 var(--shadow-color) }` 整块删除（v0.2.48 借鉴的"按下浮起"动画；shadcn button hover 不位移、不改 shadow）。
+  - link `:active { transform: translate(0, 0) }` 删除（v0.2.48 借鉴的"active 复位"；shadcn button 没有 :active override，drop shadow 由 `:active` 默认态保留）。
+  - **新增**：补全 11 个 shadcn surface vars（`secondary` / `secondary-foreground` / `accent` / `accent-foreground` / `destructive` / `destructive-foreground` / `card` / `card-foreground` / `popover` / `popover-foreground` / `input`）light + dark 各 1 套，按 tweakcn JSON verbatim。
+- **`styles/newtab.css` link hover / active**:
+  - hover 改用 shadcn button-outline 风格 `color: var(--accent-foreground) + background-color: var(--accent)`。移除：
+    - `border-color: var(--primary)`（hover 不改 border）
+    - `box-shadow: 0 0 var(--newtab-shadow-blur) var(--newtab-highlight)`（v0.2.45 之前的发光 hover 效果）
+    - `transform: var(--newtab-link-transform-hover, none)`（hover 不位移）
+  - active `box-shadow: var(--newtab-link-shadow-active, none)` → `var(--shadow-xs)`（保留 default 状态的 drop shadow，避免按下时闪烁）。
+- **`styles/globals.css`**:
+  - 兜底 11 个新增 shadcn surface vars（shadcn `slate` 调色板默认）。
+  - 移除 `--newtab-surface: color-mix(in srgb, var(--newtab-bg), var(--newtab-text) 6%)` 派生（v0.2.32 引入，v0.2.50 后 link / search-input 都不再用，无人引用）。
+  - `--newtab-highlight: color-mix(in srgb, var(--newtab-bg), var(--primary) 15%)` → `var(--accent)`（alias 到主题 accent，不再用 newtab 派生 15% mix）。
+  - `--newtab-highlight-text: var(--foreground)` → `var(--accent-foreground)`。
+- **`src/features/themes/custom-themes.ts`**: `THEME_VARS_OPTIONAL` 增加 11 个 shadcn surface keys（`secondary` / `secondary-foreground` / `accent` / `accent-foreground` / `destructive` / `destructive-foreground` / `card` / `card-foreground` / `popover` / `popover-foreground` / `input`）。runtime import tweakcn 主题时这些 vars 会随 paste 一并写入 storage（之前被丢弃）。
+
+### Architecture
+- 8 vars 限制 → 15 vars 实际。验证门槛仍是 8 个颜色 vars（`secondary` / `accent` 等是可选 pass-through）。这反映了一个 v0.2.41 时的简化判断错误——我们 link / search-input 实际渲染的是 shadcn Button / Input 组件，shadcn 组件依赖 `--accent` / `--input` 等 surface token。8 vars 兜底 hover 只能用 newtab 派生 (`--newtab-highlight`)，不是主题风格。v0.2.53 补全后 link / search-input 能直接用主题的 accent / accent-foreground / input 等。
+
+### Migration
+- **用户操作**：v0.2.53 之前 import 的主题需要重新粘贴 JSON 一次（11 个新 vars 在 storage 里没存，theme-scope hover / border 不会激活）。与 v0.2.50 类似。
+
 ## [0.2.52] - 2026-06-18
 
 ### Changed

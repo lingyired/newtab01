@@ -91,10 +91,9 @@
    * the raw shadcn vars, so the per-color user overrides written to
    * <html style="..."> continue to flow through. */
   --newtab-bg: var(--background);
-  --newtab-surface: color-mix(in srgb, var(--newtab-bg), var(--newtab-text) 6%);
   --newtab-text: var(--foreground);
-  --newtab-highlight: color-mix(in srgb, var(--newtab-bg), var(--primary) 15%);
-  --newtab-highlight-text: var(--foreground);
+  --newtab-highlight: var(--accent);
+  --newtab-highlight-text: var(--accent-foreground);
   --newtab-drop-indicator: var(--primary);
 
   --newtab-spacing: 10px;
