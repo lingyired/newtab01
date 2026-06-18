@@ -5,6 +5,21 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.60] - 2026-06-19
+
+### Added
+- **鼠标中键点击目录 = 打开全部链接**。`src/features/bookmarks/folder.ts` 的 `renderFolder()` 在 folder header 上注册 `auxclick` 监听器（`button === 1`），触发 `openAllLinks(node)`。子目录不会被展开/打开，只取直接 link 子项。点击位置在 `.folder-action-btn` 上时忽略，避免与现有 3 个 action 图标冲突；中键事件调 `e.preventDefault()` 防止浏览器对 `<a>` 的默认行为。
+- **批量打开 / 分组打开的 confirm 阈值**。新设置 `folderActionConfirmThreshold`（默认 10，可在设置面板"功能"tab 调整；设为 0 关闭确认）。当目录的 URL 子项数超过阈值时，`openAllLinks` / `openAsGroup` 先弹一个 `window.confirm()`（`「{folder}」包含 N 个链接，确认{verb}？`）再执行；用户取消则 no-op。阈值对两种动作共用——因为产生的标签数 / 体感成本相同。
+- **Split view link picker**。新模块 `src/features/bookmarks/split-picker.ts` 暴露 `showSplitPicker(entries)` / `showSplitPickerFromNodes(nodes)`：居中模态浮窗（`.split-picker-panel`，z-index 130，比设置面板的 sp-panel 120 高一档；复用 `sp-overlay` 背景层）。当 `openSplit` 发现目录 URL 子项 > 4（`SPLIT_VIEW_MAX` 常量）时弹出；默认前 4 项预选，复选框最多勾 4 个（达到上限时其余复选框置 disabled），底部三按钮：
+  - **取消** → resolve(null)，不分屏
+  - **打开选中** → resolve(当前勾选)，至少 1 项
+  - **打开前 4 个** → resolve(前 4 项 URL)，无视当前勾选
+  ESC / 点击 overlay 同等于"取消"。选中 0 项时 "打开选中" 不响应（无操作）。样式新增在 `styles/newtab.css` 末尾，沿用 `--background` / `--border` / `--primary` / `--muted` / `--muted-foreground` 等 shadcn 变量，与设置面板同语汇。
+- **设置面板：批量打开确认阈值**。「功能」tab 新增一行 `批量打开确认阈值`（number input，复用现有 `createNumberInput` 模板），"高级"tab 的导入/导出 schema 自动跟随新字段（因为是 `Settings` interface 的成员）。
+
+### Changed
+- **`src/features/bookmarks/folder-actions-handler.ts` 重构**。`openAllLinks` / `openAsGroup` 现在先 `getChildren` 过滤出 URL 子项（替代原来无差别遍历 `children`），空列表直接 no-op。新增 `confirmIfExceedsThreshold(node, count, verb)` 私有 helper（依据 `folderActionConfirmThreshold` 决定是否弹 confirm）。`openSplit` 拆出 `urlChildren` 变量后根据数量走 direct / picker 两条路径；URL 列表传入 `splitManager.open` 之前不再 `slice(0, 4)`——picker 已经保证 ≤ 4。
+
 ## [0.2.59] - 2026-06-19
 
 ### Changed

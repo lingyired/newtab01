@@ -57,6 +57,7 @@ const defaults: Settings = {
   columnWidth: 'auto',
   align: 'left',
   debug: 0,
+  folderActionConfirmThreshold: 10,
 };
 
 let currentSettings: Settings = { ...defaults };

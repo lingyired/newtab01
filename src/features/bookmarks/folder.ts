@@ -3,6 +3,7 @@
 import type { BookmarkNode } from './types';
 import { createFavicon } from './favicon';
 import { createFolderActions } from './folder-actions';
+import { openAllLinks } from './folder-actions-handler';
 import { getChildren } from './special-folders';
 import { renderLink } from './link';
 import { renderMenu, getFolderMenuItems } from './context-menu';
@@ -10,6 +11,7 @@ import { enableDragFolder } from '../drag-drop/drag-folder';
 import { getSetting } from '../../lib/storage/settings';
 import { getLocal, setLocal, removeLocal } from '../../lib/storage';
 import { getMovedOut, filterChildren } from './moved-out';
+import * as debug from '../../lib/debug';
 
 /** Track open folder state in storage */
 const OPEN_PREFIX = 'open.';
@@ -82,6 +84,22 @@ export function renderFolder(node: BookmarkNode, target: HTMLElement, depth: num
         toggleFolder(node, header, li, depth);
       }
     }
+  });
+
+  // Middle-click on the folder header opens all DIRECT link children
+  // (subfolders are skipped, same as the action button). The click
+  // handler above only fires for the primary mouse button so they
+  // don't conflict; `auxclick` is the spec'd event for non-primary
+  // buttons (button === 1 is middle, 2 is right — contextmenu handles
+  // the right-click path separately).
+  header.addEventListener('auxclick', (e: MouseEvent) => {
+    if (e.button !== 1) return;
+    const target = e.target as HTMLElement;
+    if (target.closest('.folder-action-btn')) return;
+    e.preventDefault();
+    e.stopPropagation();
+    debug.log('folder', 'auxclick:middle', { folder: node.title, id: node.id });
+    void openAllLinks(node);
   });
 
   // Enable drag on folder header

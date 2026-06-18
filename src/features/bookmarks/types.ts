@@ -70,6 +70,14 @@ export interface Settings {
   align: string;
   /** Debug mode — gates console logging in the extension. Default 0 (off). */
   debug: number;
+  /**
+   * Threshold for the "open all" / "open as group" folder actions. When
+   * the direct URL children of a folder exceed this number, the action
+   * is gated behind a `window.confirm()` prompt so the user can
+   * abort before `numberTop`-many tabs are created. 0 disables the
+   * confirm (every action runs without prompting). Default 10.
+   */
+  folderActionConfirmThreshold: number;
 }
 
 /** Context menu item */

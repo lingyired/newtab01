@@ -371,6 +371,7 @@ function getDefaults(): Settings {
     columnWidth: 'auto',
     align: 'left',
     debug: 0,
+    folderActionConfirmThreshold: 10,
   };
 }
 
@@ -801,6 +802,7 @@ function renderFeaturesTab(): HTMLElement {
   container.appendChild(createRow('显示根节点', createCheckboxInput('showRoot'), 'showRoot', '单文件夹列中是否保留根节点；关闭时会直接展开该文件夹的内容。'));
   container.appendChild(createRow('记住展开的文件夹', createCheckboxInput('rememberOpen'), 'rememberOpen', '下次打开新标签页时，是否自动恢复上次展开过的文件夹状态。'));
   container.appendChild(createRow('自动折叠文件夹', createCheckboxInput('autoClose'), 'autoClose', '展开某个文件夹时，是否自动折叠同级别的其他文件夹（手风琴效果）。'));
+  container.appendChild(createRow('批量打开确认阈值', createNumberInput('folderActionConfirmThreshold'), 'folderActionConfirmThreshold', '「打开全部链接」「以分组方式打开链接」时，目录链接数超过该值会弹出确认框。设为 0 关闭确认（每次都直接执行）。'));
   container.appendChild(createRow('打开链接方式', createSelectInput('newtab', [
     { value: '0', label: '当前标签页' },
     { value: '1', label: '新建前台标签页' },
