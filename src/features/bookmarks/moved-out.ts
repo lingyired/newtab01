@@ -28,6 +28,19 @@ export async function getMovedOut(): Promise<MovedOutMap> {
   return cache;
 }
 
+/**
+ * Replace the in-memory moved-out cache with the given snapshot. Used
+ * by the drag-undo flow to restore the pre-drop visibility map. The
+ * input is taken by reference — callers must pass a snapshot that won't
+ * be mutated (history.ts already deep-clones on push).
+ *
+ * Callers are responsible for persisting via setLocal afterwards (the
+ * undo handler in undo-button.ts does this).
+ */
+export function setMovedOutCache(next: MovedOutMap): void {
+  cache = next;
+}
+
 /** Record that childId was dragged out of parentId. Idempotent. */
 export async function markMovedOut(parentId: string, childId: string): Promise<void> {
   if (DEFAULT_ROOT_IDS.has(parentId) || SPECIAL_IDS.has(childId)) return;

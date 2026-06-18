@@ -47,6 +47,19 @@ export function setRootIds(ids: string[]): void {
   rootIds = ids;
 }
 
+/**
+ * Replace the entire column layout with the given snapshot. Used by the
+ * undo flow to restore a pre-drop state. Caller is responsible for
+ * invoking saveLayout afterwards (which re-runs verifyColumns, rebuilds
+ * the coords map, persists to storage, and re-renders the board).
+ *
+ * The input is taken by reference; the snapshot module already deep-
+ * clones before pushing, so we don't clone here.
+ */
+export function setColumns(next: Columns): void {
+  columns = next;
+}
+
 /** Load column layout from storage */
 export async function loadLayout(): Promise<void> {
   const stored = await getLocal<Columns>(LAYOUT_KEY);

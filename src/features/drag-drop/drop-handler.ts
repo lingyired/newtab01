@@ -3,6 +3,8 @@
 
 import { getDragIds, getDropTarget, setDropTarget } from './drag-state';
 import { getColumns, addRow, addColumn } from './layout-ops';
+import { getMovedOut } from '../bookmarks/moved-out';
+import { pushSnapshot, type HistorySnapshot } from './history';
 import { getSetting } from '../../lib/storage/settings';
 import * as debug from '../../lib/debug';
 
@@ -92,17 +94,52 @@ function onDrop(event: DragEvent): void {
 
   debug.log('drop', 'onDrop', { dragIds, targetTag: target.tagName, targetClass: target.className, x, y, clientX: event.clientX, clientY: event.clientY });
 
+  // Capture a pre-drop snapshot for the undo stack. Snapshotted BEFORE
+  // the mutation runs so undo restores to exactly the state the user
+  // had before this drop. Pushed to the stack AFTER the mutation
+  // completes (asynchronously — addRow/addColumn call recordMovedOutForIds
+  // which is awaited) so the snapshot is only added to history if the
+  // drop actually applied.
+  void captureAndDrop(dragIds, x, y, target, event);
+
+  clearDropTarget();
+}
+
+/** Apply a drop and record an undo snapshot on success. */
+async function captureAndDrop(
+  dragIds: string[],
+  x: number,
+  y: number | null,
+  target: HTMLElement,
+  event: DragEvent,
+): Promise<void> {
+  // Deep-clone columns; shallow-with-array-clone movedOut. getMovedOut
+  // returns the in-memory cache synchronously after first load.
+  const snapshot: HistorySnapshot = {
+    columns: getColumns().map((col) => col.slice()),
+    movedOut: cloneMovedOut(await getMovedOut()),
+  };
+
   if (dragIds.length === 1 && y !== null) {
-    void addRow(dragIds[0]!, x, y);
+    await addRow(dragIds[0]!, x, y);
   } else {
     const rect = target.getBoundingClientRect();
     const relativeX = event.clientX - rect.left;
     const finalX = relativeX > rect.width / 2 ? x + 1 : x;
-    debug.log('drop', 'onDrop: addColumn path', { finalX, relativeX, rectWidth: rect.width });
-    void addColumn(dragIds, finalX);
+    debug.log('drop', 'captureAndDrop: addColumn path', { finalX, relativeX, rectWidth: rect.width });
+    await addColumn(dragIds, finalX);
   }
 
-  clearDropTarget();
+  pushSnapshot(snapshot);
+}
+
+/** Shallow clone a moved-out map, cloning each parent's id array too. */
+function cloneMovedOut(map: Record<string, string[]>): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const [parentId, ids] of Object.entries(map)) {
+    out[parentId] = ids.slice();
+  }
+  return out;
 }
 
 /** Get the proper drop target element based on event coordinates */

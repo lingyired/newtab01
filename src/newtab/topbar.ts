@@ -1,10 +1,11 @@
-// Topbar — centered search box + settings button.
+// Topbar — centered search box + undo button + settings button.
 // Also creates the static results container (positioned absolute below the
 // input) and the overlay backdrop (covers the page below the topbar).
 
 import { getSetting } from '../lib/storage/settings';
 import { setInputElement } from '../features/search/search-main';
 import { openSettingsPanel } from './settings-panel';
+import { renderUndoButton } from './undo-button';
 
 /** Create and render the topbar (and its associated search DOM). */
 export function createTopbar(container: HTMLElement): void {
@@ -46,6 +47,11 @@ export function createTopbar(container: HTMLElement): void {
     // Append overlay first so it's behind the topbar in stacking
     container.appendChild(overlayEl);
   }
+
+  // Undo button — sits to the right of the search box, hidden until a
+  // drop happens. Only relevant when the search box is visible (the
+  // topbar without a search input would leave an orphaned button).
+  renderUndoButton(topbar, showSearch);
 
   // Settings button (top-right)
   const settingsBtn = document.createElement('button');

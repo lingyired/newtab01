@@ -5,6 +5,27 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.61] - 2026-06-19
+
+### Added
+- **拖拽撤销按钮（文字标签 + 计数角标）**。每次拖拽（folder header 或整列）落地后，topbar 搜索框右侧出现 `回退操作 [N]` 形式的按钮。点击按钮可撤销该次拖拽——恢复 columns 布局 + moved-out 隐藏映射，重渲染整个 board。多次拖拽可依次回退，最多保留 10 次历史；超出时丢弃最旧的。
+  - 新模块 `src/features/drag-drop/history.ts`：纯内存快照栈（不写 chrome.storage，刷新页面清空），导出 `pushSnapshot` / `popSnapshot` / `getHistoryLength` / `clearHistory` / `subscribe`，常量 `MAX_HISTORY = 10`。快照包含 `{ columns, movedOut }` 两份深度克隆——只回退 columns 不回退 moved-out 会导致 folder 在原 parent 下仍然被隐藏（UX 不一致）。
+  - 新模块 `src/newtab/undo-button.ts`：渲染 `#undo_button`（文字 `回退操作` + 内联 `.undo-count` 角标 pill），subscribes history 模块的 `subscribe` 自动更新可见性 / tooltip（`回退操作（N 步）` 当栈深 > 1）。**角标始终显示数字**（包括 count=1 → 显示 "1"），不再有空 pill 状态——用户反馈 "1 次时角标空着、2 次时显示 2" 视觉割裂。点击 handler 调 `popSnapshot` → `setColumns` / `setMovedOutCache`（新增 setter，详见下） → 写回 `chrome.storage.local.movedOut` → `saveLayout` 触发 verifyColumns + 持久化 + 重渲染。
+  - `src/features/drag-drop/drop-handler.ts:onDrop` 重构：原先 fire-and-forget `void addRow/addColumn` 改为 `async captureAndDrop()`——在调用 `addRow` / `addColumn` 之前深克隆当前 columns + movedOut 作为快照，等 mutation 完成（包含 `recordMovedOutForIds` 的 await）后再 `pushSnapshot`。这样快照只在 drop 真正落地后才入栈，避免 no-op drop 占位。
+- **layout-ops / moved-out 暴露 setter 给 undo 流程使用**。
+  - `src/features/drag-drop/layout-ops.ts` 新增 `setColumns(next)`：直接替换模块级 `columns` 引用（不做克隆；history 模块已经 deep-clone 入栈）。调用方需随后 `saveLayout()` 让 verifyColumns 重建 coords 并触发渲染。
+  - `src/features/bookmarks/moved-out.ts` 新增 `setMovedOutCache(next)`：直接替换模块级 `cache` 引用（同样的不克隆约定）。调用方需随后 `setLocal('movedOut', cache)` 持久化。
+
+### Changed
+- **Topbar 布局**：`.search-wrap` 之后增加 `#undo_button` 作为 flex sibling（`flex: 0 0 auto; margin-left: 8px`）。两者一起被 `#topbar { justify-content: center }` 居中，所以 (search + undo) 整体仍然在视口水平居中。settings 齿轮仍是 `position: absolute` 在右上角，与 undo 按钮互不影响。
+- **`styles/newtab.css`** 新增 `#undo_button` 与 `.undo-count` 样式：按钮用 `display: flex; gap: 8px` 横向排布"文字 + 角标"，文字部分 1.2rem / 500 weight（沿用设置面板 `.sp-btn` 语汇），角标用 `--primary` 背景 + `--primary-foreground` 文字 + 9px 圆角胶囊，inline 布局（不是 absolute）所以和文字基线对齐。hover 时按钮 `border-color` 与 `background-color` 都切到 `--newtab-highlight`。
+- **`src/newtab/undo-button.ts`** `updateVisibility` 始终把 count 写入角标 `textContent`（无空状态）；`aria-label` 和 `title` 中文为 `回退操作` / `回退操作（N 步）`。
+
+### Notes
+- **状态只在内存**：刷新 newtab 页面后 history 自动清空（模块级数组随页面销毁）。如果以后需要"刷新后仍可撤销"，需要把 history 持久化到 `chrome.storage.session`（Chrome 113+ 提供，会话级存储，关闭浏览器即清空，正好契合"不想跨会话保留撤销"的语义）。
+- **覆盖范围**：仅捕获 `addRow` / `addColumn`（drop-handler 主路径）的拖拽——其他修改 columns 的入口（如 settings 面板的 columnWidth 调整）不入栈，因为这些操作不是用户的"拖动"，混进 undo 栈会让人困惑。如果以后加"重置 columns"按钮，那种操作应该入一个独立的 history 通道。
+- **JS bundle 体积**：`dist/assets/newtab-*.js` ≈ 68 kB / gzip ≈ 24 kB（介于初版角标方案和纯文字方案之间），远低于 CLAUDE.md §7 的 80 KB gzip 预算。
+
 ## [0.2.60] - 2026-06-19
 
 ### Added

@@ -563,6 +563,73 @@
   opacity: 1;
 }
 
+/* ─── Undo button (drag-drop history) ───
+ *
+ * Sits to the immediate right of .search-wrap, part of the topbar's
+ * flex row. The whole (search + undo) pair is centered as a group.
+ *
+ * display: none by default; the undo-button module toggles it to
+ * flex (with an inline style) when the history stack is non-empty.
+ *
+ * Layout: text label `回退操作` + inline count badge. The badge
+ * ALWAYS shows a number (1, 2, …) when the history is non-empty —
+ * no empty-pill state. Earlier versions either hid the badge at
+ * count=1 (felt inconsistent) or used only a SVG icon without a
+ * label (less self-explanatory). This combination is the current
+ * consensus per user feedback in CHANGELOG v0.2.61.
+ *
+ * Style mirrors the settings panel button vocabulary
+ * (.sp-btn in styles/newtab.css) for visual consistency, sized down
+ * to the topbar scale so it doesn't compete with the search input.
+ */
+#undo_button {
+  position: relative;
+  flex: 0 0 auto;
+  margin-left: 8px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--newtab-text);
+  cursor: pointer;
+  opacity: 0.85;
+  padding: 7px 14px;
+  font-size: 1.2rem;
+  font-weight: 500;
+  line-height: 1.4;
+  border-radius: calc(var(--radius) - 2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: opacity 0.15s, background-color 0.15s, border-color 0.15s;
+}
+
+#undo_button:hover {
+  opacity: 1;
+  background-color: var(--newtab-highlight);
+  border-color: var(--newtab-highlight);
+}
+
+/* Inline count pill. Uses `--primary` background so it reads as the
+ * accent in every theme (Codex / Brutalist / etc.). The pill is part
+ * of the button's normal text flow (no absolute positioning) so its
+ * baseline aligns with the label. */
+.undo-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 18px;
+  padding: 0 6px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--primary-foreground);
+  background-color: var(--primary);
+  border-radius: 9px;
+  pointer-events: none;
+  font-variant-numeric: tabular-nums;
+}
+
 /* ─── Loading ─── */
 .loading {
   text-align: center;
