@@ -242,16 +242,17 @@
 
 /* ─── Folder actions (3 icon buttons) ─── */
 .folder-actions {
-  display: none;
+  display: inline-flex;
   align-items: center;
   gap: 2px;
   margin-left: auto;
   padding-left: 0.5em;
+  opacity: 0.5;
+  transition: opacity 0.15s;
 }
 
-#main a:hover .folder-actions,
-#main a.folder:hover .folder-actions {
-  display: inline-flex;
+#main a:hover .folder-actions {
+  opacity: 1;
 }
 
 .folder-action-btn {

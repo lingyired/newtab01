@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.59] - 2026-06-19
+
+### Changed
+- **Newtab folder header 的 3 个操作图标（分屏 / 分组 / 批量打开）默认常驻显示**。`styles/newtab.css` 的 `.folder-actions` 从 `display: none` 改为 `display: inline-flex` + `opacity: 0.5`，folder header hover 时 `opacity` 升到 `1`。移除原 `#main a:hover .folder-actions` / `#main a.folder:hover .folder-actions` 的 `display` 切换规则。空文件夹（`bookmarkCount === 0`）仍由 `folder-actions.ts` 返回空容器，行为不变。
+
 ## [0.2.58] - 2026-06-19
 
 ### Changed
