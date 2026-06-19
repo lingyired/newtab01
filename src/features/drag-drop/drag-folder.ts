@@ -5,8 +5,19 @@ import { getSetting } from '../../lib/storage/settings';
 import { setDragIds } from './drag-state';
 import * as debug from '../../lib/debug';
 
-/** Enable drag on a folder header element */
-export function enableDragFolder(node: BookmarkNode, header: HTMLElement): void {
+/**
+ * Enable drag on a folder header element.
+ * Takes both `header` (the <a> the user grabs) and `li` (the parent that
+ * wraps the entire folder tree — header + descendants). The `.dragstart`
+ * class is toggled on `li` so the visual highlight wraps the WHOLE
+ * subtree being moved, not just the header row. Drag listeners stay on
+ * `header` since that's the actual draggable element.
+ */
+export function enableDragFolder(
+  node: BookmarkNode,
+  header: HTMLElement,
+  li: HTMLLIElement,
+): void {
   if (getSetting('lock')) return;
 
   header.draggable = true;
@@ -18,13 +29,13 @@ export function enableDragFolder(node: BookmarkNode, header: HTMLElement): void 
     }
     // Stop propagation so column dragstart doesn't fire
     event.stopPropagation();
-    header.classList.add('dragstart');
+    li.classList.add('dragstart');
     debug.log('drag', 'folder dragstart', { id: node.id, title: node.title });
   });
 
   header.addEventListener('dragend', (event) => {
     debug.log('drag', 'folder dragend', { id: node.id, dropEffect: event.dataTransfer?.dropEffect });
     setDragIds(null);
-    header.classList.remove('dragstart');
+    li.classList.remove('dragstart');
   });
 }

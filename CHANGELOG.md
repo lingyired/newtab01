@@ -5,6 +5,17 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.71] - 2026-06-19
+
+### Added
+- **拖拽源（被拖拽的 folder / column）点状边框高亮**。`drag-folder.ts` 和 `drag-column.ts` 早就在 dragstart 时给源元素加 `.dragstart` class、dragend 时移除，但 CSS 只设了 `opacity: 0.5`，没有边框 —— 用户不知道"现在拖的是谁"。
+  - **样式**：跟右键选中 (`#main a.selected` / `.column.selected`) 同属一个"2px dotted"家族但用**不同颜色**：
+    - `#main li.dragstart` → `outline: 2px dotted var(--newtab-drag-ring); outline-offset: -2px;`（匹配包裹整个 folder 树的 `<li>` —— header + 全部子孙，因为拖一个 folder 本来就含整个子树）
+    - `.column.dragstart` → `border: 2px dotted var(--newtab-drag-ring); border-radius: calc(var(--radius) - 2px);`（匹配 column div，column 已有 `box-sizing: border-box`，加 border 不影响布局）
+  - **JS 端**：`enableDragFolder` 多接一个 `li` 参数，dragstart/dragend 时把 `.dragstart` 加在 `<li>` 上而不是 `<a>` 上，确保高亮范围覆盖整个 folder 树（包括未展开时只有 header、展开时 header + 所有子孙 `<li>`）。`header.draggable = true` 和 drag 监听器仍然挂在 `<a>` 上（`<a>` 才是用户实际抓的元素），`<li>` 仅承担视觉 class。
+  - **颜色**：新增 `--newtab-drag-ring` CSS 变量，默认 `var(--foreground)`（shadcn 的文字色，设计上就跟 `--background` 形成高对比 —— light 主题里深色，dark 主题里浅色）。跟右键用的 `--ring`（多数主题 ≈ `--primary`）视觉上必然区分开。每个主题可以单独 override `--newtab-drag-ring`。
+  - 配合现有的 `.dragstart { opacity: 0.5 }`，整个 folder 树拖拽时同时"半透明 + 点状边框"，双重视觉提示当前拖的是哪个（含所有子孙）。drop target 的指示器（`solid 4px var(--newtab-drop-indicator)`）未改动。
+
 ## [0.2.70] - 2026-06-19
 
 ### Fixed

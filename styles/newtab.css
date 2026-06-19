@@ -311,6 +311,22 @@
 .dragstart {
   opacity: 0.5;
 }
+/* Drag-source outline — mirrors the right-click `.selected` family
+ * (2px dotted) but uses --newtab-drag-ring (default --foreground) so
+ * the dragged element reads as visually distinct from a right-clicked
+ * one. Folder drag applies .dragstart to the <li> (which wraps the
+ * header + descendants) so the outline wraps the WHOLE subtree being
+ * moved, not just the header row. Column drag applies it to the
+ * .column div. JS toggles .dragstart on dragstart / dragend via
+ * drag-folder.ts and drag-column.ts. */
+#main li.dragstart {
+  outline: 2px dotted var(--newtab-drag-ring);
+  outline-offset: -2px;
+}
+.column.dragstart {
+  border: 2px dotted var(--newtab-drag-ring);
+  border-radius: calc(var(--radius) - 2px);
+}
 
 /* ─── Context menu ─── */
 .menu {

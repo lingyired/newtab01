@@ -95,6 +95,14 @@
   --newtab-highlight: var(--accent);
   --newtab-highlight-text: var(--accent-foreground);
   --newtab-drop-indicator: var(--primary);
+  /* Drag-source highlight ring. Mirrors the right-click .selected
+   * dotted family but uses --foreground (the text color, designed to
+   * contrast with --background in every theme) so the dragged element
+   * is visually distinct from a right-clicked element — right-click
+   * uses --ring which often equals --primary, drag-source uses the
+   * high-contrast foreground token. Each theme can still override
+   * --newtab-drag-ring if a specific value fits better. */
+  --newtab-drag-ring: var(--foreground);
 
   --newtab-spacing: 10px;
   --newtab-vmargin: 5%;

@@ -107,8 +107,9 @@ export function renderFolder(
     void openAllLinks(node);
   });
 
-  // Enable drag on folder header
-  enableDragFolder(node, header);
+  // Enable drag on folder header (li wraps the whole subtree, header
+  // is the draggable target)
+  enableDragFolder(node, header, li);
 
   // Context menu on right-click
   header.addEventListener('contextmenu', (e) => {
