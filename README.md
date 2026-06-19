@@ -14,7 +14,7 @@
 
 **newtab01** 是在 [Humble New Tab Page](https://github.com/ibillingsley/HumbleNewTabPage) (MIT) 基础上重构而来的 Chrome 新标签页扩展。
 
-它完整保留了原项目的全部能力（apps、topSites、recent、closed、devices、12 套主题、背景图、字体、动画、导入导出、自定义 CSS），并在其之上叠加 **5 项核心新能力**：文件夹批量操作、拖拽布局、书签快速搜索、Popup 分屏、主题与个性化。
+它完整保留了原项目的核心能力（apps、topSites、recent、closed、devices、背景图、字体、动画、自定义 CSS），并在其之上叠加 **5 项核心新能力**：文件夹批量操作、拖拽布局、书签快速搜索、Popup 分屏、主题与个性化。
 
 设计风格沿袭 Linear 风的克制美学：calm surface hierarchy、强 typography 与 spacing、少色、密集但可读、minimal chrome。
 
@@ -49,11 +49,11 @@
 - 2-4 个 URL，4 种布局（横分 / 竖分 / 三栏 / 四栏）
 
 ### 5. 主题与个性化
-多套主题一键切换；写不动 CSS？让 AI 帮你生成。
+4 套内置主题（Codex / MX-Brutalist / Cyberpunk / AstroVista）基于 [tweakcn](https://tweakcn.com) 调色板；想换风格直接去 tweakcn 找喜欢的主题，URL 一粘贴到扩展就装好。
 
-- 内置 default / slate / rose / dark 等主题
-- 自定义 CSS 直接生效
-- Generate with AI：一键生成自定义 CSS prompt
+- **4 套内置主题** + **无限运行时自定义**（tweakcn URL 或 CSS paste 到「自定义主题」tab）
+- **dark mode** 独立的 `darkMode` 设置（`跟随系统 / 亮 / 暗`），每个主题只出现一次，dark variant 由 dark mode 控制
+- **自定义 CSS** 仍保留 HNTP 能力（Advanced Tab 文本域），最高 cascade 优先级
 
 ---
 

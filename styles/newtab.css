@@ -70,7 +70,7 @@
   font-size: 1.8em;
   line-height: 1.4;
   text-decoration: none;
-  color: var(--newtab-text);
+  color: var(--card-foreground, var(--newtab-text));
   /* All per-theme link style is driven by --newtab-link-* variables
    * with sensible fallbacks inline. A theme that wants a different
    * link treatment (brutalist, neumorphic, glassmorphism, etc.) just
@@ -78,19 +78,29 @@
    * no JS mapping needed. Adding `transform` to the transition list
    * is a no-op for the default (transform is always none) but lets
    * themed variants animate the press interaction. */
-  /* link bg defaults to page bg (matches Codex: white-on-white with a
-   * 1px border and a hairline shadow). --newtab-link-bg is still the
-   * per-theme escape hatch (brutalist / glassmorphism override it
-   * directly).
+  /* link bg defaults to the theme's --card surface (the shadcn-
+   * conventional resting bg for grouped content). The chained
+   * fallback `var(--newtab-bg)` keeps older themes that don't define
+   * --card — e.g. tweakcn themes imported at runtime before v0.2.55
+   * added the 11 surface tokens to globals.css — visually unchanged
+   * (page bg, the v0.2.57-baseline behavior). --newtab-link-bg
+   * remains the per-theme escape hatch (brutalist / glassmorphism
+   * override it directly).
    *
    * v0.2.53: align link styling with the shadcn button class
    * (border bg-background shadow-xs hover:bg-accent
    *  hover:text-accent-foreground). All theme-aware properties
    *  (background / border / radius / box-shadow) read from the
    *  theme's shadcn vars directly; the --newtab-link-* vars remain
-   *  as per-theme escape hatches only. */
+   *  as per-theme escape hatches only.
+   *
+   * v0.2.83: switch link bg / text from --newtab-bg (= --background,
+   * the page) to --card, and from --newtab-text (= --foreground) to
+   * --card-foreground. The card surface is the shadcn-conventional
+   * resting bg for cards / inputs / list rows, so link = card reads
+   * as a proper surface, not a continuation of the page. */
   padding: 0.45em 0.8em 0.45em 1.2em;
-  background-color: var(--newtab-link-bg, var(--newtab-bg));
+  background-color: var(--newtab-link-bg, var(--card, var(--newtab-bg)));
   border: var(--newtab-link-border, 1px solid var(--border));
   border-radius: var(--newtab-link-radius, calc(var(--radius) - 2px));
   font-weight: var(--newtab-link-weight, normal);
@@ -406,9 +416,17 @@
    * input class `bg-transparent`. The surface tint was nice as a
    * link bg separator but reads as "grey box" on a search bar.
    * Themes that want a tinted search bar (e.g. glassmorphism) can
-   * override the bg via a theme-scope rule. */
-  background-color: transparent;
-  color: var(--foreground);
+   * override the bg via a theme-scope rule.
+   *
+   * v0.2.83: switch from `transparent` to the theme's --card
+   * surface so the search bar reads as a proper input (matches
+   * the new default for #main a). Chained fallback `transparent`
+   * keeps older themes that don't define --card visually
+   * unchanged (the v0.2.52 behavior). Text color follows the
+   * same pattern: --card-foreground with var(--foreground)
+   * fallback. */
+  background-color: var(--card, transparent);
+  color: var(--card-foreground, var(--foreground));
   /* Default: shadcn .shadow-xs preset from the active theme. Brutalist
    * themes (MX-Brutalist) override --shadow-xs to 4px 4px 0 0 hard
    * color at 0.50 opacity, so the search bar picks up the brutalist
