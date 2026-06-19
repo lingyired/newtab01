@@ -56,6 +56,23 @@ export async function initApp(): Promise<void> {
     applyTheme(String(getSetting('theme')));
     log('init', 'theme applied', { theme: getSetting('theme') });
 
+    // 1a-bis. When darkMode is 'system', follow the OS's color-scheme
+    // preference. The OS may flip at runtime (e.g. macOS auto switches
+    // at sunset); re-apply the theme on each change so the rendered
+    // data-theme attribute follows. Forced 'light' / 'dark' values are
+    // unaffected by OS changes (the early return below).
+    if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+      const mql = window.matchMedia('(prefers-color-scheme: dark)');
+      mql.addEventListener('change', () => {
+        if (getSetting('darkMode') === 'system') {
+          applyTheme(String(getSetting('theme')));
+          log('init', 'theme re-applied (OS color-scheme changed)', {
+            systemPrefersDark: mql.matches,
+          });
+        }
+      });
+    }
+
     // 1c. Rebuild the dynamic-styles block and the user-CSS block from
     // the current settings.
     applySettingsToDOM();

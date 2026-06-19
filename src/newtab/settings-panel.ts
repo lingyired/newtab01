@@ -175,11 +175,20 @@ function refreshInputsFromSettings(): void {
     const next = resolveCssColor(String(getSetting(sourceKey) ?? ''));
     if (input.value !== next) input.value = next;
   }
-  // Theme select lives on the same tab as the color inputs; keep it in sync.
+  // Theme + darkMode selects live on the same tabs as the color inputs;
+  // keep them in sync. v0.2.75: both tabs (外观 + 自定义主题) carry a
+  // `sp-theme` and `sp-darkMode` select with the same id; only one tab
+  // is in the DOM at a time so getElementById resolves to whichever is
+  // currently rendered.
   const themeSelect = document.getElementById('sp-theme') as HTMLSelectElement | null;
   if (themeSelect) {
     const next = String(getSetting('theme') ?? '');
     if (themeSelect.value !== next) themeSelect.value = next;
+  }
+  const darkModeSelect = document.getElementById('sp-darkMode') as HTMLSelectElement | null;
+  if (darkModeSelect) {
+    const next = String(getSetting('darkMode') ?? 'system');
+    if (darkModeSelect.value !== next) darkModeSelect.value = next;
   }
 }
 
@@ -371,6 +380,7 @@ function getDefaults(): Settings {
     fontSize: 16,
     fontWeight: 400,
     theme: 'default',
+    darkMode: 'system',
     fontColor: '#555555',
     backgroundColor: '#ffffff',
     backgroundImage: '',
@@ -445,6 +455,18 @@ function saveSetting(key: keyof Settings): void {
     return;
   }
 
+  // Dark mode changes are similar: the rendered variant flipped (light
+  // <-> dark) but the base theme id didn't change, so the 5 color
+  // overrides in storage are stale — they were captured at the old
+  // variant. Update darkMode first, then re-apply the theme so saveThemeChange
+  // re-reads the 5 colors from the newly-applied variant selector.
+  if (key === 'darkMode') {
+    void updateSetting('darkMode', value as Settings['darkMode']).then(() => {
+      void saveThemeChange(String(getSetting('theme')));
+    });
+    return;
+  }
+
   // shadowColor shares --newtab-highlight with highlightColor in the CSS
   // (see newtab.css `box-shadow: 0 0 var(--newtab-shadow-blur) var(--newtab-highlight)`).
   // Editing only shadowColor would leave highlightColor stale, so the
@@ -513,6 +535,13 @@ async function saveThemeChange(theme: string): Promise<void> {
     resolveCssColor(root.style.getPropertyValue(name).trim());
   const bundle: Partial<Settings> = {
     theme,
+    // v0.2.75: dark mode is a separate setting. Persisted together with
+    // the theme + 5-color bundle so a single user action (theme switch
+    // OR dark mode toggle) writes a coherent snapshot. The 5 colors are
+    // captured from the actually-rendered variant (light or dark) inside
+    // applyTheme()'s `resolved` selector, so they always match what the
+    // user sees after the switch.
+    darkMode: (String(getSetting('darkMode') ?? 'system') as 'system' | 'light' | 'dark'),
     backgroundColor: readVar('--newtab-bg'),
     fontColor: readVar('--newtab-text'),
     highlightColor: readVar('--newtab-highlight'),
@@ -583,6 +612,22 @@ function createSelectInput(key: keyof Settings, options: { value: string; label:
   return select;
 }
 
+/** The three dark-mode options shown in both the appearance tab and
+ *  the custom-themes tab. Same options everywhere so the user's
+ *  mental model of "where to change this" is one place. */
+const DARK_MODE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
+  { value: 'system', label: '跟随系统' },
+  { value: 'light', label: '亮' },
+  { value: 'dark', label: '暗' },
+];
+
+/** Build a fresh <select> bound to the `darkMode` setting. Used in
+ *  both tabs; no revert button because 'system' is the default
+ *  (no "reset to default" semantic distinct from the current value). */
+function createDarkModeSelectInput(): HTMLSelectElement {
+  return createSelectInput('darkMode', [...DARK_MODE_OPTIONS]);
+}
+
 // --- Tab content renderers ---
 
 function renderLayoutTab(): HTMLElement {
@@ -613,6 +658,17 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   // 跳转入口塞在主题行自己的 description 里，避免在「外观」tab 底部
   // 再堆一个独立的 section。
   container.appendChild(createRow('主题', createSelectInput('theme', themeOptions), 'theme', buildThemeRowDescription()));
+  // v0.2.75: dark mode is a separate setting, independent of theme.
+  // The dropdown shows each base theme once; the variant (light/dark)
+  // is decided by this setting. 'system' follows the OS preference.
+  container.appendChild(
+    createRow(
+      '暗色模式',
+      createDarkModeSelectInput(),
+      'darkMode',
+      '决定主题使用浅色还是深色变体。选「跟随系统」会随 macOS / Windows 的外观设置自动切换。',
+    ),
+  );
   container.appendChild(createRow('字体', createTextInput('font'), 'font', '书签链接使用的字体名称，例如 "PingFang SC"、Inter、Arial。'));
   container.appendChild(createRow('字号', createNumberInput('fontSize'), 'fontSize', '书签链接的字号（单位：px）。'));
   container.appendChild(createRow('字重', createNumberInput('fontWeight'), 'fontWeight', '书签链接的字重，常用值：400 正常、500 中等、600 半粗、700 粗体。'));
@@ -639,18 +695,60 @@ function renderCustomThemesTabSyncPlaceholder(): HTMLElement {
   return el('div', 'sp-tab-content sp-tab-content--loading');
 }
 
-/** Render the dedicated "自定义主题" tab: import + installed list.
- *  Async because readCustomThemes() hits chrome.storage.local.
- *  The Apply button and delete button both call rerenderCurrentTab
- *  on success so the dropdown in the appearance tab and the list
- *  here stay in sync with the storage state. */
+/** Render the dedicated "自定义主题" tab: import + theme/darkMode
+ *  quick switch + installed list. Async because listAllThemesWithLabels
+ *  and readCustomThemes both hit chrome.storage.
+ *
+ *  v0.2.76: import is now the FIRST section (was last). Rationale:
+ *  installing a new theme is the tab's primary action — the
+ *  theme/darkMode switcher is secondary (a quick way to USE the
+ *  themes that have already been installed), and the installed list
+ *  is for cleanup. Showing import first matches the workflow
+ *  "install → use → manage" top-to-bottom. */
 async function renderCustomThemesTab(): Promise<HTMLElement> {
   const container = el('div', 'sp-tab-content');
 
   container.appendChild(buildCustomThemeImportSection());
+  container.appendChild(await buildThemeSelectorSection());
   container.appendChild(await buildCustomThemeListSection());
 
   return container;
+}
+
+/** Build the "选择主题" section: a theme select + a darkMode select
+ *  inline above the import section, so the user can switch themes
+ *  from this tab without going back to 外观. Both selects are bound
+ *  to saveSetting() so they share the change flow (and the
+ *  chrome.storage.onChanged cross-tab sync) with their appearance
+ *  tab counterparts. The same `id="sp-theme"` / `id="sp-darkMode"`
+ *  is used as in 外观 — only one tab is in the DOM at a time, so
+ *  the duplicate IDs don't collide. */
+async function buildThemeSelectorSection(): Promise<HTMLElement> {
+  const section = el('section', 'sp-theme-selector');
+  const heading = el('h3', 'sp-custom-heading');
+  heading.textContent = '选择主题';
+  section.appendChild(heading);
+
+  const allThemes = await listAllThemesWithLabels(THEME_LABELS);
+  const themeOptions = allThemes.map((t) => ({ value: t.value, label: t.label }));
+  section.appendChild(
+    createRow(
+      '主题',
+      createSelectInput('theme', themeOptions),
+      'theme',
+      '在此切换当前主题。包含内置主题和已安装的自定义主题。',
+    ),
+  );
+  section.appendChild(
+    createRow(
+      '暗色模式',
+      createDarkModeSelectInput(),
+      'darkMode',
+      '决定主题使用浅色还是深色变体。',
+    ),
+  );
+
+  return section;
 }
 
 /** Rich description for the theme row: explanatory text + an inline
@@ -792,14 +890,15 @@ function buildCustomThemeImportSection(): HTMLElement {
     const map = await readCustomThemes();
     injectCustomThemesStyle(buildCustomThemesStyle(map));
 
-    // If the current theme is the one we just installed (or its dark
-    // sibling), re-apply so the palette refreshes.
-    const currentTheme = String(getSetting('theme'));
-    const lightId = `user-${result.entry.light.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
-    const darkId = `${lightId}-dark`;
-    if (currentTheme === lightId || currentTheme === darkId) {
-      applyTheme(currentTheme);
-    }
+    // Auto-switch to the newly installed theme. The user's current
+    // darkMode is preserved — saveThemeChange() reads it from storage
+    // and resolveTheme() picks the variant: dark if the user is in
+    // dark mode AND the new theme has a dark variant, light otherwise
+    // (fallback). Re-installing the same theme is a no-op visually but
+    // re-stamps the 5 color overrides to the current variant, which
+    // is what we want after a darkMode toggle.
+    const baseId = `user-${result.entry.light.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+    await saveThemeChange(baseId);
 
     // Clear inputs and refresh the tab.
     textarea.value = '';

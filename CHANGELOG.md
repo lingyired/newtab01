@@ -26,6 +26,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **不改**：`cssVars.theme` 共享块（项目 `emitBlock` 不读，dead code 字段，给空对象即可）、`css` 顶层 element-level 规则（JSON 路径也忽略，行为一致）、任何下游 storage / emit / refresh 逻辑。
   - **未来扩展**：`detectInputFormat` 是 URL 导入（tweakcn URL → fetch CSS → 走同一条 `parseCssTheme`）的自然接入点 —— 本次不做。
 
+## [0.2.75] - 2026-06-19
+
+### Added
+- **「暗色模式」独立成 Settings 字段**。`Settings.darkMode: 'system' | 'light' | 'dark'`，默认 `'system'`。主题列表里每个 theme 只出现一次（不再有 `default-dark` / `user-xxx-dark` 等独立条目）；深浅由这个独立开关控制。选「跟随系统」会同步 macOS / Windows 的外观设置 —— OS 切深浅时扩展内主题**自动跟随**（`matchMedia('(prefers-color-scheme: dark)')` 的 change listener 在 `app.ts` 初始化时挂上，仅当 `darkMode === 'system'` 时 re-apply）。
+  - **架构**：`switcher.ts` 新增 `DarkMode` type、`resolveTheme(baseTheme, darkMode)` 函数、`hasDarkVariant()` + `setHasDarkVariant()` 同步缓存（缓存由 `custom-themes.ts` 在 install/remove 时维护，保证 sync lookup）。`applyTheme(theme)` 内部 `resolveTheme()` 算 `data-theme` 值 —— `theme` 入参永远是 base id（不再带后缀），但实际 `data-theme` 属性仍是 `<base>` 或 `<base>-dark`（CSS 选择器不变）。
+  - **存储**：`theme` 字段约定永远是 base id；`darkMode` 是新字段。`{theme, darkMode, 5 colors}` 在每次主题切换 / 暗色模式切换时一起写入。**无 storage migration**（产品未发布，零旧用户）。
+  - **CSS**：`styles/themes/*.css` 里 `*-dark` 规则全部保留 —— 这套机制能 work 的关键。0 改动。
+  - **UI**：外观 tab 在「主题」row 下方新增「暗色模式」row（`跟随系统 / 亮 / 暗` 三档）。自定义主题 tab 的「选择主题」section 同样含主题 + 暗色模式两个 select —— 用户从哪个 tab 都能切。两处的 `id="sp-theme"` / `id="sp-darkMode"` 相同（同一时间只有一个 tab 在 DOM，duplicate id 不冲突）。
+  - **Import 后 auto-switch 简化**：从原本需要手动算 `endsWith('-dark')` + 选 lightId / darkId，简化为 `await saveThemeChange(baseId)`。`saveThemeChange` 读 `getSetting('darkMode')`，`resolveTheme` 算最终变体 —— 当前是 dark 模式且新主题有 dark variant 就用 dark，否则 fallback 到 light。
+
+## [0.2.76] - 2026-06-19
+
+### Changed
+- **「自定义主题」tab 内部 section 顺序调整**。v0.2.75 的 tab 是「选择主题」→「导入自定义主题」→「已安装的自定义主题」（theme switcher 顶部，因为它的"快速切主题"是当时认为的主场景）。v0.2.76 调整为「导入自定义主题」→「选择主题」→「已安装的自定义主题」—— 把 tab 的**主操作**（装新主题）放最顶部，「切到已装好的主题」次之，「管理已装好的（删除等）」最底。匹配"装 → 用 → 管"的 top-to-bottom 工作流。代码改动仅 2 行 appendChild 顺序对调 + 注释更新；DOM 结构、行为、事件绑定全部 0 改动。
+
 ## [0.2.72] - 2026-06-19
 
 ### Fixed
