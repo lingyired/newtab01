@@ -999,8 +999,9 @@
 }
 
 /* Custom theme import section — tweakcn JSON paste UI.
- * Lives at the bottom of the appearance tab. Mirrors the sp-* class
- * vocabulary so it inherits panel spacing/typography. */
+ * Lives in the dedicated "自定义主题" tab. The appearance tab
+ * points to it via an inline <a class="sp-link"> in the theme
+ * row's description (see sp-row--with-desc + sp-link below). */
 .sp-custom-import,
 .sp-custom-list {
   margin-top: 20px;
@@ -1124,6 +1125,25 @@
   color: var(--muted-foreground);
   font-style: italic;
   padding: 8px 0;
+}
+
+/* Inline link inside a sp-desc paragraph. Used by the theme row to
+ * point to the dedicated "自定义主题" tab. Minimal shadcn-style:
+ * primary color, underline on hover, no underline on rest. */
+.sp-link {
+  color: var(--primary);
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.1s;
+}
+.sp-link:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+.sp-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* Loading placeholder for the appearance tab while listAllThemes resolves. */

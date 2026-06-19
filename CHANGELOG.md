@@ -5,6 +5,16 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.73] - 2026-06-19
+
+### Changed
+- **导入自定义主题 & 已安装的自定义主题 独立成新 tab**。设置面板左侧 nav 从 4 项（布局 / 外观 / 功能 / 高级）扩到 5 项，新增「自定义主题」tab —— 位于「外观」之后，「功能」之前。原「外观」tab 底部堆的「导入自定义主题」textarea、「应用」按钮、状态条、以及「已安装的自定义主题」列表（每项一个删除按钮）整体迁到新 tab。
+  - **入口**：跳转入口内联在「外观」tab 主题下拉行自己的 `sp-row--with-desc` 里，是一段说明文字 + 一个普通 `<a class="sp-link">` 链接（「管理自定义主题 →」），点击直接切到新 tab。`setActiveTab('custom-themes')` 复用了 nav 按钮的同一条路径，避免 nav 重渲染逻辑和内容刷新逻辑分叉。
+  - **结构**：`renderCustomThemesTab` 走和 `renderAppearanceTab` 相同的「placeholder → async 渲染 → swap children」模式，chrome.storage.local 读取期间不闪空。install 成功 / delete 成功后调 `rerenderCurrentTab()` 刷新当前 tab（重命名自 `rerenderAppearanceTab` —— 现在两个 tab 都可能触发刷新，函数命名按"动作"而非"调用方"）。
+  - **行为不变**：导入、校验、应用、删除、删除后回退到 default 主题的逻辑完全没动；CSS 变量系统、chrome.storage 读写、tweakcn JSON 解析、theme dropdown 同步都没动。tab 物理位置变化 + 入口从按钮改为内联链接，行为零变化。
+  - **CSS**：`.sp-link` 新增内联链接样式（`var(--primary)` 上色，hover 下划线 + 0.85 透明，`:focus-visible` 用 `var(--ring)` 描边）—— 与 shadcn link 风格一致，沿用现有 shadcn token。
+  - **API**：`createRow` 的 `description` 参数从 `string` 扩到 `string | HTMLElement`（一个 `if` 分支），允许调用方在 row description 里塞富内容（链接、图标等）。所有现有调用方都传 string，零修改。
+
 ## [0.2.72] - 2026-06-19
 
 ### Fixed
