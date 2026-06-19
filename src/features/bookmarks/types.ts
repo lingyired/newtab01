@@ -34,6 +34,15 @@ export interface Settings {
   fontSize: number;
   fontWeight: number;
   theme: string;
+  /**
+   * Dark mode preference. Independent from `theme` — the rendered
+   * `data-theme` attribute on <html> is `<theme>` for light,
+   * `<theme>-dark` for dark (when the theme has a dark variant),
+   * or resolved at runtime via `prefers-color-scheme` for 'system'.
+   * Default 'system'. See docs/superpowers/specs/2026-06-19-
+   * dark-mode-setting-design.md for the full design.
+   */
+  darkMode: 'system' | 'light' | 'dark';
   fontColor: string;
   backgroundColor: string;
   backgroundImage: string;

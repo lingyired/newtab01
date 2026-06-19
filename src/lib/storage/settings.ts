@@ -12,6 +12,7 @@ const defaults: Settings = {
   fontSize: 18,
   fontWeight: 400,
   theme: 'default',
+  darkMode: 'system',
   // The five palette fields are intentionally empty strings: `applyUserColorOverride`
   // treats `''` as "no override" and calls `removeProperty`, so the active
   // theme's CSS variables (defined in styles/themes/*.css) are what

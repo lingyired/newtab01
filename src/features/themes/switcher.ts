@@ -46,16 +46,64 @@ import { listAllThemes, type ThemeListEntry } from './custom-themes';
  */
 const THEMES = [
   'default',
-  'default-dark',
   'mx-brutalist',
-  'mx-brutalist-dark',
   'cyberpunk',
-  'cyberpunk-dark',
   'astrovista',
-  'astrovista-dark',
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number];
+
+/** Built-in dark variant existence. All 4 built-in base themes have
+ *  a `-dark` CSS rule in styles/themes/*.css, so the `xxx-dark`
+ *  suffix is always available as a `data-theme` value. The user
+ *  picks "light vs dark" via the separate `darkMode` setting; this
+ *  set is consulted by `hasDarkVariant()` and `resolveTheme()`. */
+const BUILT_IN_THEMES_WITH_DARK: ReadonlySet<string> = new Set(THEMES);
+
+/** Custom themes with a dark variant. Maintained by custom-themes.ts
+ *  on every install/remove — it's the single writer of the custom
+ *  theme storage, so it's the natural place to keep the cache in
+ *  sync. Lookup is sync, which applyTheme() needs. */
+const customThemesWithDarkVariant: Set<string> = new Set();
+
+/** User-visible dark mode preference. Independent from `theme`:
+ *  resolves to an actual `data-theme` value via `resolveTheme()`. */
+export type DarkMode = 'system' | 'light' | 'dark';
+
+/** True iff the given base theme id has a `-dark` variant. Built-in
+ *  themes always do; custom themes depend on storage (see
+ *  `setHasDarkVariant` + the writers in custom-themes.ts). */
+export function hasDarkVariant(baseTheme: string): boolean {
+  if (BUILT_IN_THEMES_WITH_DARK.has(baseTheme)) return true;
+  return customThemesWithDarkVariant.has(baseTheme);
+}
+
+/** Mark a custom theme's dark-variant availability. Called by
+ *  custom-themes.ts whenever chrome.storage.local.customThemes
+ *  is written. No-op for built-in themes. */
+export function setHasDarkVariant(baseTheme: string, hasDark: boolean): void {
+  if (hasDark) customThemesWithDarkVariant.add(baseTheme);
+  else customThemesWithDarkVariant.delete(baseTheme);
+}
+
+/** Resolve a base theme id + user darkMode preference to the actual
+ *  `data-theme` value the browser sees. Returns the base id (no
+ *  suffix) when the resolved mode is light, or when dark is
+ *  requested but the theme has no dark variant (fallback). */
+export function resolveTheme(baseTheme: string, darkMode: DarkMode): string {
+  const effective: 'light' | 'dark' =
+    darkMode === 'system'
+      ? (typeof window !== 'undefined' &&
+          typeof window.matchMedia === 'function' &&
+          window.matchMedia('(prefers-color-scheme: dark)').matches
+          ? 'dark'
+          : 'light')
+      : darkMode;
+  if (effective === 'dark' && hasDarkVariant(baseTheme)) {
+    return baseTheme + '-dark';
+  }
+  return baseTheme;
+}
 
 /** Subscribe here to react to theme application (e.g. re-render widgets). */
 const listeners = new Set<(theme: string) => void>();
@@ -100,9 +148,16 @@ export async function listAllThemesWithLabels(
  * and `applyUserColorOverride` writes the user's choices on top of the
  * theme baseline at startup and on every other settings change.
  *
+ * As of v0.2.75 the `theme` argument is a BASE id (no `-dark` suffix);
+ * the actual `data-theme` attribute is computed by `resolveTheme()` from
+ * the base id + the user's `darkMode` setting read out of storage.
+ * Listeners receive the resolved id, not the base id.
+ *
  * No-op when called in a non-DOM environment (e.g. unit tests without jsdom).
  */
 export function applyTheme(theme: string): void {
+  const darkMode = String(getSetting('darkMode') ?? 'system') as DarkMode;
+  const resolved = resolveTheme(theme, darkMode);
   let prev: string | null = null;
   if (typeof document !== 'undefined') {
     const root = document.documentElement;
@@ -117,8 +172,10 @@ export function applyTheme(theme: string): void {
     root.style.removeProperty('--newtab-highlight-text');
 
     // 2. Activate the theme CSS so the four variables now resolve to
-    //    the palette defined in styles/themes/<theme>.css.
-    root.setAttribute('data-theme', theme);
+    //    the palette defined in styles/themes/<resolved>.css. `<resolved>`
+    //    is the base id or `<base>-dark` depending on the user's
+    //    `darkMode` setting + the theme's dark-variant availability.
+    root.setAttribute('data-theme', resolved);
 
     // 3. Promote the resolved values to inline style (specificity 1,0,0,0)
     //    so subsequent `applyUserColorOverride` calls have a known target
@@ -141,9 +198,9 @@ export function applyTheme(theme: string): void {
     if (highlight) root.style.setProperty('--newtab-highlight', highlight);
     if (highlightText) root.style.setProperty('--newtab-highlight-text', highlightText);
   }
-  log('theme', 'applyTheme', { from: prev, to: theme });
+  log('theme', 'applyTheme', { from: prev, to: resolved, base: theme, darkMode });
   for (const cb of listeners) {
-    cb(theme);
+    cb(resolved);
   }
 }
 

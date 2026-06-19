@@ -26,6 +26,7 @@
 // Design spec: docs/superpowers/specs/2026-06-17-runtime-theme-import-design.md
 
 import { log } from '../../lib/debug';
+import { setHasDarkVariant } from './switcher';
 
 /** The 8 shadcn color variables we REQUIRE for any theme. The validator
  *  rejects a paste that doesn't define all 8 — they are the
@@ -324,6 +325,10 @@ export async function installCustomTheme(entry: CustomThemeEntry): Promise<void>
   const current = await readCustomThemes();
   current[entry.light.name] = entry;
   await chrome.storage.local.set({ [STORAGE_KEY]: current });
+  // Keep the dark-variant cache in switcher.ts in sync — applyTheme()
+  // consults this to decide whether to append `-dark` to the data-theme
+  // value when the user is in dark mode.
+  setHasDarkVariant(userThemeId(entry.light.name, 'light'), entry.dark != null);
 }
 
 /** Remove an entry by name. Returns true if it was present, false otherwise. */
@@ -333,6 +338,9 @@ export async function removeCustomTheme(name: CustomThemeName): Promise<boolean>
   if (!Object.prototype.hasOwnProperty.call(current, name)) return false;
   delete current[name];
   await chrome.storage.local.set({ [STORAGE_KEY]: current });
+  // Clear the cache entry too — the theme is gone, hasDarkVariant
+  // would otherwise still return true (stale) until next applyCustomThemes.
+  setHasDarkVariant(userThemeId(name, 'light'), false);
   return true;
 }
 
@@ -424,10 +432,16 @@ export function injectCustomThemesStyle(cssBody: string): void {
 }
 
 /** Top-level entry: read storage → generate CSS → inject. Called
- *  once on newtab / options / popup startup. */
+ *  once on newtab / options / popup startup. Also syncs the
+ *  `hasDarkVariant` cache in switcher.ts with current storage
+ *  so applyTheme() can do sync variant lookups. */
 export async function applyCustomThemes(): Promise<void> {
   const map = await readCustomThemes();
   injectCustomThemesStyle(buildCustomThemesStyle(map));
+  for (const [name, entry] of Object.entries(map)) {
+    if (!entry) continue;
+    setHasDarkVariant(userThemeId(name, 'light'), entry.dark != null);
+  }
 }
 
 // --- Listing ---
