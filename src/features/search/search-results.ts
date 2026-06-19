@@ -17,6 +17,17 @@ export function attachResultsContainer(el: HTMLElement): void {
   container = el;
   container.style.display = 'none';
 
+  // Keep the search input focused when the user clicks anywhere inside the
+  // results panel (items, empty area, footer). Without this guard the
+  // mousedown transfers focus away from the input, the input's blur
+  // listener fires, and the panel auto-hides after 150ms. Left button only
+  // — right-click / middle-click should keep their default focus behavior
+  // and not interfere with context menus etc.
+  container.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+  });
+
   // Internal structure: list + footer with keyboard hints.
   // Re-render on each attach so the footer is always present.
   while (container.firstChild) {
@@ -52,6 +63,18 @@ function buildFooter(): HTMLElement {
   appendHint(['↑', '↓'], 'navigate');
   appendHint(['↵'], 'open');
   appendHint(['esc'], 'close');
+
+  // Right-aligned fallback hint: pressing Enter without selecting a result
+  // routes the input through the browser's default search engine.
+  const fallback = document.createElement('span');
+  fallback.className = 'search-results-footer-fallback';
+  const fallbackKbd = document.createElement('kbd');
+  fallbackKbd.textContent = '↵';
+  fallback.appendChild(fallbackKbd);
+  fallback.appendChild(
+    document.createTextNode(' no selection \u2192 web search'),
+  );
+  footer.appendChild(fallback);
 
   return footer;
 }

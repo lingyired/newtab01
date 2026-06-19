@@ -5,6 +5,12 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.81] - 2026-06-20
+
+### Changed
+- **搜索结果栏底部右侧新增「↵ no selection → web search」hint**。明确告诉用户：不选中任何结果直接按 Enter 会用浏览器默认搜索引擎搜当前输入框文本。原 footer 已有 `↑↓ navigate` / `↵ open` / `esc close` 三个 hint，现在把"无选中 → 兜底搜索"这条行为也常驻可见。CSS 用 `margin-left: auto` 把这个 hint 推到 footer 最右，与左侧三个键盘 hint 在视觉上分组（左侧键盘导航，右侧 fallback 行为说明）。窄屏（搜索框宽度 < 4 个 hint 总宽）会自动 wrap 到下一行单独占满。
+- **点搜索结果栏内部不再误关**。`#search-results` 容器新增 `mousedown` 监听器：左键（`button === 0`）mousedown 时调 `e.preventDefault()`，阻止默认的 focus transfer —— 这样 input 不会失焦、blur 监听器不会触发、150ms 后 hide 的逻辑不会被错误触发。右键 / 中键不走 preventDefault，保留默认行为（不影响 context menu）。点具体某项仍然正常打开 URL（item 自己的 click handler 仍然 fire，调用 `onSelectCallback → closeAll` 主动清空状态，这是预期行为：URL 已经在新标签页打开了，留着旧搜索状态无意义）。点 overlay（背景层）仍然走 `onClose → closeAll` 路径关闭。代码改动仅 [search-results.ts:20-29](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/search/search-results.ts#L20-L29)（mousedown guard，6 行新增）+ [search-results.ts:67-77](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/search/search-results.ts#L67-L77)（fallback hint span，11 行新增）+ [newtab.css:496-499](file:///Users/lingsmbp/Documents/aiwork/newtab01/styles/newtab.css#L496-L499)（fallback 右对齐 CSS，4 行新增），其它代码 0 改动。
+
 ## [0.2.80] - 2026-06-20
 
 ### Fixed
