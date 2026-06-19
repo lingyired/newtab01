@@ -1,58 +1,92 @@
 # 从 tweakcn 复制主题到 newtab01
 
-newtab01 的主题文件设计成可直接从 [tweakcn](https://tweakcn.com) 复制：每个主题文件只声明 8 个 shadcn 变量，6 个 `--newtab-*`（书签背景、悬停高亮、拖拽指示）由 `styles/globals.css` 的 `:where(:root)` 默认值从这 8 个 shadcn 变量派生（部分走 `color-mix` 保证对比度，Chrome 111+）。
+newtab01 的主题系统完全基于 [tweakcn](https://tweakcn.com) 调色板。每个主题文件只声明 8 个核心 shadcn 变量 + 11 个 surface 变量 + 设计 token，6 个 `--newtab-*`（书签背景、文字、hover 高亮、拖拽落点）由 `styles/globals.css` 的 `:where(:root)` 默认值从 8 个核心变量派生（部分走 `color-mix` 保证对比度，Chrome 111+）。
 
-**v0.2.41+ 优先用运行时导入（见第 0 节）** —— 粘贴 JSON 到设置面板即可，无需 build、无需改代码。本文档剩余的"5 步复制流程"适用于**内置主题**（v0.2.41 之前的添加方式，以及 v0.2.41 之后的 v2 工作流 —— 把运行时导入固定为内置主题）。
+**v0.2.73+ 优先用运行时导入（见第 0 节）** —— 在「自定义主题」tab 粘贴 tweakcn 主题 URL 或 CSS，**无需 build、无需改代码**。本文档剩余的"5 步复制流程"是 v0.2.41 之前的**内置主题添加方式**（v0.2.41 之后是历史 fallback 路径，**新功能不再走这条**）。
 
-## 0. 运行时导入（v0.2.41+，推荐）
+## 0. 运行时导入（v0.2.73+，推荐）
 
-newtab01 现在支持从 tweakcn registry item JSON 直接导入主题，无需 build、无需修改源代码。
+newtab01 支持从 tweakcn 直接导入主题，无需 build、无需修改源代码。导入区在「自定义主题」tab 顶部"导入自定义主题"section。
 
-### 0.1 拿 tweakcn 主题的 raw JSON
+### 0.1 拿 tweakcn 主题的 URL
 
-UI 上的 "Code" 按钮要登录；用 tweakcn 给 shadcn CLI 的 raw endpoint：
+打开 [tweakcn.com/themes](https://tweakcn.com/themes) 浏览，看到喜欢的主题就复制浏览器地址栏的 URL，例如：
 
-```bash
-curl -sL https://tweakcn.com/r/themes/cmllfu8oc000004l1a0tidj2g
-# 返回 shadcn registry item JSON（含 name + cssVars.theme/light/dark + css）
+```
+https://tweakcn.com/themes/cmo5ifogt000304jm34v746n2
 ```
 
-或者打开 [tweakcn.com/themes](https://tweakcn.com/themes) 浏览，看到喜欢的主题就把 URL 里的 `<id>` 拼到上面。
+theme URL 的 `<id>` 段（路径最后一段）就是 tweakcn 内部主题 ID —— newtab01 会用它去 shadcn CLI 的 raw endpoint 拉 JSON。
 
-### 0.2 粘贴到设置面板
+如果手头已经有 tweakcn 的 JSON URL（`.../r/themes/<id>` 形式），也可以直接粘贴，URL 检测会跳过 normalize 直接 fetch。
 
-1. 打开 newtab 设置面板 → 「外观」tab
-2. 滚到「导入自定义主题」section
-3. 把整个 JSON 粘贴到文本框
+### 0.2 URL 粘贴（推荐）
+
+1. 打开 newtab 设置面板 → 「自定义主题」tab（齿轮图标打开设置面板，导航点「自定义主题」）
+2. 在顶部"导入自定义主题"section 的文本框粘贴 `https://tweakcn.com/themes/<id>`
+3. （可选）填"主题名称"输入框 —— 留空时用 JSON 里的 `<name>` 字段；填写时**覆盖** JSON 里的 name
 4. 点「应用」
-5. 状态条会显示 `✓ 已安装 "主题名"（含深色变体）` 或红色错误信息
-6. 主题下拉框里立刻出现新主题（light + dark 两个变体）
+5. 进度条（indeterminate shimmer）显示 fetch 中；完成后进度条消失
+6. 状态条会显示 `✓ 已安装 "<name>（含深色变体）"` 或具体错误（"URL 格式不正确" / "加载失败: HTTP 404" / "JSON 解析失败: ..."）
+7. 页面立即切到新主题，主题下拉框里出现新条目（dark mode 设置决定渲染 light 还是 dark 变体）
+8. URL 内的 `?query` / `#hash` 保留
 
-### 0.3 校验规则
+### 0.3 CSS 粘贴（备选）
 
-- 必须 `type === "registry:style"`
-- 必须有 8 个 shadcn 变量（`background` / `foreground` / `primary` / `primary-foreground` / `muted` / `muted-foreground` / `border` / `ring`）
-- `cssVars.dark` 可选 —— 缺它只会生成 light 变体
+适合手头已有 tweakcn 主题的 CSS 而非 URL 的场景。
 
-### 0.4 持久化与同步
+1. 打开 tweakcn 主题详情页 → 点「Code」按钮 → 复制 `:root { ... }` + `.dark { ... }` 两段
+2. 整个粘贴到 newtab 设置面板的同一个文本框
+3. 必填"主题名称"（CSS 里没有 name 字段，扩展需要这个来生成 storage key）
+4. 点「应用」
 
-- 主题 JSON 存在 `chrome.storage.local.customThemes`（仅本设备，10MB 配额）
-- 重复粘贴同名 → 覆盖更新（保留 `installedAt`、更新 `updatedAt`）
-- "已安装的自定义主题" 列表显示名称 + 安装日期 + light/dark 状态
-- 删除按钮会从 storage 移除 + 重新生成 CSS 块
+CSS 解析器会提取 `--name: value;` 对；tweakcn 主题里 `shadow-x` / `shadow-y` 这种命名会自动 rename 成 `shadow-offset-x` / `shadow-offset-y`，**与 JSON 路径产物同形**（保证同一个 tweakcn 主题从两条路径进来是同一个 storage 条目）。
+
+### 0.4 校验规则
+
+无论 URL 还是 CSS 路径，最终都走 `validateThemeJson()` 强制：
+
+- 必须有 8 个核心 shadcn 变量（`background` / `foreground` / `primary` / `primary-foreground` / `muted` / `muted-foreground` / `border` / `ring`）—— 缺一个就拒绝
+- `cssVars.dark` 可选 —— 缺它只生成 light 变体，dark mode 切到 dark 时**自动 fallback** 到 light（不会破样式）
+- 主题名（URL 路径下从 JSON 读，CSS 路径下从输入框读）必须非空，重复粘贴同名 → 覆盖更新
+
+### 0.5 持久化与同步
+
+- 主题存 `chrome.storage.local.customThemes`（仅本设备，10MB 配额）
+- 重复粘贴同名 → 覆盖更新
+- "已安装的自定义主题"列表显示名称 + 安装日期 + light/dark 状态
+- **删除按钮**先弹 `window.confirm("确定要删除自定义主题 \"<name>\" 吗？")` 二次确认 → 确认后从 storage 移除 + 重新生成 CSS 块
 - 删除当前 active 的主题 → 自动 fallback 到 `default` 主题
 
-### 0.5 不被消费的字段
+### 0.6 不被消费的字段
 
-tweakcn JSON 里我们**只取** 8 个 shadcn 颜色变量 + 主题名。其他字段（`font-sans` / `radius` / `shadow-*` / `chart-*` / `sidebar-*` / `tracking-*` / `css` / `files`）全部丢弃 —— newtab01 不使用这些 surface。
+tweakcn JSON 里我们**只取** 8 个核心 + 11 个 surface 颜色变量 + 主题名。其他字段（`font-sans` / `radius` / `shadow-*` / `chart-*` / `sidebar-*` / `tracking-*` / `css` / `files`）**在 JSON 路径下全部丢弃**（newtab01 不消费这些 surface）—— CSS 路径下 shadcn surface vars（`secondary` / `accent` / `destructive` / `card` / `popover` / `input` + 各自 foreground）+ 设计 token 会**保留并 emit** 到 `<style id="custom-themes">`，因为这些影响 UI 元素（link hover、search bg 等）。
 
-### 0.6 实现
+### 0.7 dark mode 与 dark variant
 
-`src/features/themes/custom-themes.ts` + `docs/superpowers/specs/2026-06-17-runtime-theme-import-design.md`
+- 每个主题的 dark 版本在 CSS 里**物理存在**（同文件里另一段 `:root[data-theme="<id>-dark"]` 块，跟 light 块平级）
+- 但**不**作为独立主题列在 dropdown 里 —— 主题列表里每个 theme 只出现一次
+- dark variant 由独立的 `darkMode` 设置控制（`跟随系统 / 亮 / 暗`，默认 `跟随系统`）
+- 当 `darkMode = 跟随系统` 时，扩展跟随 OS 主题切换实时变化（`matchMedia('(prefers-color-scheme: dark)')` 监听）
+- 当切到 dark 但主题没 dark 变体时自动 fallback 到 light 变体
+
+### 0.8 实现
+
+- `src/features/themes/custom-themes.ts` —— validate + storage CRUD + CSS emit
+- `src/features/themes/css-import.ts` —— CSS paste 解析（v0.2.74）
+- `src/features/themes/url-import.ts` —— URL 检测 + normalize（v0.2.77）
+- `src/features/themes/switcher.ts` —— `resolveTheme()` + `hasDarkVariant()` 缓存 + `applyTheme()`（v0.2.75）
+- 设计 spec：`docs/superpowers/specs/2026-06-17-runtime-theme-import-design.md` / `2026-06-19-css-paste-import-design.md` / `2026-06-19-url-import-design.md` / `2026-06-19-dark-mode-setting-design.md`
 
 ---
 
-## 1. 5 步复制流程（v0.2.41 之前的内置主题添加方式）
+## 1. 5 步复制流程（v0.2.41 之前的**内置主题**添加方式）—— **legacy**
+
+> ⚠️ **此流程仅用于"把 tweakcn 主题烧进内置主题"**。日常添加主题请用上面的 §0 运行时导入。除非你想：
+> - 不依赖 tweakcn 的 raw endpoint（自定义 URL 或离线使用）
+> - 想把某个 tweakcn 主题固定为内置、不让用户删
+>
+> 日常用法**不要**走这条 —— 运行时导入一行粘贴就完事，build 一次才到位对"用户自己加主题"这个场景是过度工程。
 
 ### 1.0 拿 tweakcn 主题的 raw 数据
 

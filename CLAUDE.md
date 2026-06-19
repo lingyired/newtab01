@@ -35,7 +35,7 @@
 **已弃分支策略**：`feat/runtime-theme-import` 与 `feat/vue-migration` 暂时不删除，保留为历史 commit 索引。新功能 / hotfix **只**在 `main` 上做，不要 merge 任何 v0.3.x commit 进 main。
 
 **当前已知未决问题**（v0.2.57 遗留，**仅** main 上未解决）
-- **主题化兼容性**：tweakcn 主题通过 runtime import 时，需要重新粘贴 JSON 一次以确保 11 个 shadcn surface vars（`secondary` / `accent` / `destructive` / `card` / `popover` / `input` + foregrounds）写入 storage。Chrome extension storage 不会自动升级旧值。
+- **主题化兼容性**：tweakcn 主题通过 runtime import（URL / CSS paste）时需要带完整的 8 个核心 + 11 个 surface vars（`secondary` / `accent` / `destructive` / `card` / `popover` / `input` + 各自 foreground）。v0.2.83 之后 link / search 默认 bg 走 `var(--newtab-link-bg, var(--card, var(--newtab-bg)))` chained fallback —— 缺 `--card` 时回退到 `--newtab-bg`，视觉降级但**不会**破样式。Chrome extension storage 不会自动升级旧值；用户在 v0.2.55 之前导入的老主题需要重新粘贴一次以写入完整 surface 集。
 - **Codex light 主题下 link 默认态有极淡 drop shadow**（`var(--shadow-xs)` = `0px 2px 4px 0px hsl(0 0% 0% / 0.05)`）。按 shadcn Button 标准不主动 override 时会保留；用户已经接受此视觉，视为"主题本身效果"。
 
 ---
@@ -44,7 +44,8 @@
 
 ### 1.1 目标
 - 提供高性能、低资源占用的新标签页体验
-- 在保留原项目全部能力（apps、topSites、recent、closed、devices、12 主题、背景图、字体、动画、导入导出、自定义 CSS）的基础上叠加 5 项新能力
+- 在保留原项目核心能力（apps、topSites、recent、closed、devices、背景图、字体、动画、自定义 CSS）的基础上叠加 5 项核心新能力
+- 主题系统完全基于 [tweakcn](https://tweakcn.com) 调色板：4 套内置主题（Codex / MX-Brutalist / Cyberpunk / AstroVista）+ 无限运行时自定义（URL / CSS paste 到「自定义主题」tab，存 `chrome.storage.local.customThemes`）；dark mode 是独立 `darkMode` 设置（`system` / `light` / `dark`），与 theme id 解耦
 - 通过**分屏引擎抽象层**为未来 Chrome Window Placing API 等原生能力预留接入点
 - 提供清晰的模块边界与可维护代码
 
@@ -93,12 +94,16 @@
 - 点击 **Open Split** → 调分屏引擎在新标签页以 `?split=1` 参数渲染分屏视图
 - 与文件夹分屏共用同一引擎
 
-### 2.5 样式自定义
-- 基于 tweakcn 和 shadcn 增加切换皮肤的功能，默认内置多套主题，其中包含多个暗色系和亮色系主题
-- **主题切换**：在 `styles/themes/` 定义多套 CSS 变量集（`default`、`slate`、`rose`、`dark` 等），选项页切换
-- **自定义 CSS**：保留原项目能力，文本域位于 Advanced Tab
-- **低优先级**：抽离 DOM/CSS 结构生成 prompt，让用户借助 AI 生成自定义 CSS（在选项页"Generate with AI"按钮，弹窗展示 prompt 并复制）
-- 主题切换影响所有界面（newtab、options、popup）
+### 2.5 主题与样式
+- **完全基于 tweakcn 调色板**：内置 4 套主题（Codex / MX-Brutalist / Cyberpunk / AstroVista）从 tweakcn 复制调色板到 `styles/themes/<id>.css`；运行时导入同样以 tweakcn JSON 为唯一来源。无 AI 生成、无独立设计系统。
+- **双层结构**：每个 theme file 声明 8 个核心 shadcn 变量（`background` / `foreground` / `primary` / `primary-foreground` / `muted` / `muted-foreground` / `border` / `ring`）+ 11 个 surface 变量（`secondary` / `accent` / `destructive` / `card` / `popover` / `input` + 各自 foreground）+ 设计 token（`radius` / `font-sans/mono/serif` / `shadow-*` / `letter-spacing` / `tracking-normal` / `spacing`）。`styles/globals.css` 的 `:where(:root)` 从这 8 个核心变量派生 6 个 `--newtab-*` 变量（书签背景、文字、hover 高亮、拖拽落点），见 §6。
+- **dark mode 是独立 `darkMode` 设置**（v0.2.75）：`Settings.darkMode: 'system' | 'light' | 'dark'`，默认 `'system'`。下拉列表里每个 theme 只出现一次（不再有 `<base>-dark` 副本条目）；dark variant 由 `resolveTheme()` 在 `applyTheme()` 时根据 `darkMode` + theme 的 dark variant 存在性计算（`data-theme` = `<base>` 或 `<base>-dark`）。`'system'` 走 `matchMedia('(prefers-color-scheme: dark)')` 实时跟随 OS 切换。切到 dark 但主题没有 dark 变体时自动 fallback 到 light。
+- **运行时导入**（v0.2.73-v0.2.77）：设置面板 → 「自定义主题」tab 的"导入自定义主题"区支持两种格式：
+  - **URL paste**（推荐）：粘贴 `https://tweakcn.com/themes/<id>`，自动补 `/r/` 走 service worker fetch 拉 JSON；JSON URL（`/r/themes/<id>`）也直接支持
+  - **CSS paste**：粘贴 tweakcn 主题的 `:root { ... }` + `.dark { ... }` CSS 块（CSS 解析器提取 `--name: value;` 对，shadow var 名 `shadow-x` / `shadow-y` rename 成 `shadow-offset-x` / `shadow-offset-y` 以匹配 JSON schema）
+  - 两个路径都最终走 `validateThemeJson()` 校验（8 required shadcn var + dark variant 存在性）+ `installCustomTheme()` 写 storage + 自动切到新主题（保留当前 darkMode 设置）
+  - 删除前有 `window.confirm()` 二次确认（v0.2.79）
+- **主题切换影响所有界面**（newtab、options、popup）—— 同一份 `data-theme` 属性 + `darkMode` 设置跨上下文同步。
 
 ---
 
@@ -220,11 +225,28 @@ splitManager.register(new IframeSplitEngine());
 
 ## 6. 主题系统
 
-- `styles/globals.css` 定义 `:root` 语义变量（`--background`、`--foreground`、`--primary` 等）+ newtab 专用变量
-- `styles/themes/*.css` 定义各主题变量集（`data-theme="dark"` 等覆盖）
-- 选项页切换主题：根节点加 `data-theme` 属性
-- 用户自定义 CSS：放在 `<style id="user-css">` 内，置于主题变量后
-- 颜色使用语义变量：`var(--newtab-bg)`、`var(--newtab-text)` 等，**禁止**硬编码色值
+- **theme source of truth = tweakcn**：内置 4 套主题 + 无限运行时自定义，所有调色板都来自 [tweakcn.com](https://tweakcn.com)。无 AI 生成、无独立调色板。tweakcn 主题的 `<id>` 在 newtab01 内部就是 theme file 的 `data-theme` 值（去掉 `-dark` 后缀的 base id）。
+- **三层结构**：
+  1. `styles/globals.css` 的 `:where(:root)` 定义 6 个 `--newtab-*` 派生变量（`--newtab-bg` / `--newtab-text` / `--newtab-highlight` / `--newtab-highlight-text` / `--newtab-drop-indicator` / `--newtab-surface`），全部 `var(--xxx)` 引用 8 个核心 shadcn 变量，**specificity = 0**
+  2. `styles/themes/<id>.css` 的 `:root[data-theme="<id>"]` 声明该主题的 8 个核心 + 11 个 surface + 设计 token，**specificity = 0,1,0**，**赢过** `:where(:root)` —— 这是 `:where()` 选择器特性 + 主题块后于 globals 的综合效果
+  3. `chrome.storage.local.customThemes`（运行时导入的 user theme）经 `applyCustomThemes()` 注入到 `<style id="custom-themes">`，同样用 `:root[data-theme="user-xxx"]` 选择器，与内置主题走同一份 CSS 变量体系
+- **dark variant 与 `darkMode` 设置解耦**：每个主题的 dark 版本在 CSS 里**物理存在**（同文件里另一段 `:root[data-theme="<id>-dark"]` 块，跟 light 块平级），但**不**作为独立主题列在 dropdown 里。`<html>` 上的 `data-theme` 属性由 `applyTheme()` → `resolveTheme(baseTheme, darkMode)` 计算：
+  - `darkMode = 'light'` → `data-theme = <base>`
+  - `darkMode = 'dark'` 且主题有 dark 变体 → `data-theme = <base>-dark`
+  - `darkMode = 'dark'` 但主题无 dark 变体 → `data-theme = <base>`（fallback）
+  - `darkMode = 'system'` → 走 `matchMedia('(prefers-color-scheme: dark)')` 决定，跟 'light' / 'dark' 走相同 fallback 逻辑
+  - OS 主题切换时 `matchMedia` 的 `change` 事件触发 `applyTheme(currentTheme)`，仅当 `darkMode === 'system'` 时 re-apply
+- **运行时自定义主题**（v0.2.73-v0.2.77）：
+  - 入口：设置面板 → 「自定义主题」tab 顶部"导入自定义主题"section
+  - 接收两种格式：**URL**（tweakcn 主题 URL 或 JSON URL，自动 normalize）/**CSS**（tweakcn 主题的 `:root` + `.dark` 块）
+  - 校验：`validateThemeJson()` 强制 8 个核心 shadcn var 存在；`installCustomTheme()` 写 `chrome.storage.local.customThemes` map（key = theme name）
+  - CSS 路径的 shadow var 命名规范化：`shadow-x` / `shadow-y` → `shadow-offset-x` / `shadow-offset-y`，与 JSON 路径的存储形状对齐
+  - 删除前 `window.confirm()` 二次确认（v0.2.79）
+- **用户自定义 CSS**（HNTP 继承）：放在 `<style id="user-css">` 内，置于主题变量 + dynamic-styles 之后，cascade 优先级最高。位于 Advanced Tab 文本域。
+- **颜色使用语义变量**：`var(--newtab-bg)` / `var(--newtab-text)` / `var(--card)` / `var(--card-foreground)` 等，**禁止**硬编码色值。代码内 `getComputedStyle` 读 `oklch()` / `color-mix()` 等 CSS Color 4 表达式时需经过 `resolveCssColor()` 规整成 `rgb()`，否则 `<input type="color">` 和 chrome.storage 会拒绝非 `#rrggbb` 格式。
+- **storage 分层**：
+  - `chrome.storage.sync.settings.theme` + `settings.darkMode` —— 跨设备同步用户偏好
+  - `chrome.storage.local.customThemes` —— 运行时导入的主题，本地大对象（10MB 配额）
 
 ---
 
