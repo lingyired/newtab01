@@ -15,6 +15,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **CSS**：`.sp-link` 新增内联链接样式（`var(--primary)` 上色，hover 下划线 + 0.85 透明，`:focus-visible` 用 `var(--ring)` 描边）—— 与 shadcn link 风格一致，沿用现有 shadcn token。
   - **API**：`createRow` 的 `description` 参数从 `string` 扩到 `string | HTMLElement`（一个 `if` 分支），允许调用方在 row description 里塞富内容（链接、图标等）。所有现有调用方都传 string，零修改。
 
+## [0.2.74] - 2026-06-19
+
+### Added
+- **自定义主题 tab 支持粘贴 tweakcn CSS**。v0.2.73 的导入区只接受 tweakcn JSON (`registry-item`)，本版本把主输入格式切到 tweakcn 的"Copy"按钮默认吐出的 CSS（`:root` + `.dark` 块）—— 少一道「点 Show Code → 选 CSS → 复制 → 改粘贴成 JSON」的来回，对终端用户更直接。JSON 路径**保留**作为测试 / 高级入口，由 `detectInputFormat()` 在 Apply 时按首字符自动分发。
+  - **模块拆分**：新增 `src/features/themes/css-import.ts`（~80 行）—— `parseCssTheme(css, name)` 用 4 条正则（`:root` 块、`.dark` 块、注释剥离、`--name: value;` 提取）把 CSS 解析成 `TweakcnJson`，**直接复用** `validateThemeJson` / `installCustomTheme` / `emitBlock` / `injectCustomThemesStyle` 的整条下游 —— 8 required shadcn var 校验、storage 写入、CSS emit、tab 刷新等逻辑 0 重复。
+  - **规范化**：`shadow-x` / `shadow-y` 在 CSS 路径里 rename 成 `shadow-offset-x` / `shadow-offset-y`，与 JSON 路径的存储形状对齐 —— 同一个 tweakcn 主题从 CSS 进和从 JSON 进得到同一个 storage 条目（否则 `installCustomTheme` 视为不同主题，无法 update）。
+  - **UI**：textarea 下方新增 name `<input>`（`#sp-custom-theme-name` / `.sp-name-input`），placeholder「主题名称（仅 CSS 粘贴必填）」。JSON 路径忽略该 input，CSS 路径必填。hint 文案 + textarea placeholder 都同步更新，明确两种格式都支持。
+  - **错误处理**：CSS 缺 `:root { ... }` → "CSS 解析失败: 未找到 :root { ... } 块"；CSS 缺 name → "请先输入主题名称"；其余 8 required var / dark 校验复用 validator 既有错误文案。
+  - **不改**：`cssVars.theme` 共享块（项目 `emitBlock` 不读，dead code 字段，给空对象即可）、`css` 顶层 element-level 规则（JSON 路径也忽略，行为一致）、任何下游 storage / emit / refresh 逻辑。
+  - **未来扩展**：`detectInputFormat` 是 URL 导入（tweakcn URL → fetch CSS → 走同一条 `parseCssTheme`）的自然接入点 —— 本次不做。
+
 ## [0.2.72] - 2026-06-19
 
 ### Fixed

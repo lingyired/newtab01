@@ -11,6 +11,7 @@ import {
   removeCustomTheme,
   validateThemeJson,
 } from '../features/themes/custom-themes';
+import { detectInputFormat, parseCssTheme } from '../features/themes/css-import';
 import { applySettingChange, applyUserColorOverride } from '../features/settings/apply';
 import * as debug from '../lib/debug';
 import { renderColumns } from '../features/bookmarks/board';
@@ -678,8 +679,42 @@ function buildThemeRowDescription(): HTMLElement {
   return desc;
 }
 
-/** Build the "Import custom theme" section: textarea + Apply button +
- *  status message. The section itself is a static shell; the handler
+/** Dispatch by detected input format and return a ValidationResult
+ *  ready for installCustomTheme. The two paths share validation
+ *  downstream (8 required shadcn vars + dark variant check +
+ *  duplicate-name detection), so all format-specific code lives
+ *  here and the rest of the Apply handler is format-agnostic. */
+async function runThemeValidation(
+  raw: string,
+  nameFromInput: string,
+  existing: Awaited<ReturnType<typeof readCustomThemes>>,
+): Promise<Awaited<ReturnType<typeof validateThemeJson>>> {
+  if (detectInputFormat(raw) === 'css') {
+    if (!nameFromInput) {
+      return { ok: false, error: '请先输入主题名称' };
+    }
+    const parsed = parseCssTheme(raw, nameFromInput);
+    if (!parsed.ok) {
+      return { ok: false, error: `CSS 解析失败: ${parsed.error}` };
+    }
+    return validateThemeJson(parsed.json, existing);
+  }
+  // JSON path — unchanged from v0.2.73, kept here so the Apply
+  // handler doesn't have to know which format it's handling.
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch (e) {
+    return { ok: false, error: `JSON 解析失败: ${(e as Error).message}` };
+  }
+  return validateThemeJson(parsed, existing);
+}
+
+/** Build the "Import custom theme" section: textarea + name input +
+ *  Apply button + status message. Accepts tweakcn's two output formats:
+ *  CSS (`:root` + `.dark` blocks — the format tweakcn's "Copy" button
+ *  emits) or JSON (registry-item — kept as a hidden-test escape hatch
+ *  via auto-detect). The section itself is a static shell; the handler
  *  is bound lazily after render so it can re-render the tab on success. */
 function buildCustomThemeImportSection(): HTMLElement {
   const section = el('section', 'sp-custom-import');
@@ -689,7 +724,7 @@ function buildCustomThemeImportSection(): HTMLElement {
 
   const hint = el('p', 'sp-hint');
   hint.textContent =
-    '把 tweakcn 主题的 JSON 粘贴到下方文本框，点击「应用」即可立即安装（持久保存到本地）。';
+    '把 tweakcn 主题粘贴到下方文本框（支持 CSS 或 JSON），点击「应用」即可立即安装（持久保存到本地）。';
   section.appendChild(hint);
 
   const textarea = document.createElement('textarea');
@@ -697,8 +732,21 @@ function buildCustomThemeImportSection(): HTMLElement {
   textarea.rows = 8;
   textarea.spellcheck = false;
   textarea.placeholder =
-    '{ "$schema": "https://ui.shadcn.com/schema/registry-item.json", "name": "...", "type": "registry:style", "cssVars": { "theme": {...}, "light": {...}, "dark": {...} } }';
+    '粘贴 tweakcn 主题 CSS（:root { ... } .dark { ... } 块）\n或 JSON (registry-item 高级格式)';
   section.appendChild(textarea);
+
+  // Theme name. Required when pasting CSS (CSS has no name field);
+  // silently ignored on the JSON path (JSON carries its own `name`).
+  // We render it unconditionally so the UI is uniform — only the
+  // Apply handler decides whether to read the value.
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.id = 'sp-custom-theme-name';
+  nameInput.className = 'sp-name-input';
+  nameInput.placeholder = '主题名称（仅 CSS 粘贴必填）';
+  nameInput.autocomplete = 'off';
+  nameInput.spellcheck = false;
+  section.appendChild(nameInput);
 
   const actions = el('div', 'sp-actions');
   const apply = document.createElement('button');
@@ -715,23 +763,16 @@ function buildCustomThemeImportSection(): HTMLElement {
   status.setAttribute('aria-live', 'polite');
   section.appendChild(status);
 
-  // Wire up the Apply button. We re-render the appearance tab after
-  // every successful install/delete so the dropdown + list stay in sync.
+  // Wire up the Apply button. We re-render the custom-themes tab after
+  // every successful install so the dropdown + list stay in sync.
   apply.addEventListener('click', async () => {
     const raw = textarea.value.trim();
     if (!raw) {
-      setCustomThemeStatus(status, 'error', '请先粘贴 JSON');
-      return;
-    }
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(raw);
-    } catch (e) {
-      setCustomThemeStatus(status, 'error', `JSON 解析失败: ${(e as Error).message}`);
+      setCustomThemeStatus(status, 'error', '请先粘贴 CSS 或 JSON');
       return;
     }
     const existing = await readCustomThemes();
-    const result = validateThemeJson(parsed, existing);
+    const result = await runThemeValidation(raw, nameInput.value.trim(), existing);
     if (!result.ok) {
       setCustomThemeStatus(status, 'error', result.error);
       return;
@@ -760,8 +801,9 @@ function buildCustomThemeImportSection(): HTMLElement {
       applyTheme(currentTheme);
     }
 
-    // Clear textarea and refresh the appearance tab.
+    // Clear inputs and refresh the tab.
     textarea.value = '';
+    nameInput.value = '';
     const successMsg = result.isUpdate
       ? `✓ 已更新 "${result.entry.light.name}"`
       : `✓ 已安装 "${result.entry.light.name}"${result.entry.dark ? '（含深色变体）' : '（仅浅色）'}`;

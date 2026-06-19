@@ -128,6 +128,9 @@ type TweakcnCssVarsBlock = {
   light: Record<RequiredThemeVar, string> & Partial<Record<OptionalThemeVar, string>>;
   dark?: Record<RequiredThemeVar, string> & Partial<Record<OptionalThemeVar, string>>;
 };
+// Exported so consumers (e.g. css-import.ts) can construct
+// TweakcnJson objects without re-declaring the strict inner shape.
+export type { TweakcnCssVarsBlock };
 
 export type TweakcnJson = {
   name: string;
