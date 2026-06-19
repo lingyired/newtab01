@@ -59,6 +59,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **主题下拉列表里仍有 `<name> (Dark)` 条目**。v0.2.75 把 dark mode 提升成一等 `darkMode` 设置的 commit 意图是从 `listAllThemes()` 里去掉 dark variant 的 push —— 但那次 `SearchReplace` edit 静默失败了，dark 那段 `if (entry.dark)` 没真删，只是注释（连注释也是后来才加）改了。从用户视角表现：装一个**有** dark 变体的自定义主题后，外观 tab 主题下拉里能看到 `Whatsapp` 和 `Whatsapp (Dark)` 两个条目；切到 dark 那个实际渲染没问题但 dropdown 出现了本不该有的冗余。修复：`listAllThemes` 不再 push dark 入口 —— 用户统一通过 `darkMode` 设置决定变体。`buildCustomThemesStyle` 的 `[data-theme="user-xxx-dark"]` CSS 规则 emit **不动**（那是 `resolveTheme` 切到 dark variant 必需的）。
 
+## [0.2.79] - 2026-06-19
+
+### Added
+- **删除自定义主题加确认对话框**。在「自定义主题」tab 的「已安装的自定义主题」列表里点「删除」按钮时，先弹 native `window.confirm("确定要删除自定义主题 \"<name>\" 吗？")`；用户取消则不执行任何操作。沿用项目现有 pattern（CLAUDE.md 提到的 `folderActionConfirmThreshold` 给 folder 批量操作加 confirm 也是 `window.confirm()`），0 DOM 改动、0 新组件。
+
 ## [0.2.72] - 2026-06-19
 
 ### Fixed

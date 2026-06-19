@@ -1031,6 +1031,12 @@ async function buildCustomThemeListSection(): Promise<HTMLElement> {
     del.setAttribute('aria-label', `Delete ${name}`);
     del.textContent = '删除';
     del.addEventListener('click', async () => {
+      // Confirm before destructive delete. Matches the project's
+      // existing `window.confirm()` pattern (CLAUDE.md mentions
+      // `folderActionConfirmThreshold` gates folder bulk actions
+      // through the same native dialog). Zero DOM cost, no extra
+      // state — the user must explicitly OK the removal.
+      if (!window.confirm(`确定要删除自定义主题 "${name}" 吗？`)) return;
       const wasCurrent =
         String(getSetting('theme')).startsWith('user-') &&
         (String(getSetting('theme')) === deriveLightId(name) ||
