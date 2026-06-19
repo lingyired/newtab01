@@ -2,7 +2,7 @@
 // Calculates drop target position and delegates to layout-ops
 
 import { getDragIds, getDropTarget, setDropTarget } from './drag-state';
-import { getColumns, addRow, addColumn } from './layout-ops';
+import { getColumns, addRow, addColumn, getCoords } from './layout-ops';
 import { captureSnapshot, pushSnapshot } from './history';
 import { getSetting } from '../../lib/storage/settings';
 import * as debug from '../../lib/debug';
@@ -112,6 +112,32 @@ async function captureAndDrop(
   target: HTMLElement,
   event: DragEvent,
 ): Promise<void> {
+  // Self-drop detection: when the user drags a single folder (dragIds
+  // length 1) and releases it on its own source column — and that
+  // source column has only this folder — the drop is a no-op. Without
+  // this guard, getDropTargetElement promotes the source LI to a UL
+  // (because the single-folder column triggers the "promote to UL"
+  // branch), which sends the drop through addRow with the same column
+  // as both source and target. addRow then:
+  //   1. removes the folder from the source column (length 1 → empty)
+  //   2. removes the now-empty source column (xPos gets decremented)
+  //   3. inserts the folder into the column immediately to the left
+  // Result: [A], [B] dragged in place becomes [BA], [C], [D].
+  //
+  // The check is gated on source column length === 1 so legitimate
+  // in-column reorders in multi-folder columns (e.g. drag X in [A, X]
+  // to row 0) still flow through addRow unchanged.
+  if (dragIds.length === 1 && y !== null) {
+    const sourceCoords = getCoords(dragIds[0]!);
+    if (sourceCoords && sourceCoords.x === x) {
+      const sourceColumn = getColumns()[sourceCoords.x];
+      if (sourceColumn && sourceColumn.length === 1) {
+        debug.log('drop', 'captureAndDrop: self-drop on single-folder source column, no-op');
+        return;
+      }
+    }
+  }
+
   // Capture pre-drop snapshot (columns + movedOut, both cloned).
   const snapshot = await captureSnapshot();
 

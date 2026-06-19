@@ -5,6 +5,18 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.72] - 2026-06-19
+
+### Fixed
+- **拖单个 folder 原地松开会合并到左边列**。`getDropTargetElement` 在"目标列只有 1 个 folder"时把 LI promote 成 UL，目的是把"拖到 header"解读成 column drop。但当源列自身也是单 folder 列时（典型场景：`[A], [B], [C], [D]` 拖 B），drop 走 `addRow('B', x=1, y=0|1)` 路径：
+  1. 从列 1 移除 B → 列 1 变空
+  2. 删空列 1 → `xPos > x` 命中，xPos 从 1 变成 0
+  3. 把 B 插到 columns[0]（现在的 A）row 0
+
+  结果 `[A], [B], [C], [D]` 变成 `[BA], [C], [D]` —— 用户拖了一下没动位置却把 B 合并进 A 了。
+  - **修复**：`drop-handler.ts:captureAndDrop` 在取 snapshot 前检测 self-drop on single-folder source column（`dragIds.length === 1 && y !== null && sourceCoords.x === x && sourceColumn.length === 1`），命中直接 return —— 不取 snapshot、不改 layout、不进 undo 栈。
+  - 多文件列的 in-column 重排（`[A, X]` 拖 X 到 row 0）仍然走 addRow，不受影响（因为 `sourceColumn.length === 1` 失败，guard 不触发）。多文件列的列间 drop 也不受影响。
+
 ## [0.2.71] - 2026-06-19
 
 ### Added
