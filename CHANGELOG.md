@@ -5,6 +5,21 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.83] - 2026-06-20
+
+### Changed
+- **链接和搜索框默认背景/文字色改为 `--card` / `--card-foreground`**。原方案：链接 bg = `var(--newtab-bg)` (= `--background`，与页面同色)、文字 = `var(--newtab-text)` (= `--foreground`)；搜索框 bg = `transparent`、文字 = `var(--foreground)` —— 链接读起来是"页面本身的延伸"，搜索框读起来是"页面挖空的一块"。新方案：链接 bg = `var(--newtab-link-bg, var(--card, var(--newtab-bg)))`、文字 = `var(--card-foreground, var(--newtab-text))`；搜索框 bg = `var(--card, transparent)`、文字 = `var(--card-foreground, var(--foreground))` —— 两者都落在 tweakcn "card" 这个 shadcn-conventional 的卡片表面，链接 / 输入框读起来都是**独立的 surface**，不再融进页面。
+  - **代码改动**：[styles/newtab.css:73](file:///Users/lingsmbp/Documents/aiwork/newtab01/styles/newtab.css#L73) + [styles/newtab.css:103](file:///Users/lingsmbp/Documents/aiwork/newtab01/styles/newtab.css#L103)（`#main a` 的 `color` + `background-color`，3 个属性微调 + 1 段注释更新）+ [styles/newtab.css:428-429](file:///Users/lingsmbp/Documents/aiwork/newtab01/styles/newtab.css#L428-L429)（`.search-input` 的 `background-color` + `color`，2 个属性微调 + 1 段注释更新）。其它代码 0 改动。
+  - **chained fallback 的目的**：4 套内置主题（Codex / MX-Brutalist / Cyberpunk / AstroVista）从 v0.2.55 起都在 theme file 里声明了 `--card` 和 `--card-foreground`，所以新方案对内置主题直接生效。但通过运行时导入（粘贴 tweakcn URL / JSON）的**老**主题在 v0.2.55 之前可能没声明这两个 var，CSS var 查询返回无效值，浏览器会回退到下一个 fallback —— `var(--newtab-bg)` / `var(--newtab-text)` / `transparent`（即 v0.2.57-baseline 的行为）。等用户在 v0.2.55+ 重新粘贴一次 URL 之后 `--card` / `--card-foreground` 进入 storage，链接和搜索框就会自动切到 card surface，无需额外操作。CLAUDE.md §0 已记录的"主题化兼容性"问题（runtime import 升级需要重新粘贴）这里天然适配，不引入新的迁移负担。
+  - **hover / active / focus / selected / border / shadow 全部不动**。hover 仍然走 shadcn `hover:bg-accent hover:text-accent-foreground`；focus / focus-visible 仍然 `border-color: var(--ring)` + `box-shadow: 0 0 0 3px color-mix(... ring 50% ...)`；selected 仍然 `outline: 2px dotted var(--ring)`。link 的 `--newtab-link-bg` per-theme escape hatch 保留不变，未来 brutalist / glassmorphism 主题想恢复"链接 = 页面 bg" 的视觉效果，只需在 theme file 里写一行 `--newtab-link-bg: var(--newtab-bg);` 即可。
+  - **视觉影响**（4 套内置主题）：
+    - Codex light (`--card: oklch(0.9761 0 0)`，bg `oklch(1)` → `oklch(0.9761)`，#fff → #f8f8f8)：链接和搜索框由纯白变成非常浅的灰白，与页面 bg 形成**细微但可见**的层级感，靠 1px `--border` 区分
+    - Codex dark (`--card: oklch(0.2178 0 0)`，bg `oklch(0.1776)` → `oklch(0.2178)`，#2d2d2d → #383838)：链接和搜索框由接近黑变成稍浅的灰，文字 (`--card-foreground: oklch(0.9911)` = 近白) 仍清晰
+    - MX-Brutalist light (`--card: oklch(1.0000 0 0)`，bg `oklch(0.9923)` → `oklch(1.0000)`)：链接和搜索框变成纯白，对比 1px 黑色 `--border` 视觉更锐利
+    - MX-Brutalist dark (`--card: oklch(0.2283 ...)`，bg `oklch(0.1649)` → `oklch(0.2283)`)：链接和搜索框变成更亮的灰绿调
+    - AstroVista (`--card: oklch(1.0000 0 0)`，bg 是 `oklch(0.9383)` 冷白)：链接和搜索框变成纯白，从冷白页面里"浮"出来 —— 视觉差异最明显
+    - Cyberpunk (`--card: oklch(0.2310 ...)` 略浅的紫，bg `oklch(0.1418)` 深紫)：链接和搜索框变成稍浅的紫色
+
 ## [0.2.82] - 2026-06-20
 
 ### Fixed
