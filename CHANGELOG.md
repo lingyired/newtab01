@@ -54,6 +54,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Removed
 - **v0.2.74 引入的 raw JSON 粘贴**。`detectInputFormat` 从 `'css' | 'json' | 'url'` 缩到 `'css' | 'url'`；`runThemeValidation` 删掉 JSON 分支。`validateThemeJson` 内部仍被 URL 路径用（fetch 回来的文本要 parse 成 JSON 再 validate），保留不动。textarea placeholder 不再列 JSON 格式；用户想粘贴 JSON 的场景都被 URL 粘贴覆盖了。
 
+## [0.2.78] - 2026-06-19
+
+### Fixed
+- **主题下拉列表里仍有 `<name> (Dark)` 条目**。v0.2.75 把 dark mode 提升成一等 `darkMode` 设置的 commit 意图是从 `listAllThemes()` 里去掉 dark variant 的 push —— 但那次 `SearchReplace` edit 静默失败了，dark 那段 `if (entry.dark)` 没真删，只是注释（连注释也是后来才加）改了。从用户视角表现：装一个**有** dark 变体的自定义主题后，外观 tab 主题下拉里能看到 `Whatsapp` 和 `Whatsapp (Dark)` 两个条目；切到 dark 那个实际渲染没问题但 dropdown 出现了本不该有的冗余。修复：`listAllThemes` 不再 push dark 入口 —— 用户统一通过 `darkMode` 设置决定变体。`buildCustomThemesStyle` 的 `[data-theme="user-xxx-dark"]` CSS 规则 emit **不动**（那是 `resolveTheme` 切到 dark variant 必需的）。
+
 ## [0.2.72] - 2026-06-19
 
 ### Fixed
