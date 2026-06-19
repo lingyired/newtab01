@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.82] - 2026-06-20
+
+### Fixed
+- **同一 folder 在收藏夹栏和自定义 column 中的展开状态独立**。修复前从收藏夹栏把 folder A 拖到新 column、展开 A 后刷新页面，收藏夹栏里的 A 也会跟着展开 —— 因为 `folder.ts` 的展开/收起状态以 `chrome.storage.local` key `'open.' + node.id` 持久化，**key 只用 node id 不带 column 信息**，收藏夹栏和自定义 column 共用同一份 storage；当前 session 内 click handler 是 per-DOM 的所以两边 DOM `.open` class 看起来独立，但刷新后两边都从 storage 重读同一 key 就同步了。修复后 key 加 scope：[folder.ts:19-24](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/folder.ts#L19-L24) 新增 `openKey(nodeId, inBookmarkBarContext)` —— 收藏夹栏内 folder → `open.bar.{id}`，自定义 column 内 folder → `open.col.{id}`。够用是因为 [CLAUDE.md §2.2](file:///Users/lingsmbp/Documents/aiwork/newtab01/CLAUDE.md) 已约束"同一文件夹只能出现在一列中"（[layout-ops.ts:152-164](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/drag-drop/layout-ops.ts#L152-L164) 在 `addColumn` / `addRow` 强制去重），所以一个 folder 至多在「收藏夹栏 + 一个自定义 column」两处出现，两个 scope 足够。`autoCloseSiblings` 路径走的是 DOM `.click()`，会自然复用新的 scope-aware 路径，行为零变化。代码改动仅 [folder.ts](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/folder.ts) 一个文件（1 个 helper + 3 处 set/remove + 1 处 read + 1 处调用方传参），其它代码 0 改动。未做旧 key 迁移（产品未发布，无需兼容旧 storage），旧的 `open.{id}` key 会留为 storage 死数据，KB 量级，不影响功能。
+
 ## [0.2.81] - 2026-06-20
 
 ### Changed

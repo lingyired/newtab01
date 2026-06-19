@@ -16,6 +16,13 @@ import * as debug from '../../lib/debug';
 /** Track open folder state in storage */
 const OPEN_PREFIX = 'open.';
 
+/** Scope the open-state key so a folder in the bookmarks bar and a copy
+ * of the same folder in a custom column can be expanded independently. */
+function openKey(nodeId: string, inBookmarkBarContext: boolean): string {
+  const scope = inBookmarkBarContext ? 'bar' : 'col';
+  return `${OPEN_PREFIX}${scope}.${nodeId}`;
+}
+
 /** Render a folder node as li with header and collapsible children */
 export function renderFolder(
   node: BookmarkNode,
@@ -61,7 +68,7 @@ export function renderFolder(
   li.appendChild(header);
 
   // Check if folder should be open
-  checkOpenState(node).then((isOpen) => {
+  checkOpenState(node, inBookmarkBarContext).then((isOpen) => {
     if (isOpen) {
       header.classList.add('open');
       getChildren(node).then(async (children) => {
@@ -137,7 +144,7 @@ async function toggleFolder(
   if (isOpen) {
     // Close folder
     header.classList.remove('open');
-    await removeLocal(OPEN_PREFIX + node.id);
+    await removeLocal(openKey(node.id, inBookmarkBarContext));
 
     // Auto-close child folders
     if (getSetting('autoClose')) {
@@ -155,7 +162,7 @@ async function toggleFolder(
   } else {
     // Open folder
     header.classList.add('open');
-    await setLocal(OPEN_PREFIX + node.id, true);
+    await setLocal(openKey(node.id, inBookmarkBarContext), true);
 
     // Auto-close sibling folders (accordion behavior)
     if (getSetting('autoClose')) {
@@ -236,8 +243,11 @@ function renderNodeInto(
 }
 
 /** Check if a folder should be open (from storage) */
-async function checkOpenState(node: BookmarkNode): Promise<boolean> {
+async function checkOpenState(
+  node: BookmarkNode,
+  inBookmarkBarContext: boolean,
+): Promise<boolean> {
   if (!getSetting('rememberOpen')) return false;
-  const stored = await getLocal<boolean>(OPEN_PREFIX + node.id);
+  const stored = await getLocal<boolean>(openKey(node.id, inBookmarkBarContext));
   return stored === true;
 }
