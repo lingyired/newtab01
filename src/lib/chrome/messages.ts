@@ -7,7 +7,8 @@
 
 export type Message =
   | { type: 'createTabGroup'; tabIds: number[]; title?: string }
-  | { type: 'refreshDeclarativeNetRequest' };
+  | { type: 'refreshDeclarativeNetRequest' }
+  | { type: 'fetchThemeJson'; url: string };
 
 /**
  * Handwritten type guard for messages sent to the service worker.
@@ -26,6 +27,18 @@ export function isValidMessage(msg: unknown): msg is Message {
   }
 
   if (m['type'] === 'refreshDeclarativeNetRequest') {
+    return true;
+  }
+
+  if (m['type'] === 'fetchThemeJson') {
+    // The SW is strict about the URL shape — only an already-normalized
+    // JSON URL (`/r/themes/...`) on tweakcn.com. The settings panel
+    // normalizes theme URLs to JSON URLs before sending, so the SW
+    // doesn't need to redo it. Reject anything that looks like a
+    // non-tweakcn URL or a non-normalized theme URL — single source
+    // of truth for "what fetchable URL the SW will accept".
+    if (typeof m['url'] !== 'string') return false;
+    if (!/^https?:\/\/tweakcn\.com\/r\/themes\/[\w-]+/.test(m['url'])) return false;
     return true;
   }
 

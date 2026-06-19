@@ -8,6 +8,7 @@ console.log('newtab01 background service worker loaded');
 
 type CreateTabGroupResponse = { ok: true; groupId: number } | { ok: false; error: string };
 type RefreshDnrResponse = { ok: true } | { ok: false; error: string };
+type FetchThemeJsonResponse = { ok: true; text: string } | { ok: false; error: string };
 
 const OPEN_SETTINGS_MENU_ID = 'newtab01-open-settings';
 
@@ -62,6 +63,9 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     case 'refreshDeclarativeNetRequest':
       void handleRefreshDeclarativeNetRequest(sendResponse);
       return true; // async response
+    case 'fetchThemeJson':
+      void handleFetchThemeJson(msg, sendResponse);
+      return true; // async response
     default: {
       // Exhaustiveness check
       const _exhaustive: never = msg;
@@ -103,6 +107,39 @@ async function handleRefreshDeclarativeNetRequest(
     await registerFrameHeaderRules();
     sendResponse({ ok: true });
   } catch (err) {
+    sendResponse({ ok: false, error: err instanceof Error ? err.message : String(err) });
+  }
+}
+
+/** Fetch a tweakcn theme JSON via the service worker's full extension
+ *  privileges (bypasses CORS, so the URL doesn't need to advertise
+ *  `Access-Control-Allow-Origin: *`). The URL is already validated to
+ *  be `https://tweakcn.com/r/themes/<id>` by isValidMessage; we do
+ *  not re-check the URL shape here.
+ *
+ *  Why this lives in the SW and not in the newtab page:
+ *  - Service worker has unrestricted fetch within host_permissions.
+ *  - Extension pages (chrome-extension://...) can also bypass CORS
+ *    for the same hosts, but going through the SW keeps the URL
+ *    validation policy (isValidMessage) in one place — even if a
+ *    future context (popup, content script) reuses the message,
+ *    they all hit the same gate. */
+async function handleFetchThemeJson(
+  msg: Extract<Message, { type: 'fetchThemeJson' }>,
+  sendResponse: (response: FetchThemeJsonResponse) => void,
+): Promise<void> {
+  try {
+    const res = await fetch(msg.url, { credentials: 'omit' });
+    if (!res.ok) {
+      sendResponse({ ok: false, error: `HTTP ${res.status} ${res.statusText}` });
+      return;
+    }
+    const text = await res.text();
+    sendResponse({ ok: true, text });
+  } catch (err) {
+    // Network errors, DNS failures, CORS preflight failures (shouldn't
+    // happen for the SW, but be defensive). Caller maps the message
+    // to a user-visible status.
     sendResponse({ ok: false, error: err instanceof Error ? err.message : String(err) });
   }
 }

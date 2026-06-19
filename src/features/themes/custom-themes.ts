@@ -468,10 +468,15 @@ export async function listAllThemes(
   for (const name of Object.keys(map)) {
     const entry = map[name];
     if (!entry) continue;
+    // v0.2.75 + v0.2.78: dark variants are not listed as separate
+    // dropdown entries. The user picks "light vs dark" via the
+    // separate `darkMode` setting; resolveTheme() picks the actual
+    // data-theme value at apply time. Keeping the dark entry in the
+    // dropdown would (a) duplicate UX, (b) let users "select" a dark
+    // theme whose base id is the same as the light one's, which
+    // would crash resolveTheme() (it'd see "user-xxx-dark" as a
+    // base id and look up a non-existent CSS selector).
     out.push({ value: userThemeId(name, 'light'), label: name, isCustom: true });
-    if (entry.dark) {
-      out.push({ value: userThemeId(name, 'dark'), label: `${name} (Dark)`, isCustom: true });
-    }
   }
   return out;
 }

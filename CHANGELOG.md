@@ -41,6 +41,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **「自定义主题」tab 内部 section 顺序调整**。v0.2.75 的 tab 是「选择主题」→「导入自定义主题」→「已安装的自定义主题」（theme switcher 顶部，因为它的"快速切主题"是当时认为的主场景）。v0.2.76 调整为「导入自定义主题」→「选择主题」→「已安装的自定义主题」—— 把 tab 的**主操作**（装新主题）放最顶部，「切到已装好的主题」次之，「管理已装好的（删除等）」最底。匹配"装 → 用 → 管"的 top-to-bottom 工作流。代码改动仅 2 行 appendChild 顺序对调 + 注释更新；DOM 结构、行为、事件绑定全部 0 改动。
 
+## [0.2.77] - 2026-06-19
+
+### Added
+- **tweakcn 主题 URL 粘贴导入**。在「自定义主题」tab 的导入区粘贴 `https://tweakcn.com/themes/<id>`，自动补成 `https://tweakcn.com/r/themes/<id>`，通过 service worker fetch 拿 JSON，走和 CSS 粘贴同一条下游（validate → install → auto-switch）。`https://tweakcn.com/r/themes/<id>` 形式的 JSON URL 也直接支持。fetch 期间 Apply 按钮 disable，import section 下方显示 indeterminate 进度条（`var(--primary)` 颜色的 shimmer 动画，1.2s 循环）。
+  - **新模块**：[src/features/themes/url-import.ts](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/themes/url-import.ts) (~50 行) —— `detectTweakcnUrl(raw)` 区分主题 URL / JSON URL，`toTweakcnJsonUrl(url)` 主题 URL 加 `/r/`（保留 query / hash）。严格匹配 `^https?://tweakcn\.com/(r/)?themes/[\w-]+`，不松到任意 URL。
+  - **背景 fetch**：[background.ts](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/background.ts) 新增 `fetchThemeJson` message handler —— service worker 有完整扩展特权（`host_permissions: ["<all_urls>"]`），**不依赖** tweakcn 是否返回 CORS 头。`isValidMessage` 在 [messages.ts](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/lib/chrome/messages.ts) 严格校验 URL 必须已是 `/r/themes/` 形式（SW 端不再二次 normalize，单一职责）。
+  - **UI**：`#sp-custom-theme-progress` 进度条元素（CSS 控制 visible / hidden 切换）。name input 的 placeholder 改为 "CSS 必填；URL 可选，未填用主题里的名字" —— URL 路径下用户填的 name 覆盖 JSON 里的 name 字段。
+  - **错误处理**：4 类错误各有文案 —— URL 格式不正确 / 加载失败 (HTTP / network) / JSON 解析失败 / 验证失败。全部在 status 区显示，复用现有 `setCustomThemeStatus`。
+  - **进度条 UX**：3px 高，shimmer 动画从左滑到右 + Apply 按钮 disable。fetch 完成（无论成败）都消失。CSS 路径是 sync 的，进度条只闪一下；URL 路径是 async 的，进度条持续到响应到达。
+
+### Removed
+- **v0.2.74 引入的 raw JSON 粘贴**。`detectInputFormat` 从 `'css' | 'json' | 'url'` 缩到 `'css' | 'url'`；`runThemeValidation` 删掉 JSON 分支。`validateThemeJson` 内部仍被 URL 路径用（fetch 回来的文本要 parse 成 JSON 再 validate），保留不动。textarea placeholder 不再列 JSON 格式；用户想粘贴 JSON 的场景都被 URL 粘贴覆盖了。
+
+## [0.2.78] - 2026-06-19
+
+### Fixed
+- **主题下拉列表里仍有 `<name> (Dark)` 条目**。v0.2.75 把 dark mode 提升成一等 `darkMode` 设置的 commit 意图是从 `listAllThemes()` 里去掉 dark variant 的 push —— 但那次 `SearchReplace` edit 静默失败了，dark 那段 `if (entry.dark)` 没真删，只是注释（连注释也是后来才加）改了。从用户视角表现：装一个**有** dark 变体的自定义主题后，外观 tab 主题下拉里能看到 `Whatsapp` 和 `Whatsapp (Dark)` 两个条目；切到 dark 那个实际渲染没问题但 dropdown 出现了本不该有的冗余。修复：`listAllThemes` 不再 push dark 入口 —— 用户统一通过 `darkMode` 设置决定变体。`buildCustomThemesStyle` 的 `[data-theme="user-xxx-dark"]` CSS 规则 emit **不动**（那是 `resolveTheme` 切到 dark variant 必需的）。
+
 ## [0.2.72] - 2026-06-19
 
 ### Fixed
