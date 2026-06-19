@@ -5,6 +5,15 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.69] - 2026-06-19
+
+### Fixed
+- **drag-drop 拖列到右半边直接跳到末尾（与 v0.2.68 的 Move column right 同源 bug）**。`drop-handler.ts:captureAndDrop` 之前传 `addColumn(dragIds, finalX)` 时 `finalX` 直接用 `x + 1`（x = 目标列在**原数组**里的索引），但 `addColumn` 的 `index` 参数是**移除源列后**的数组索引 —— 配合 `Math.min(insertIndex, columns.length)` clamp 会让所有 `x + 1 >= source` 的右半边 drop 落到最右边。
+  - **修复**：在 drop-handler 里把"原数组坐标"翻译成"移除后坐标"。`targetX = (右半边 ? x + 1 : x)` 是原数组坐标；然后数原数组里 `index < targetX` 且包含 `dragIds` 任一元素的源列数 `compensation`，`finalX = targetX - compensation`。
+  - 例子：`[A, B, C, D]`，拖 A（源 0）丢到 C 右半边 → targetX = 3, compensation = 1（A 在 0 < 3）, finalX = 2 → 落 `[B, C, A, D]` ✓（旧代码 → `[B, C, D, A]` ✗）。
+  - **不改 `addColumn` API**：本仓库还有 context-menu 的 Move column right（已在 v0.2.68 用 old-array 语义修过）也调 `addColumn`，保持 `addColumn` 的 post-removal 语义不变；只在 drop-handler 这个把 drop 坐标当 old-array 的 caller 做翻译。多源列（dragged ids 跨多列）也被同一循环覆盖：每个 `< targetX` 的源列各贡献一次 compensation。
+  - `debug.log` 增补 `targetX / compensation` 字段方便后续抓 bug。
+
 ## [0.2.68] - 2026-06-19
 
 ### Fixed

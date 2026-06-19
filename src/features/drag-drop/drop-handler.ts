@@ -120,8 +120,29 @@ async function captureAndDrop(
   } else {
     const rect = target.getBoundingClientRect();
     const relativeX = event.clientX - rect.left;
-    const finalX = relativeX > rect.width / 2 ? x + 1 : x;
-    debug.log('drop', 'captureAndDrop: addColumn path', { finalX, relativeX, rectWidth: rect.width });
+    // targetX is in the ORIGINAL array coordinate system (left half =
+    // before column N, right half = after column N). addColumn's index
+    // parameter is in the POST-REMOVAL array — it removes the ids from
+    // their source column(s) first, then splices. For each source
+    // column at an index strictly less than targetX, the new array is
+    // shorter by 1 at that position, so we compensate by subtracting
+    // the count of such sources. (Without this, dropping on the right
+    // half of a column at index >= source position overshoots to the
+    // end via the Math.min(insertIndex, columns.length) clamp — same
+    // family of bug as v0.2.68's Move column right.)
+    const targetX = relativeX > rect.width / 2 ? x + 1 : x;
+    const beforeColumns = getColumns();
+    let compensation = 0;
+    for (let xi = 0; xi < beforeColumns.length; xi++) {
+      if (xi >= targetX) break;
+      if (dragIds.some((id) => beforeColumns[xi]!.includes(id))) {
+        compensation++;
+      }
+    }
+    const finalX = targetX - compensation;
+    debug.log('drop', 'captureAndDrop: addColumn path', {
+      finalX, targetX, compensation, relativeX, rectWidth: rect.width,
+    });
     await addColumn(dragIds, finalX);
   }
 
