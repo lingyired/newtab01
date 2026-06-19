@@ -1088,6 +1088,43 @@
   word-break: break-word;
 }
 
+/* Indeterminate progress bar — visible only while a URL fetch is in
+ * flight (the CSS parse path is sync and never shows this). 3px
+ * tall, sits between the Apply button and the status div. A
+ * linear-gradient "shimmer" pseudo-element slides across at a
+ * fixed 1.2s loop, using `var(--primary)` to match the Apply
+ * button — gives the user a clear "in flight" signal without
+ * needing real progress data (fetch() on opaque responses
+ * doesn't expose Content-Length). */
+.sp-progress {
+  display: none;
+  position: relative;
+  height: 3px;
+  margin-top: 12px;
+  background: var(--muted);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.sp-progress--active {
+  display: block;
+}
+.sp-progress--active::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--primary),
+    transparent
+  );
+  animation: sp-progress-indeterminate 1.2s linear infinite;
+}
+@keyframes sp-progress-indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
 .sp-status--success {
   color: color-mix(in srgb, var(--primary) 80%, black);
 }

@@ -60,18 +60,20 @@ export function parseCssTheme(css: string, name: string): CssParseResult {
 }
 
 /** Cheap format detection used by the settings panel Apply
- *  handler. Returns `'css'` or `'json'`. Default `'json'` for
- *  unrecognized input preserves v0.2.73 behavior (the only path
- *  that existed before CSS support landed). */
-export function detectInputFormat(raw: string): 'css' | 'json' {
+ *  handler. Returns `'css' | 'url'`. v0.2.77: removed the `'json'`
+ *  branch — direct raw JSON paste is gone in favour of URL paste
+ *  (which is itself a JSON paste under the hood, fetched via the
+ *  service worker). Unrecognized input now defaults to `'css'`
+ *  rather than `'json'`. */
+export function detectInputFormat(raw: string): 'css' | 'url' {
   const t = raw.trim();
-  if (t.startsWith('{') || t.startsWith('[')) return 'json';
   if (t.startsWith(':root') || t.startsWith('@import')) return 'css';
   // Fallback: any CSS custom property declaration anywhere in the
   // input. Catches `body { --foo: ... }` style pastes that the
   // `:root` / `@import` heuristics miss.
   if (/--[\w-]+\s*:/.test(t)) return 'css';
-  return 'json';
+  if (/^https?:\/\/tweakcn\.com\/(r\/)?themes\/[\w-]+/i.test(t)) return 'url';
+  return 'css';
 }
 
 /** Extract the body of a top-level block whose selector is

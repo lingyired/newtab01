@@ -12,6 +12,8 @@ import {
   validateThemeJson,
 } from '../features/themes/custom-themes';
 import { detectInputFormat, parseCssTheme } from '../features/themes/css-import';
+import { detectTweakcnUrl, toTweakcnJsonUrl } from '../features/themes/url-import';
+import { sendMessage } from '../lib/chrome/messages';
 import { applySettingChange, applyUserColorOverride } from '../features/settings/apply';
 import * as debug from '../lib/debug';
 import { renderColumns } from '../features/bookmarks/board';
@@ -778,42 +780,83 @@ function buildThemeRowDescription(): HTMLElement {
 }
 
 /** Dispatch by detected input format and return a ValidationResult
- *  ready for installCustomTheme. The two paths share validation
- *  downstream (8 required shadcn vars + dark variant check +
- *  duplicate-name detection), so all format-specific code lives
- *  here and the rest of the Apply handler is format-agnostic. */
+ *  ready for installCustomTheme. The two paths (CSS, URL) share
+ *  validation downstream (8 required shadcn vars + dark variant
+ *  check + duplicate-name detection), so all format-specific code
+ *  lives here and the rest of the Apply handler is format-agnostic.
+ *
+ *  v0.2.77: dropped the `'json'` branch — direct raw JSON paste is
+ *  gone in favour of URL paste (which produces a JSON object the
+ *  same way). The URL path's `JSON.parse` is now reading the
+ *  service worker's fetch response, not user input. */
 async function runThemeValidation(
   raw: string,
   nameFromInput: string,
   existing: Awaited<ReturnType<typeof readCustomThemes>>,
 ): Promise<Awaited<ReturnType<typeof validateThemeJson>>> {
-  if (detectInputFormat(raw) === 'css') {
-    if (!nameFromInput) {
-      return { ok: false, error: '请先输入主题名称' };
+  if (detectInputFormat(raw) === 'url') {
+    // Step 1: shape check (no network yet)
+    const kind = detectTweakcnUrl(raw);
+    if (!kind) {
+      return {
+        ok: false,
+        error:
+          'URL 格式不正确：tweakcn 主题 URL 应该是 https://tweakcn.com/themes/<id>',
+      };
     }
-    const parsed = parseCssTheme(raw, nameFromInput);
-    if (!parsed.ok) {
-      return { ok: false, error: `CSS 解析失败: ${parsed.error}` };
+    // Step 2: normalize → JSON URL, fetch via service worker
+    const jsonUrl = toTweakcnJsonUrl(raw);
+    const fetched = await sendMessage<{ ok: true; text: string } | { ok: false; error: string }>({
+      type: 'fetchThemeJson',
+      url: jsonUrl,
+    });
+    if (!fetched || !fetched.ok) {
+      return {
+        ok: false,
+        error: `加载失败: ${fetched?.error ?? 'unknown'}`,
+      };
     }
-    return validateThemeJson(parsed.json, existing);
+    // Step 3: parse the response as JSON
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(fetched.text);
+    } catch (e) {
+      return {
+        ok: false,
+        error: `JSON 解析失败: ${(e as Error).message}`,
+      };
+    }
+    // Step 4: user-supplied name overrides the JSON's name field,
+    // matching the v0.2.74 CSS-path semantics (where the name input
+    // is required) — but on the URL path the name input is optional
+    // (a missing name means "use whatever the JSON says").
+    if (nameFromInput && typeof parsed === 'object' && parsed !== null) {
+      (parsed as { name?: string }).name = nameFromInput;
+    }
+    return validateThemeJson(parsed, existing);
   }
-  // JSON path — unchanged from v0.2.73, kept here so the Apply
-  // handler doesn't have to know which format it's handling.
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(raw);
-  } catch (e) {
-    return { ok: false, error: `JSON 解析失败: ${(e as Error).message}` };
+  // CSS path (unchanged from v0.2.74 / v0.2.77)
+  if (!nameFromInput) {
+    return { ok: false, error: '请先输入主题名称' };
   }
-  return validateThemeJson(parsed, existing);
+  const parsed = parseCssTheme(raw, nameFromInput);
+  if (!parsed.ok) {
+    return { ok: false, error: `CSS 解析失败: ${parsed.error}` };
+  }
+  return validateThemeJson(parsed.json, existing);
 }
 
 /** Build the "Import custom theme" section: textarea + name input +
- *  Apply button + status message. Accepts tweakcn's two output formats:
- *  CSS (`:root` + `.dark` blocks — the format tweakcn's "Copy" button
- *  emits) or JSON (registry-item — kept as a hidden-test escape hatch
- *  via auto-detect). The section itself is a static shell; the handler
- *  is bound lazily after render so it can re-render the tab on success. */
+ *  Apply button + progress bar + status message. Accepts two input
+ *  formats (auto-detected):
+ *  - URL: `https://tweakcn.com/themes/<id>` or `https://tweakcn.com/r/themes/<id>`
+ *    — fetched via the service worker, normalized to the JSON URL form.
+ *  - CSS: `:root` + `.dark` blocks (the format tweakcn's "Copy" button emits).
+ *
+ *  v0.2.77: direct raw JSON paste removed (URL paste covers the same
+ *  use case end-to-end). The Apply handler adds an indeterminate
+ *  progress bar + disabled-button loading UX for the URL fetch path
+ *  (CSS parse is sync and doesn't need it). */
 function buildCustomThemeImportSection(): HTMLElement {
   const section = el('section', 'sp-custom-import');
   const heading = el('h3', 'sp-custom-heading');
@@ -822,7 +865,7 @@ function buildCustomThemeImportSection(): HTMLElement {
 
   const hint = el('p', 'sp-hint');
   hint.textContent =
-    '把 tweakcn 主题粘贴到下方文本框（支持 CSS 或 JSON），点击「应用」即可立即安装（持久保存到本地）。';
+    '把 tweakcn 主题粘贴到下方文本框（支持 URL 或 CSS），点击「应用」即可立即安装（持久保存到本地）。';
   section.appendChild(hint);
 
   const textarea = document.createElement('textarea');
@@ -830,18 +873,22 @@ function buildCustomThemeImportSection(): HTMLElement {
   textarea.rows = 8;
   textarea.spellcheck = false;
   textarea.placeholder =
-    '粘贴 tweakcn 主题 CSS（:root { ... } .dark { ... } 块）\n或 JSON (registry-item 高级格式)';
+    '粘贴 tweakcn 主题 URL（https://tweakcn.com/themes/...）\n' +
+    '或 tweakcn 主题 CSS（:root { ... } .dark { ... } 块）';
   section.appendChild(textarea);
 
-  // Theme name. Required when pasting CSS (CSS has no name field);
-  // silently ignored on the JSON path (JSON carries its own `name`).
-  // We render it unconditionally so the UI is uniform — only the
-  // Apply handler decides whether to read the value.
+  // Theme name. Behavior depends on the input format:
+  // - CSS path: required (CSS has no name field); the Apply handler
+  //   refuses the paste if empty.
+  // - URL path: optional. If the user fills it, it overrides the
+  //   JSON's `name` field. If empty, the JSON's name is used.
+  // Rendered unconditionally so the UI is uniform — only the Apply
+  // handler decides whether to read the value.
   const nameInput = document.createElement('input');
   nameInput.type = 'text';
   nameInput.id = 'sp-custom-theme-name';
   nameInput.className = 'sp-name-input';
-  nameInput.placeholder = '主题名称（仅 CSS 粘贴必填）';
+  nameInput.placeholder = '主题名称（CSS 必填；URL 可选，未填用主题里的名字）';
   nameInput.autocomplete = 'off';
   nameInput.spellcheck = false;
   section.appendChild(nameInput);
@@ -855,6 +902,15 @@ function buildCustomThemeImportSection(): HTMLElement {
   actions.appendChild(apply);
   section.appendChild(actions);
 
+  // Indeterminate progress bar — visible only while the URL fetch is
+  // in flight (toggled by adding/removing `.sp-progress--active`).
+  // The CSS path is sync and never shows this — only the URL path
+  // touches it.
+  const progress = el('div', 'sp-progress');
+  progress.id = 'sp-custom-theme-progress';
+  progress.setAttribute('aria-hidden', 'true');
+  section.appendChild(progress);
+
   const status = el('div', 'sp-status');
   status.id = 'sp-custom-theme-status';
   status.setAttribute('role', 'status');
@@ -866,52 +922,68 @@ function buildCustomThemeImportSection(): HTMLElement {
   apply.addEventListener('click', async () => {
     const raw = textarea.value.trim();
     if (!raw) {
-      setCustomThemeStatus(status, 'error', '请先粘贴 CSS 或 JSON');
+      setCustomThemeStatus(status, 'error', '请先粘贴 URL 或 CSS');
       return;
     }
-    const existing = await readCustomThemes();
-    const result = await runThemeValidation(raw, nameInput.value.trim(), existing);
-    if (!result.ok) {
-      setCustomThemeStatus(status, 'error', result.error);
-      return;
-    }
+
+    // Show the indeterminate progress bar + disable the button for
+    // the duration of the apply flow. CSS parse is sync, so the bar
+    // flashes briefly; URL fetch is async, so it stays until the
+    // response lands. Either way the user sees a clear "in flight"
+    // signal and can't double-click.
+    apply.disabled = true;
+    progress.classList.add('sp-progress--active');
     try {
-      await installCustomTheme(result.entry);
-    } catch (e) {
-      setCustomThemeStatus(
-        status,
-        'error',
-        `保存失败: ${(e as Error).message}（可能 local 存储已满）`,
-      );
-      return;
-    }
-    // Re-inject the <style id="custom-themes"> so the new theme is
-    // available immediately without reloading the tab.
-    const map = await readCustomThemes();
-    injectCustomThemesStyle(buildCustomThemesStyle(map));
+      const existing = await readCustomThemes();
+      const result = await runThemeValidation(raw, nameInput.value.trim(), existing);
+      if (!result.ok) {
+        setCustomThemeStatus(status, 'error', result.error);
+        return;
+      }
+      try {
+        await installCustomTheme(result.entry);
+      } catch (e) {
+        setCustomThemeStatus(
+          status,
+          'error',
+          `保存失败: ${(e as Error).message}（可能 local 存储已满）`,
+        );
+        return;
+      }
+      // Re-inject the <style id="custom-themes"> so the new theme is
+      // available immediately without reloading the tab.
+      const map = await readCustomThemes();
+      injectCustomThemesStyle(buildCustomThemesStyle(map));
 
-    // Auto-switch to the newly installed theme. The user's current
-    // darkMode is preserved — saveThemeChange() reads it from storage
-    // and resolveTheme() picks the variant: dark if the user is in
-    // dark mode AND the new theme has a dark variant, light otherwise
-    // (fallback). Re-installing the same theme is a no-op visually but
-    // re-stamps the 5 color overrides to the current variant, which
-    // is what we want after a darkMode toggle.
-    const baseId = `user-${result.entry.light.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
-    await saveThemeChange(baseId);
+      // Auto-switch to the newly installed theme. The user's current
+      // darkMode is preserved — saveThemeChange() reads it from storage
+      // and resolveTheme() picks the variant: dark if the user is in
+      // dark mode AND the new theme has a dark variant, light otherwise
+      // (fallback). Re-installing the same theme is a no-op visually but
+      // re-stamps the 5 color overrides to the current variant, which
+      // is what we want after a darkMode toggle.
+      const baseId = `user-${result.entry.light.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
+      await saveThemeChange(baseId);
 
-    // Clear inputs and refresh the tab.
-    textarea.value = '';
-    nameInput.value = '';
-    const successMsg = result.isUpdate
-      ? `✓ 已更新 "${result.entry.light.name}"`
-      : `✓ 已安装 "${result.entry.light.name}"${result.entry.dark ? '（含深色变体）' : '（仅浅色）'}`;
-    if (result.warning) {
-      setCustomThemeStatus(status, 'warning', `${successMsg}\n⚠ ${result.warning}`);
-    } else {
-      setCustomThemeStatus(status, 'success', successMsg);
+      // Clear inputs and refresh the tab.
+      textarea.value = '';
+      nameInput.value = '';
+      const successMsg = result.isUpdate
+        ? `✓ 已更新 "${result.entry.light.name}"`
+        : `✓ 已安装 "${result.entry.light.name}"${result.entry.dark ? '（含深色变体）' : '（仅浅色）'}`;
+      if (result.warning) {
+        setCustomThemeStatus(status, 'warning', `${successMsg}\n⚠ ${result.warning}`);
+      } else {
+        setCustomThemeStatus(status, 'success', successMsg);
+      }
+      rerenderCurrentTab();
+    } finally {
+      // Re-enable the button + hide the progress bar regardless of
+      // success/failure. The `return` statements above are early
+      // exits, but `finally` runs before they return to the caller.
+      apply.disabled = false;
+      progress.classList.remove('sp-progress--active');
     }
-    rerenderCurrentTab();
   });
 
   return section;
