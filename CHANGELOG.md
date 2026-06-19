@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.80] - 2026-06-20
+
+### Fixed
+- **搜索框按回车不再被中文输入法抢词**。topbar 搜索 input 的 keydown 监听器在最前面加 `e.isComposing` 早返回 —— IME（拼音 / 注音 / 其他基于 composition 的输入法）组字过程中按 Enter 用于确认第一个候选词时，浏览器派发的 keydown 事件 `isComposing === true`，此时不再进入 `handleKeyNavigation`（避免误打开上一次的搜索候选结果）和 `searchInCurrentTab` 兜底分支（避免误跳转搜索结果页）。组字结束、用户**再**按一次 Enter 时 `isComposing === false`，正常走搜索兜底逻辑，行为零变化。改动 [search-main.ts:108-115](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/search/search-main.ts#L108-L115) 一个 keydown 监听器，6 行新增（3 行注释 + 1 行 if + 2 行 body），其它代码 0 改动。
+
 ## [0.2.73] - 2026-06-19
 
 ### Changed

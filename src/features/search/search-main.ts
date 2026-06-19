@@ -106,6 +106,14 @@ function wireInputEvents(): void {
   });
 
   inputEl.addEventListener('keydown', (e) => {
+    // Skip while IME composition is in progress (e.g. Chinese pinyin
+    // confirming the first candidate). Without this guard, pressing Enter
+    // during composition would prematurely open a search result or
+    // navigate to the search-engine fallback page.
+    if (e.isComposing) {
+      return;
+    }
+
     const handled = handleKeyNavigation(e);
     if (handled) return;
 
