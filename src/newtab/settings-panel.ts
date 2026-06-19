@@ -28,7 +28,7 @@ const THEME_LABELS: Readonly<Record<string, string>> = {
   'astrovista-dark': 'AstroVista·暗',
 };
 
-type SettingsTab = 'layout' | 'appearance' | 'features' | 'advanced';
+type SettingsTab = 'layout' | 'appearance' | 'custom-themes' | 'features' | 'advanced';
 
 /** Settings that affect column rendering — require re-render after change */
 const RERENDER_KEYS: ReadonlySet<keyof Settings> = new Set([
@@ -224,6 +224,7 @@ function renderNav(nav: HTMLElement): void {
   const tabs: { id: SettingsTab; label: string }[] = [
     { id: 'layout', label: '布局' },
     { id: 'appearance', label: '外观' },
+    { id: 'custom-themes', label: '自定义主题' },
     { id: 'features', label: '功能' },
     { id: 'advanced', label: '高级' },
   ];
@@ -234,14 +235,22 @@ function renderNav(nav: HTMLElement): void {
     btn.className = 'sp-nav-item';
     if (tab.id === currentTab) btn.classList.add('sp-nav-item--active');
     btn.textContent = tab.label;
-    btn.addEventListener('click', () => {
-      currentTab = tab.id;
-      renderNav(nav);
-      const content = document.getElementById('sp-content');
-      if (content) renderContent(content);
-    });
+    btn.addEventListener('click', () => setActiveTab(tab.id));
     nav.appendChild(btn);
   }
+}
+
+/** Switch to a different tab and re-render the nav + content.
+ *  Used by the nav buttons AND by the "管理自定义主题 →" button in
+ *  the appearance tab — extracting this keeps both call sites in
+ *  sync (if we ever add scroll-restore, transition, etc.). */
+function setActiveTab(tab: SettingsTab): void {
+  if (currentTab === tab) return;
+  currentTab = tab;
+  const nav = panelEl?.querySelector('.sp-nav') as HTMLElement | null;
+  if (nav) renderNav(nav);
+  const content = document.getElementById('sp-content');
+  if (content) renderContent(content);
 }
 
 function renderContent(container: HTMLElement): void {
@@ -252,14 +261,27 @@ function renderContent(container: HTMLElement): void {
       container.appendChild(renderLayoutTab());
       break;
     case 'appearance':
-      // renderAppearanceTab is async because it reads chrome.storage.local
-      // for the custom themes list. We render a placeholder synchronously,
-      // then swap the children in once the async work resolves — this keeps
-      // the rest of the panel responsive.
+      // renderAppearanceTab is async because it lists installed custom
+      // themes (chrome.storage.local read) to populate the dropdown.
+      // We render a placeholder synchronously, then swap the children
+      // in once the async work resolves — keeps the rest of the panel
+      // responsive.
       container.appendChild(renderAppearanceTabSyncPlaceholder());
       void renderAppearanceTab().then((content) => {
         // Only swap if the user hasn't navigated away in the meantime.
         if (currentTab === 'appearance' && container.firstChild) {
+          container.textContent = '';
+          container.appendChild(content);
+        }
+      });
+      break;
+    case 'custom-themes':
+      // Same async pattern as appearance — renderCustomThemesTab reads
+      // chrome.storage.local for the installed list. The placeholder
+      // keeps the panel from flashing empty.
+      container.appendChild(renderCustomThemesTabSyncPlaceholder());
+      void renderCustomThemesTab().then((content) => {
+        if (currentTab === 'custom-themes' && container.firstChild) {
           container.textContent = '';
           container.appendChild(content);
         }
@@ -283,7 +305,12 @@ function renderAppearanceTabSyncPlaceholder(): HTMLElement {
 
 // --- Setting row helpers ---
 
-function createRow(label: string, input: HTMLElement, key: keyof Settings, description?: string): HTMLElement {
+function createRow(
+  label: string,
+  input: HTMLElement,
+  key: keyof Settings,
+  description?: string | HTMLElement,
+): HTMLElement {
   const row = el('div', 'sp-row');
   if (description) row.classList.add('sp-row--with-desc');
 
@@ -322,7 +349,14 @@ function createRow(label: string, input: HTMLElement, key: keyof Settings, descr
 
   if (description) {
     const desc = el('p', 'sp-desc');
-    desc.textContent = description;
+    if (typeof description === 'string') {
+      desc.textContent = description;
+    } else {
+      // HTMLElement path — caller built a rich description (text + link,
+      // text + icon, etc.). Used by the theme row, which embeds an inline
+      // <a> that switches to the dedicated "自定义主题" tab.
+      desc.appendChild(description);
+    }
     row.appendChild(desc);
   }
 
@@ -574,7 +608,10 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
 
   const allThemes = await listAllThemesWithLabels(THEME_LABELS);
   const themeOptions = allThemes.map((t) => ({ value: t.value, label: t.label }));
-  container.appendChild(createRow('主题', createSelectInput('theme', themeOptions), 'theme', '切换新标签页的整体配色主题。自定义主题会出现在内置主题之后。'));
+  // 自定义主题的导入 / 删除迁到了独立的「自定义主题」tab。这里只把
+  // 跳转入口塞在主题行自己的 description 里，避免在「外观」tab 底部
+  // 再堆一个独立的 section。
+  container.appendChild(createRow('主题', createSelectInput('theme', themeOptions), 'theme', buildThemeRowDescription()));
   container.appendChild(createRow('字体', createTextInput('font'), 'font', '书签链接使用的字体名称，例如 "PingFang SC"、Inter、Arial。'));
   container.appendChild(createRow('字号', createNumberInput('fontSize'), 'fontSize', '书签链接的字号（单位：px）。'));
   container.appendChild(createRow('字重', createNumberInput('fontWeight'), 'fontWeight', '书签链接的字重，常用值：400 正常、500 中等、600 半粗、700 粗体。'));
@@ -590,13 +627,55 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   container.appendChild(createRow('宽度', createNumberInput('width'), 'width', '新标签页主体区域的整体宽度（自动缩放时为百分比，否则为像素）。'));
   container.appendChild(createRow('水平位置', createNumberInput('hPos'), 'hPos', '主体区域在窗口内的水平位置比例，0 偏左、1 居中、2 偏右。'));
 
-  // --- Custom theme import (runtime tweakcn JSON paste) ---
-  container.appendChild(buildCustomThemeImportSection());
+  return container;
+}
 
-  // --- Installed custom themes list ---
+/** Placeholder rendered immediately when the user opens the custom-themes
+ *  tab, replaced by the real content once readCustomThemes resolves.
+ *  Mirrors renderAppearanceTabSyncPlaceholder — keeps the panel from
+ *  flashing empty during the chrome.storage.local round-trip. */
+function renderCustomThemesTabSyncPlaceholder(): HTMLElement {
+  return el('div', 'sp-tab-content sp-tab-content--loading');
+}
+
+/** Render the dedicated "自定义主题" tab: import + installed list.
+ *  Async because readCustomThemes() hits chrome.storage.local.
+ *  The Apply button and delete button both call rerenderCurrentTab
+ *  on success so the dropdown in the appearance tab and the list
+ *  here stay in sync with the storage state. */
+async function renderCustomThemesTab(): Promise<HTMLElement> {
+  const container = el('div', 'sp-tab-content');
+
+  container.appendChild(buildCustomThemeImportSection());
   container.appendChild(await buildCustomThemeListSection());
 
   return container;
+}
+
+/** Rich description for the theme row: explanatory text + an inline
+ *  link that jumps to the dedicated "自定义主题" tab. Returned as a
+ *  <span> (inline element) so it nests correctly inside the <p
+ *  class="sp-desc"> that createRow builds for sp-row--with-desc.
+ *  The link uses preventDefault on the click — it's a JS-driven tab
+ *  switch, not a real navigation, so the URL bar would otherwise
+ *  briefly try to scroll to "#". */
+function buildThemeRowDescription(): HTMLElement {
+  const desc = el('span');
+  desc.appendChild(
+    document.createTextNode(
+      '切换新标签页的整体配色主题。已安装的自定义主题会出现在内置主题之后。如需安装新主题或管理已安装的主题，',
+    ),
+  );
+  const link = document.createElement('a');
+  link.href = '#';
+  link.className = 'sp-link';
+  link.textContent = '管理自定义主题 →';
+  link.addEventListener('click', (e) => {
+    e.preventDefault();
+    setActiveTab('custom-themes');
+  });
+  desc.appendChild(link);
+  return desc;
 }
 
 /** Build the "Import custom theme" section: textarea + Apply button +
@@ -691,7 +770,7 @@ function buildCustomThemeImportSection(): HTMLElement {
     } else {
       setCustomThemeStatus(status, 'success', successMsg);
     }
-    rerenderAppearanceTab();
+    rerenderCurrentTab();
   });
 
   return section;
@@ -750,7 +829,7 @@ async function buildCustomThemeListSection(): Promise<HTMLElement> {
         applyTheme('default');
         updateSetting('theme', 'default').catch((e) => debug.warn('settings', e));
       }
-      rerenderAppearanceTab();
+      rerenderCurrentTab();
     });
     li.appendChild(del);
 
@@ -768,9 +847,13 @@ function deriveLightId(name: string): string {
   return `user-${name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')}`;
 }
 
-/** Re-render the appearance tab in place after a custom-theme install
- *  or delete, so the dropdown + list reflect the new state. */
-function rerenderAppearanceTab(): void {
+/** Re-render the currently-active tab in place after a custom-theme
+ *  install or delete, so the dropdown + list reflect the new state.
+ *  Works for both appearance (theme dropdown re-sync) and
+ *  custom-themes (installed list re-sync) — the user is always on
+ *  the custom-themes tab when install/delete fires, but the
+ *  function is named for the action, not the call site. */
+function rerenderCurrentTab(): void {
   const content = document.getElementById('sp-content');
   if (!content) return;
   renderContent(content);
