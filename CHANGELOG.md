@@ -36,6 +36,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **UI**：外观 tab 在「主题」row 下方新增「暗色模式」row（`跟随系统 / 亮 / 暗` 三档）。自定义主题 tab 的「选择主题」section 同样含主题 + 暗色模式两个 select —— 用户从哪个 tab 都能切。两处的 `id="sp-theme"` / `id="sp-darkMode"` 相同（同一时间只有一个 tab 在 DOM，duplicate id 不冲突）。
   - **Import 后 auto-switch 简化**：从原本需要手动算 `endsWith('-dark')` + 选 lightId / darkId，简化为 `await saveThemeChange(baseId)`。`saveThemeChange` 读 `getSetting('darkMode')`，`resolveTheme` 算最终变体 —— 当前是 dark 模式且新主题有 dark variant 就用 dark，否则 fallback 到 light。
 
+## [0.2.76] - 2026-06-19
+
+### Changed
+- **「自定义主题」tab 内部 section 顺序调整**。v0.2.75 的 tab 是「选择主题」→「导入自定义主题」→「已安装的自定义主题」（theme switcher 顶部，因为它的"快速切主题"是当时认为的主场景）。v0.2.76 调整为「导入自定义主题」→「选择主题」→「已安装的自定义主题」—— 把 tab 的**主操作**（装新主题）放最顶部，「切到已装好的主题」次之，「管理已装好的（删除等）」最底。匹配"装 → 用 → 管"的 top-to-bottom 工作流。代码改动仅 2 行 appendChild 顺序对调 + 注释更新；DOM 结构、行为、事件绑定全部 0 改动。
+
 ## [0.2.72] - 2026-06-19
 
 ### Fixed

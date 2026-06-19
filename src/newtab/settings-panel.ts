@@ -695,14 +695,21 @@ function renderCustomThemesTabSyncPlaceholder(): HTMLElement {
   return el('div', 'sp-tab-content sp-tab-content--loading');
 }
 
-/** Render the dedicated "自定义主题" tab: theme/darkMode quick switch
- *  + import + installed list. Async because listAllThemesWithLabels
- *  and readCustomThemes both hit chrome.storage. */
+/** Render the dedicated "自定义主题" tab: import + theme/darkMode
+ *  quick switch + installed list. Async because listAllThemesWithLabels
+ *  and readCustomThemes both hit chrome.storage.
+ *
+ *  v0.2.76: import is now the FIRST section (was last). Rationale:
+ *  installing a new theme is the tab's primary action — the
+ *  theme/darkMode switcher is secondary (a quick way to USE the
+ *  themes that have already been installed), and the installed list
+ *  is for cleanup. Showing import first matches the workflow
+ *  "install → use → manage" top-to-bottom. */
 async function renderCustomThemesTab(): Promise<HTMLElement> {
   const container = el('div', 'sp-tab-content');
 
-  container.appendChild(await buildThemeSelectorSection());
   container.appendChild(buildCustomThemeImportSection());
+  container.appendChild(await buildThemeSelectorSection());
   container.appendChild(await buildCustomThemeListSection());
 
   return container;
