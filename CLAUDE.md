@@ -20,6 +20,10 @@
 | **`main`** | 当前默认分支 | 已发布 / 稳定基线 | `68fa259` (v0.2.57) |
 | `feat/runtime-theme-import` | 🗄 冻结 | runtime theme import 后期增量（v0.2.57 → v0.2.59）| `68fa259` (v0.2.57) |
 | `feat/vue-migration` | 🗄 冻结 / 已弃 | Vue 3 + Pinia + shadcn-vue 重构实验（v0.3.0 → v0.3.12）| main @ v0.2.59 |
+| `feat/custom-themes-tab` | 🗄 冻结 | "自定义主题" tab 拆分 + entry link 重构（v0.2.73）| `1c67d0a` (v0.2.73) |
+| `feat/css-paste-import` | 🗄 冻结 | tweakcn CSS 粘贴导入（v0.2.74）| `87af123` (v0.2.74) |
+| `feat/dark-mode-setting` | 🗄 冻结 | darkMode 一等设置 + dark variant dropdown 修复（v0.2.75 + v0.2.76）| `f44a4cc` (v0.2.76) |
+| `feat/url-import` | 🗄 冻结 | tweakcn URL 粘贴导入 + JSON 路径移除（v0.2.77 + v0.2.78）| `427173f` (v0.2.78) |
 
 **为什么 v0.2.57 是 `main` 的基线（而不是 v0.2.36 / v0.2.59）**
 
