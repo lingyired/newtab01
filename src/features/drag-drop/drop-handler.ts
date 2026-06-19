@@ -123,19 +123,28 @@ async function captureAndDrop(
     // targetX is in the ORIGINAL array coordinate system (left half =
     // before column N, right half = after column N). addColumn's index
     // parameter is in the POST-REMOVAL array — it removes the ids from
-    // their source column(s) first, then splices. For each source
-    // column at an index strictly less than targetX, the new array is
-    // shorter by 1 at that position, so we compensate by subtracting
-    // the count of such sources. (Without this, dropping on the right
-    // half of a column at index >= source position overshoots to the
-    // end via the Math.min(insertIndex, columns.length) clamp — same
-    // family of bug as v0.2.68's Move column right.)
+    // their source column(s) first, then splices.
+    //
+    // Compensation rule: a source column contributes to the shift iff
+    // it becomes EMPTY after removing dragIds (i.e., every id in that
+    // column is being dragged). addColumn's empty-column cleanup then
+    // removes it, shortening the new array by 1 at that position.
+    // If such an empty-out column sits at an index strictly less than
+    // targetX, we decrement the splice target by 1 per removed source.
+    //
+    // IMPORTANT: a source column that still has non-dragged ids left
+    // (e.g. dragging B out of [B, C] leaves [C]) does NOT become empty
+    // and keeps its slot — targetX in old array maps 1:1 to the new
+    // array. v0.2.69 over-counted compensation in this case: for
+    // [A], [B, C], [D] dragging B onto D's left half it produced
+    // [A, B, C, D] instead of [A, C, B, D].
     const targetX = relativeX > rect.width / 2 ? x + 1 : x;
     const beforeColumns = getColumns();
     let compensation = 0;
     for (let xi = 0; xi < beforeColumns.length; xi++) {
       if (xi >= targetX) break;
-      if (dragIds.some((id) => beforeColumns[xi]!.includes(id))) {
+      const col = beforeColumns[xi]!;
+      if (col.length > 0 && col.every((id) => dragIds.includes(id))) {
         compensation++;
       }
     }

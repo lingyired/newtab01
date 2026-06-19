@@ -5,6 +5,13 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.70] - 2026-06-19
+
+### Fixed
+- **drag-drop 多目录源列的 compensation 过补偿**。v0.2.69 把"任何 `index < targetX` 且包含 dragIds 任一元素的源列"都计入 compensation，但只有**源列拖空**（即该列里**所有**目录都在被拖）才会被 addColumn 的空列清理移除、才需要补偿。当源列拖走一部分还剩一部分时（例如 `[A], [B, C], [D]` 拖 B），源列不会被移除，新数组里 `targetX` 位置不变 —— v0.2.69 在这种情况下错把 `[B, C]` 当成会被移除的列，compensation 多算了 1，结果 `[A, B, C, D]`（B 错位到 C 之前）而不是用户期望的 `[A, C, B, D]`。
+  - **修复**：把条件从 `dragIds.some(id => col.includes(id))` 改为 `col.every(id => dragIds.includes(id))` —— 只有当源列里**每个** id 都在 dragIds 里（即拖空）时才算补偿。`[B, C]` 拖 B 不会通过 every 检查（因为 C 不在 dragIds），compensation = 0，targetX 直传到 addColumn。
+  - 单目录源列（`[A], [B], [D]` 拖 B 等）的行为不变 —— `[B]` 经 every 检查通过，compensation 正常算上，v0.2.69 修过的"右半边 overshoot"问题保持修复。
+
 ## [0.2.69] - 2026-06-19
 
 ### Fixed
