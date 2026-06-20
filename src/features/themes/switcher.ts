@@ -236,13 +236,40 @@ export function resolveCssColor(cssValue: string): string {
   if (/^rgba?\(/i.test(v)) return v;
   if (typeof document === 'undefined') return v;
 
-  // Primary path: canvas fillStyle. The HTML Living Standard mandates
-  // that the `fillStyle` setter accepts any legal CSS color value
-  // (oklch / lab / color() / hsl / named colors / etc.) and the
-  // getter returns the value in a normalized form — either `#rrggbb`
-  // or `rgb(...)`. This is the canonical CSS-color normalizer and
-  // works identically across every browser with
-  // CanvasRenderingContext2D (universal support).
+  // Primary path: canvas pixel rendering. The HTML Living Standard
+  // mandates CanvasRenderingContext2D accepts any legal CSS color
+  // value in the fillStyle setter (oklch / lab / color() / hsl /
+  // named colors / etc.) and the canvas backing store is always
+  // sRGB — so actually RENDERING a 1x1 rect and reading
+  // getImageData(0, 0, 1, 1) returns a Uint8ClampedArray of
+  // sRGB bytes, regardless of how the fillStyle getter round-trips
+  // the value.
+  //
+  // v0.2.86 used `ctx.fillStyle` getter (set then read back) as
+  // the canonical normalizer. That works in Chrome 111+ for most
+  // inputs but **fails for CSS Color 4 functions** (oklch / oklab
+  // / color() / lab) — the getter preserves the original function
+  // form rather than serializing to rgb/rgba, so the regex check
+  // `^#[0-9a-f]...|^rgba?...` fails and the function falls through
+  // to the getComputedStyle fallback, which has the same
+  // preservation behavior. Result: oklch values reach the color
+  // input unchanged and trigger the browser's "does not conform
+  // to the required format '#rrggbb'" warning.
+  //
+  // The fillRect + getImageData pipeline avoids the getter entirely
+  // — the rasterizer converts the color to sRGB pixels (the only
+  // format canvas supports) and getImageData returns the bytes
+  // directly. This is the same trick used by html2canvas /
+  // dom-to-image for cross-browser color conversion.
+  //
+  // Out-of-gamut oklch colors are clipped to sRGB by the
+  // rasterizer — visually the "closest representable" color, but
+  // always a valid hex. Acceptable for our use case (we need
+  // *any* valid hex for `<input type="color">` and chrome.storage).
+  // Alpha is ignored (data[3]); all current oklch values in our
+  // theme files are opaque, and `<input type="color">` is hex6-only
+  // anyway. If we ever need alpha support, switch to hex8
+  // (`#rrggbbaa`).
   try {
     const canvas = document.createElement('canvas');
     canvas.width = 1;
@@ -250,14 +277,19 @@ export function resolveCssColor(cssValue: string): string {
     const ctx = canvas.getContext('2d');
     if (ctx) {
       ctx.fillStyle = v;
-      const normalized = ctx.fillStyle;
-      if (/^#[0-9a-f]{3,8}$/i.test(normalized) || /^rgba?\(/i.test(normalized)) {
-        return normalized;
-      }
+      ctx.fillRect(0, 0, 1, 1);
+      const data = ctx.getImageData(0, 0, 1, 1).data;
+      // `noUncheckedIndexedAccess: true` makes data[i] typed as
+      // `number | undefined`. The 1×1 canvas always populates all 4
+      // bytes (RGBA), so the `!` non-null assertion is safe.
+      const toHex = (n: number | undefined): string =>
+        (n ?? 0).toString(16).padStart(2, '0');
+      return '#' + toHex(data[0]) + toHex(data[1]) + toHex(data[2]);
     }
   } catch {
     // canvas path threw (extremely rare — e.g. some sandboxed
-    // contexts); fall through to the getComputedStyle fallback below.
+    // contexts, or invalid CSS the setter can't parse). Fall
+    // through to the getComputedStyle fallback below.
   }
 
   // Fallback: getComputedStyle on a detached span. Canvas doesn't

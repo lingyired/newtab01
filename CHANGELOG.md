@@ -28,6 +28,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **设置按钮位置错乱**（v0.2.88 引入的 bug）。v0.2.88 加的 CSS rule 写了 `#options_button, .sp-appearance-toggle-btn { position: relative; }`，**覆盖了** v0.2.84 给 `#options_button` 设的 `position: absolute`，把齿轮从 topbar 右上角的绝对定位推出，回到 topbar 文档流里错位显示。修复：把 `position: relative` 单独加到 `.sp-appearance-toggle-btn`（之前确实没 position），`#options_button` 不动（它的 `position: absolute` 本身也是 `::after` tooltip 的合法 anchor 上下文）。**完全回归 v0.2.84 的齿轮定位**。
 - **Tooltip 在按钮上方显示不全**。topbar 紧贴视口顶，按钮在 topbar 边缘，`bottom: calc(100% + 8px)` 把 tooltip 顶到视口顶部被裁切（或被某些窗口管理器的 URL bar 遮挡）。修复：tooltip 改到**按钮下方** —— `top: calc(100% + 8px)`，落在 topbar 的 16px 下 padding 里 + 8px 间距，安全且不撞视口边缘。
 
+## [0.2.90] - 2026-06-20
+
+### Fixed
+- **切换主题时 console 仍然出现 `oklch(...) does not conform to #rrggbb` 警告**。v0.2.86 的 canvas fix 用 `ctx.fillStyle` setter+getter 试图归一化 oklch，但 Chrome/Edge 111+ 的 `fillStyle` getter **保留 CSS Color 4 函数形式**（oklch / oklab / color() / lab）—— 跟 v0.2.86 之前的 `getComputedStyle` 同样的问题，只是换了 getter。`resolveCssColor("oklch(0.9383 ...)")` 实际还是返 `oklch(0.9383 ...)`，regex `^#[0-9a-f]...|^rgba?...` 不匹配，fall through 到 getComputedStyle 也保留 oklch，最终 oklch 字符串到 `<input type="color">.value` 触发警告。
+  - **修复**：把 canvas 路径从 "setter+getter 字符串对" 换成 "**setter+fillRect+getImageData**"。Canvas backing store 永远是 sRGB，rasterization pipeline 把任何 CSS 颜色函数强制转 sRGB 像素，`getImageData(0, 0, 1, 1)` 返 sRGB bytes（始终是 `#rrggbb` 形式，无视 fillStyle getter 行为）。这是 html2canvas / dom-to-image 等库通用的"跨浏览器 CSS Color 4 → sRGB" trick。
+  - **out-of-gamut 行为**：rasterizer 把色域外的 oklch 裁剪到 sRGB 的 closest representable。视觉差异通常**肉眼不可见**（AstroVista 的 `oklch(0.9383 ...)` 裁剪后 `#eff3f4`），但**始终是合法 hex**。Alpha 暂时忽略（`#rrggbb` 而非 `#rrggbbaa`），当前所有 oklch 值都是 opaque。
+  - **影响面**：`applyTheme` / `saveThemeChange` / `refreshInputsFromSettings` / `createColorInput` 全部走 `resolveCssColor`，callers 0 改动。chrome.storage 里残留的 oklch 值在下次切换主题时（触发 `refreshInputsFromSettings`）**一次性自愈**为 hex。
+  - **跨浏览器一致**：所有支持 CanvasRenderingContext2D 的浏览器（Chrome / Safari / Firefox / Edge 全覆盖）行为一致 —— 跟 v0.2.86 同样的覆盖范围，但这次是真正 working。
+
 ## [0.2.86] - 2026-06-20
 
 ### Changed
