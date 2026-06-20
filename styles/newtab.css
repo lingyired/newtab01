@@ -1158,6 +1158,70 @@
   100% { transform: translateX(100%); }
 }
 
+/* ─── Appearance Toggle (v0.2.87) ───
+ *
+ * 3-state pill (亮 / 跟随系统 / 暗) sitting to the left of the
+ * settings button in the topbar. Synced with Settings.darkMode
+ * via chrome.storage.onChanged — see src/newtab/appearance-toggle.ts
+ * for the JS side. Sits at the same 32px height as the settings
+ * button (per user direction "大小一致" → same height, not same
+ * width — width is auto, driven by content).
+ *
+ * Layout: position: absolute to avoid the #topbar flex flow (the
+ * search box is centered via flex; absolute children don't disturb
+ * that). right: 80px puts the toggle ~16px to the left of the
+ * settings button at right: 2% (settings button = 32px wide + 16px
+ * gap ≈ 48px from right; toggle ≈ 56px wide + 16px gap ≈ 72px
+ * from right; 80px is a safe value that survives theme changes
+ * that might slightly affect button width).
+ *
+ * Visual: light-gray pill background (var(--muted)), selected
+ * segment bumps opacity to 1 while unselected segments stay at
+ * 0.5. No background highlight on selected — the iOS-style
+ * "pill within a pill" would compete with the 32px-height
+ * constraint and look heavier than the reference image.
+ */
+.sp-appearance-toggle {
+  position: absolute;
+  right: 80px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 32px;
+  display: flex;
+  background: var(--muted);
+  border-radius: 16px;
+  padding: 0 4px;
+  z-index: 1;
+}
+.sp-appearance-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: var(--newtab-text);
+  cursor: pointer;
+  opacity: 0.5;
+  padding: 0 8px;
+  height: 100%;
+  border-radius: 14px;
+  transition: opacity 0.15s;
+}
+.sp-appearance-toggle-btn:hover {
+  /* 0.5 → 0.75 for unselected; selected stays at 1 (set below
+   * with the same specificity). Keeps the hover affordance
+   * without overriding the "currently selected" emphasis. */
+  opacity: 0.75;
+}
+.sp-appearance-toggle-btn[aria-checked="true"] {
+  opacity: 1;
+}
+.sp-appearance-toggle-btn[aria-checked="true"]:hover {
+  /* No dim on hover for the selected segment — it's already
+   * the "focused" state, dimming it would be confusing. */
+  opacity: 1;
+}
+
 .sp-status--success {
   color: color-mix(in srgb, var(--primary) 80%, black);
 }

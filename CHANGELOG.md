@@ -5,6 +5,12 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.87] - 2026-06-20
+
+### Added
+- **Topbar 3 段外观 toggle**（亮 / 跟随系统 / 暗）。在设置按钮左边，32px 高（与设置按钮同高），pill 形 segmented control，Lucide `sun` / `zap` / `moon` 图标。**和设置面板「暗色模式」select 双向同步**——读 / 写同一个 `Settings.darkMode`（v0.2.75 single source of truth），不新增字段。topbar 端有独立的 `chrome.storage.onChanged` listener（不依赖 settings-panel 的开/关 listener pair）。点段 → `updateSetting('darkMode', value)` + `applyTheme(theme)` 重算 `data-theme`；从设置面板改 → 收到 storage change → `aria-checked` 同步。
+- **5 个 tooltip**（HTML native `title`）：设置按钮 (`设置`，原 `Settings`)、3 个 toggle 段 (`亮` / `跟随系统` / `暗`)、folder header 3 个动作图标（`Open all in tabs` / `Open as tab group` / `Open in split view`，**保留原英文**——已是 tooltip，0 改动，避免范围蔓延）。
+
 ## [0.2.86] - 2026-06-20
 
 ### Changed

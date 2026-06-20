@@ -6,6 +6,7 @@ import { getSetting } from '../lib/storage/settings';
 import { setInputElement } from '../features/search/search-main';
 import { openSettingsPanel } from './settings-panel';
 import { renderUndoButton } from './undo-button';
+import { createAppearanceToggle } from './appearance-toggle';
 
 /** Create and render the topbar (and its associated search DOM). */
 export function createTopbar(container: HTMLElement): void {
@@ -53,11 +54,19 @@ export function createTopbar(container: HTMLElement): void {
   // topbar without a search input would leave an orphaned button).
   renderUndoButton(topbar, showSearch);
 
+  // v0.2.87: appearance toggle (亮 / 跟随系统 / 暗). Sits to the LEFT
+  // of the settings button, same 32px height. Independent
+  // chrome.storage.onChanged listener for sync with the settings
+  // panel's 暗色模式 select.
+  topbar.appendChild(createAppearanceToggle());
+
   // Settings button (top-right)
   const settingsBtn = document.createElement('button');
   settingsBtn.id = 'options_button';
-  settingsBtn.title = 'Settings';
-  settingsBtn.setAttribute('aria-label', 'Open settings');
+  // v0.2.87: title in Chinese (was 'Settings') to match the rest of
+  // the topbar/UI vocabulary.
+  settingsBtn.title = '设置';
+  settingsBtn.setAttribute('aria-label', '设置');
   // v0.2.85: replaced the Feather "settings" path (a complex
   // multi-curve shape whose lower-right segment rendered with
   // visible mis-alignment at small sizes — the bug the user
