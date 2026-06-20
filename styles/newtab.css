@@ -587,19 +587,29 @@
 
 #options_button {
   position: absolute;
-  top: 8px;
-  /* right: 16px — the gear is an absolute child of #topbar (position:
-   * relative). Per the CSS spec, the containing block for an absolute
-   * child is the ancestor's PADDING box (content + padding, but not
-   * border/margin). With border-width: 0 and padding-right: 16px on
-   * the topbar, the padding box's right edge IS the viewport's right
-   * edge — so right: 16px puts the gear 16px from the viewport edge
-   * (NOT 32px as you'd get if `right` measured from the content box).
-   * v0.2.47 mistakenly used right: 0 here, which pinned the gear flush
-   * against the viewport (it disappeared off-screen on some widths).
-   * Anchoring to a literal pixel value keeps the gear's right gutter
-   * independent of any future topbar padding tweaks. */
-  right: 24px;
+  /* v0.2.84: anchor to `right: 2%` instead of a fixed pixel value.
+   * `#main` is `width: 96%; margin: 0 auto` — the bookmark columns
+   * fill #main 100%, so the rightmost column's right edge is exactly
+   * 2% of the viewport width from the viewport's right edge. The
+   * gear now aligns with that column edge at any viewport width
+   * (was `right: 24px`, which only matched at ~1200px and drifted
+   * off on narrow / wide viewports).
+   *
+   * Vertical centering via `top: 50%` + `transform: translateY(-50%)`
+   * aligns the gear with the search bar's visual midline. The gear
+   * is `position: absolute` so it bypasses #topbar's `align-items:
+   * center` flex layout (which only applies to in-flow children);
+   * the transform compensates for the button's own height. */
+  top: 50%;
+  transform: translateY(-50%);
+  right: 2%;
+  /* v0.2.85: 32×32 button (was 38×38). Per user feedback the 38px
+   * read heavier than the search bar's 50ish-pixel height. 32
+   * with 4px padding lands at 24px SVG content — closer to the
+   * common icon-button size, sits clearly under the search bar's
+   * visual weight while still aligning with it. */
+  width: 32px;
+  height: 32px;
   background: transparent;
   border: none;
   color: var(--newtab-text);

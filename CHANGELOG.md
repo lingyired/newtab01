@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.2.86] - 2026-06-20
 
+### Changed
+- **顶栏设置齿轮（`#options_button`）重定位 + 放大**（v0.2.84 / v0.2.85 累积工作，在 main 历史里按时间线合并到 v0.2.86）：
+  - **水平位置**：`right: 24px`（绝对像素，~1200px 视口才刚好对齐）→ `right: 2%`（视口宽度的 2%，跟 `#main`（`width: 96%; margin: 0 auto`）的右边沿严格重合）。跨视口宽度（800 / 1280 / 1920 / 2560）都跟下面书签列右边沿对齐。
+  - **垂直位置**：`top: 8px`（固定 top offset）→ `top: 50%; transform: translateY(-50%)`。齿轮是 `position: absolute` 脱出 `#topbar` 的 `align-items: center` flex 流，transform 补偿自身高度，视觉中线跟 search bar 对齐。
+  - **尺寸**：26×26 → 38×38（v0.2.84）→ 32×32（v0.2.85 用户回退一档）。SVG 18×18 → 30×30 → 24×24。`width/height="24"` 填满 32px 按钮的 4px 内 padding 区域（24 + 4×2 = 32）。
+  - **图标**：Feather "settings"（复杂多曲线 path，渲染小尺寸时右下角段视觉错位）→ Lucide "settings"（8 齿圆 + center circle 的标准齿轮形态，单 path 干净）。Lucide ISC 协议。
+  - **不**加 border / **不**加 radius（保持 icon button 的语义，跟 search bar 的 input 形态区分开）。0 不动 hover / focus / click 行为。
+
 ### Fixed
 - **切换主题时 console 大量 `oklch(...)` 不符合 `#rrggbb` 格式的警告**。根因：`switcher.ts:resolveCssColor()` 的"two hops"转换（`probe.style.color = v` + `getComputedStyle().color` 读两次）在 Chrome 111+ 是**假归一化**——CSS Color 4 规范规定 `getComputedStyle().color` 返回原 function 形式（oklch / lab / color() 等），**不**强制转 rgb。两次 read 拿到的是同一个 oklch 字符串，所以 `resolveCssColor("oklch(0.1418 0.0662 295.805)")` 实际返回的还是 `oklch(...)`。这个返回值随后被 `settings-panel.ts:refreshInputsFromSettings()` 直接设到 `<input type="color">.value`，浏览器拒绝非 `#rrggbb` 字符串 → 警告。功能正确是因为 oklch 仍是合法 CSS（作为 inline style 接受），但 input 不显示颜色 picker 选中的位置。
   - **修复**：把 `resolveCssColor` 的主路径从「span + getComputedStyle two hops」换成「**canvas fillStyle**」。HTML Living Standard 强制要求 `ctx.fillStyle = v` 接受任何合法 CSS 颜色（oklch / lab / color() / hsl / named 等），**getter 永远返回归一化后的 `#rrggbb` 或 `rgb(...)`**。这是浏览器内置的、规范保证的 CSS 颜色归一化路径。getComputedStyle 路径保留为 fallback，仅处理 canvas 不接受的 `var(--foo)` / `color-mix(...)`（需要 cascade 解析）。
