@@ -5,6 +5,14 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.84] - 2026-06-20
+
+### Changed
+- **顶栏设置齿轮（`#options_button`）重定位 + 放大**。3 个维度的调整：
+  - **水平位置**：`right: 24px`（绝对像素，~1200px 视口才刚好对齐）→ `right: 2%`（视口宽度的 2%，跟 `#main`（`width: 96%; margin: 0 auto`）的右边沿严格重合）。跨视口宽度（800 / 1280 / 1920 / 2560）都跟下面书签列右边沿对齐。
+  - **垂直位置**：`top: 8px`（固定 top offset）→ `top: 50%; transform: translateY(-50%)`。齿轮是 `position: absolute` 脱出 `#topbar` 的 `align-items: center` flex 流，transform 补偿自身高度，视觉中线跟 search bar 对齐。
+  - **尺寸**：按钮 26×26 → 38×38；SVG 18×18 → 30×30。视觉高度跟 search bar 接近，**不**加 border / **不**加 radius（保持 icon button 的语义，跟 search bar 的 input 形态区分开）。0 不动 hover / focus / click 行为。
+
 ## [0.2.83] - 2026-06-20
 
 ### Changed
