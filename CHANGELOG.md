@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.92] - 2026-06-20
+
+### Fixed
+- 在 §0.1 「已弃分支策略」列表里加 `feat/appearance-options-fix`（跟其他冻结分支同等待遇）。merge commit `4618553` 已把 feat 分支同步到 main，`db72b95` 是 feat 分支上 v0.2.91 改动的原始 commit（merge 前的 history 在 `feat/appearance-options-fix` 远程分支完整保留，§0.1 流程）。
+
 ## [0.2.91] - 2026-06-20
 
 ### Removed
