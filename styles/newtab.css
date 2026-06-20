@@ -603,15 +603,13 @@
   top: 50%;
   transform: translateY(-50%);
   right: 2%;
-  /* v0.2.84: 38×38 button (was 26×26 with `padding: 4px` around an
-   * 18px SVG). SVG grows to 30×30 in the next commit
-   * (src/newtab/topbar.ts) so the icon visually fills the larger
-   * button. Stays an icon button (no border, no border-radius) —
-   * visual height matches the search bar but semantic stays distinct
-   * (search bar is an input with 1px border + theme-radius; gear is
-   * a flat button). */
-  width: 38px;
-  height: 38px;
+  /* v0.2.85: 32×32 button (was 38×38). Per user feedback the 38px
+   * read heavier than the search bar's 50ish-pixel height. 32
+   * with 4px padding lands at 24px SVG content — closer to the
+   * common icon-button size, sits clearly under the search bar's
+   * visual weight while still aligning with it. */
+  width: 32px;
+  height: 32px;
   background: transparent;
   border: none;
   color: var(--newtab-text);

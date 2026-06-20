@@ -13,6 +13,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **垂直位置**：`top: 8px`（固定 top offset）→ `top: 50%; transform: translateY(-50%)`。齿轮是 `position: absolute` 脱出 `#topbar` 的 `align-items: center` flex 流，transform 补偿自身高度，视觉中线跟 search bar 对齐。
   - **尺寸**：按钮 26×26 → 38×38；SVG 18×18 → 30×30。视觉高度跟 search bar 接近，**不**加 border / **不**加 radius（保持 icon button 的语义，跟 search bar 的 input 形态区分开）。0 不动 hover / focus / click 行为。
 
+## [0.2.85] - 2026-06-20
+
+### Changed
+- **齿轮按钮尺寸 38×38 → 32×32**（v0.2.84 的 38px 视觉上比 search bar 的 ~52px 还显重，用户回退一档）。SVG 30→24，`width/height="24"` 填满 32px 按钮的 4px 内 padding 区域（24 + 4×2 = 32）。
+- **齿轮图标从 Feather "settings" 换成 Lucide "settings"**。原 Feather path 是个多曲线复杂 path，渲染小尺寸时右下角段有视觉错位（用户原话"右下角怪怪的"）；Lucide 是 8 齿圆 + 独立 center circle 的标准齿轮形态，单 path 干净，`stroke-width="2"` `stroke-linecap="round"` 跟 Feather 的 18px 版本视觉风格一致。Lucide 是 ISC 协议。
+
 ## [0.2.83] - 2026-06-20
 
 ### Changed
