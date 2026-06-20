@@ -33,7 +33,7 @@
 3. **v0.2.58 / v0.2.59 仍未完全通过测试**——v0.2.58 切到 shadcn class-based approach 后 link 颜色与下划线回归、v0.2.59 补全 class 集后用户仍未做完整视觉验证；v0.2.57 是"用户确认视觉 OK"的最后稳定点。
 4. **v0.3.x 已被弃用**——`feat/vue-migration` 在 v0.3.5 ~ v0.3.12 之间做了 8 次增量 hotfix（box-sizing / 链接颜色 / 列宽 / 主题 / 设置 UI / 布局 / 列高），最终用户决定 Vue 重构"不明智"。该分支不再维护，保留为历史参考。详细取舍见 CHANGELOG.md `## [0.2.57-baseline]` 条目。
 
-**已弃分支策略**：`feat/runtime-theme-import` 与 `feat/vue-migration`、`feat/custom-themes-tab`、`feat/css-paste-import`、`feat/dark-mode-setting`、`feat/url-import`、`feat/settings-gear-reposition` 暂时不删除，保留为历史 commit 索引。新功能 / hotfix **只**在 `main` 上做，不要 merge 任何 v0.3.x commit 进 main。新功能流程：在 `feat/<feature>` 分支上做 → 完成后 `--no-ff` merge 到 main → push main → `git push -u origin feat/<feature>` 把分支冻结到 origin 作为历史索引（merge 前的 commit history 完整保留）。
+**已弃分支策略**：`feat/runtime-theme-import` 与 `feat/vue-migration`、`feat/custom-themes-tab`、`feat/css-paste-import`、`feat/dark-mode-setting`、`feat/url-import`、`feat/settings-gear-reposition`、`feat/appearance-toggle-and-tooltips` 暂时不删除，保留为历史 commit 索引。新功能 / hotfix **只**在 `main` 上做，不要 merge 任何 v0.3.x commit 进 main。新功能流程：在 `feat/<feature>` 分支上做 → 完成后 `--no-ff` merge 到 main → push main → `git push -u origin feat/<feature>` 把分支冻结到 origin 作为历史索引（merge 前的 commit history 完整保留）。
 
 **当前已知未决问题**（v0.2.57 遗留，**仅** main 上未解决）
 - **主题化兼容性**：tweakcn 主题通过 runtime import（URL / CSS paste）时需要带完整的 8 个核心 + 11 个 surface vars（`secondary` / `accent` / `destructive` / `card` / `popover` / `input` + 各自 foreground）。v0.2.83 之后 link / search 默认 bg 走 `var(--newtab-link-bg, var(--card, var(--newtab-bg)))` chained fallback —— 缺 `--card` 时回退到 `--newtab-bg`，视觉降级但**不会**破样式。Chrome extension storage 不会自动升级旧值；用户在 v0.2.55 之前导入的老主题需要重新粘贴一次以写入完整 surface 集。
