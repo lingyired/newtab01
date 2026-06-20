@@ -22,6 +22,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - **Toggle 选中态颜色**：从 `opacity: 0.5 / 1` 改为 `color: var(--muted-foreground) / var(--primary)`。原方案靠明暗区分，用户反馈"选中状态不明显"——浅灰 + 主色（品牌色）对比度比"50% 透明文本 vs 100% 透明文本"明显得多。Unselected hover: `color` 从 `--muted-foreground` 渐变到 `--newtab-text`（仍比 selected 浅），保留 hover 反馈但不破坏 selected 视觉信号。Selected hover: 不变。
 
+## [0.2.89] - 2026-06-20
+
+### Fixed
+- **设置按钮位置错乱**（v0.2.88 引入的 bug）。v0.2.88 加的 CSS rule 写了 `#options_button, .sp-appearance-toggle-btn { position: relative; }`，**覆盖了** v0.2.84 给 `#options_button` 设的 `position: absolute`，把齿轮从 topbar 右上角的绝对定位推出，回到 topbar 文档流里错位显示。修复：把 `position: relative` 单独加到 `.sp-appearance-toggle-btn`（之前确实没 position），`#options_button` 不动（它的 `position: absolute` 本身也是 `::after` tooltip 的合法 anchor 上下文）。**完全回归 v0.2.84 的齿轮定位**。
+- **Tooltip 在按钮上方显示不全**。topbar 紧贴视口顶，按钮在 topbar 边缘，`bottom: calc(100% + 8px)` 把 tooltip 顶到视口顶部被裁切（或被某些窗口管理器的 URL bar 遮挡）。修复：tooltip 改到**按钮下方** —— `top: calc(100% + 8px)`，落在 topbar 的 16px 下 padding 里 + 8px 间距，安全且不撞视口边缘。
+
 ## [0.2.86] - 2026-06-20
 
 ### Changed

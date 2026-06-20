@@ -1233,17 +1233,36 @@
   color: var(--primary);
 }
 
-/* ─── v0.2.88: CSS-only tooltip for topbar buttons ───
+/* ─── v0.2.88 (revised v0.2.89): CSS-only tooltip for topbar buttons ───
  *
  * The native HTML `title` attribute gives a 200ms-delayed gray
  * browser tooltip that's easy to miss on small icon buttons in a
  * dark topbar. This rule extracts the `title` text and renders a
  * theme-aware dark bubble immediately on hover (no delay).
  *
- * Applied to #options_button and .sp-appearance-toggle-btn. Both
+ * Applied to .sp-appearance-toggle-btn and #options_button. Both
  * already set `title` (and `aria-label`) in their respective JS
  * modules, so this rule needs no markup changes — just hover
  * any of those buttons to see the tooltip.
+ *
+ * v0.2.89 fix: do NOT list #options_button in the position rule.
+ * #options_button has `position: absolute` from v0.2.84 (so it
+ * sits in the top-right corner of the viewport). The v0.2.88
+ * rule was setting `position: relative` on it, overriding the
+ * absolute positioning and shoving the gear back into the
+ * topbar's document flow (causing the "settings icon position
+ * broken" report). #options_button's `position: absolute` is
+ * ALSO a valid anchor for the ::after pseudo, so we leave it
+ * alone and only set `position: relative` on the toggle buttons
+ * (which previously had no position set).
+ *
+ * v0.2.89 fix: tooltip appears BELOW the button (`top: 100% +
+ * 8px`) instead of above (`bottom: 100% + 8px`). The topbar
+ * sits at the top of the viewport with the buttons right at
+ * the top edge — `bottom: 100% + 8px` puts the tooltip only
+ * 8px from the viewport's top, where it gets clipped or
+ * overlaps the URL bar in some window managers. `top: 100% +
+ * 8px` puts it safely below the topbar padding.
  *
  * Trade-off: the browser's native tooltip may also show after
  * ~500ms of continuous hover (Chrome behavior on touch-capable
@@ -1253,7 +1272,6 @@
  * `pointer-events: none` so the pseudo-element never blocks the
  * underlying button's click. `z-index` 1000 lifts above the
  * topbar (z 100), the sp-overlay (z 110), and any panels. */
-#options_button,
 .sp-appearance-toggle-btn {
   position: relative;
 }
@@ -1261,7 +1279,7 @@
 .sp-appearance-toggle-btn:hover::after {
   content: attr(title);
   position: absolute;
-  bottom: calc(100% + 8px);
+  top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
   background: var(--newtab-text);
@@ -1273,10 +1291,8 @@
   white-space: nowrap;
   pointer-events: none;
   z-index: 1000;
-  /* `currentColor` is var(--newtab-text) at this scope — but the
-   * pseudo has its own color from above. Reset font-weight so
-   * the bubble doesn't inherit the bold style some buttons
-   * might have. */
+  /* Reset font-weight so the bubble doesn't inherit a bold style
+   * some buttons might have. */
   font-weight: 400;
 }
 
