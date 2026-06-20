@@ -1199,27 +1199,85 @@
   justify-content: center;
   background: transparent;
   border: none;
-  color: var(--newtab-text);
+  /* v0.2.88: unselected segments now use var(--muted-foreground)
+   * (theme-aware light gray) at full opacity. Was var(--newtab-text)
+   * with opacity 0.5 — that worked for "dim vs not dim" but the
+   * user couldn't tell which segment was selected at a glance.
+   * Color-based distinction (light gray vs primary) is more
+   * legible than opacity-based. */
+  color: var(--muted-foreground);
   cursor: pointer;
-  opacity: 0.5;
   padding: 0 8px;
   height: 100%;
   border-radius: 14px;
-  transition: opacity 0.15s;
+  transition: color 0.15s;
 }
 .sp-appearance-toggle-btn:hover {
-  /* 0.5 → 0.75 for unselected; selected stays at 1 (set below
-   * with the same specificity). Keeps the hover affordance
-   * without overriding the "currently selected" emphasis. */
-  opacity: 0.75;
+  /* Unselected hover: nudge toward the text color for affordance.
+   * Stays lighter than the selected segment (which uses var(--primary)),
+   * so the "this is the current mode" signal isn't disturbed. */
+  color: var(--newtab-text);
 }
 .sp-appearance-toggle-btn[aria-checked="true"] {
-  opacity: 1;
+  /* v0.2.88: selected segment uses var(--primary) — the theme's
+   * brand color. Together with var(--muted-foreground) on the
+   * unselected segments, this gives a clear color-based selected
+   * state (vs the prior opacity-based which read as "faded" rather
+   * than "different"). */
+  color: var(--primary);
 }
 .sp-appearance-toggle-btn[aria-checked="true"]:hover {
-  /* No dim on hover for the selected segment — it's already
-   * the "focused" state, dimming it would be confusing. */
-  opacity: 1;
+  /* No color shift on hover for the selected segment — it's
+   * already the "current state" signal; dimming it would be
+   * confusing. */
+  color: var(--primary);
+}
+
+/* ─── v0.2.88: CSS-only tooltip for topbar buttons ───
+ *
+ * The native HTML `title` attribute gives a 200ms-delayed gray
+ * browser tooltip that's easy to miss on small icon buttons in a
+ * dark topbar. This rule extracts the `title` text and renders a
+ * theme-aware dark bubble immediately on hover (no delay).
+ *
+ * Applied to #options_button and .sp-appearance-toggle-btn. Both
+ * already set `title` (and `aria-label`) in their respective JS
+ * modules, so this rule needs no markup changes — just hover
+ * any of those buttons to see the tooltip.
+ *
+ * Trade-off: the browser's native tooltip may also show after
+ * ~500ms of continuous hover (Chrome behavior on touch-capable
+ * devices; never on desktop). The CSS one appears first and
+ * reads cleaner; the native one is harmless if it follows.
+ *
+ * `pointer-events: none` so the pseudo-element never blocks the
+ * underlying button's click. `z-index` 1000 lifts above the
+ * topbar (z 100), the sp-overlay (z 110), and any panels. */
+#options_button,
+.sp-appearance-toggle-btn {
+  position: relative;
+}
+#options_button:hover::after,
+.sp-appearance-toggle-btn:hover::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--newtab-text);
+  color: var(--newtab-bg);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1000;
+  /* `currentColor` is var(--newtab-text) at this scope — but the
+   * pseudo has its own color from above. Reset font-weight so
+   * the bubble doesn't inherit the bold style some buttons
+   * might have. */
+  font-weight: 400;
 }
 
 .sp-status--success {

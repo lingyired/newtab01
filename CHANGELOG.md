@@ -11,6 +11,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Topbar 3 段外观 toggle**（亮 / 跟随系统 / 暗）。在设置按钮左边，32px 高（与设置按钮同高），pill 形 segmented control，Lucide `sun` / `zap` / `moon` 图标。**和设置面板「暗色模式」select 双向同步**——读 / 写同一个 `Settings.darkMode`（v0.2.75 single source of truth），不新增字段。topbar 端有独立的 `chrome.storage.onChanged` listener（不依赖 settings-panel 的开/关 listener pair）。点段 → `updateSetting('darkMode', value)` + `applyTheme(theme)` 重算 `data-theme`；从设置面板改 → 收到 storage change → `aria-checked` 同步。
 - **5 个 tooltip**（HTML native `title`）：设置按钮 (`设置`，原 `Settings`)、3 个 toggle 段 (`亮` / `跟随系统` / `暗`)、folder header 3 个动作图标（`Open all in tabs` / `Open as tab group` / `Open in split view`，**保留原英文**——已是 tooltip，0 改动，避免范围蔓延）。
 
+## [0.2.88] - 2026-06-20
+
+### Fixed
+- **Topbar 5 个元素的 tooltip 在 32px 小尺寸下"几乎看不见"**。v0.2.87 加了 `title` 属性，但浏览器原生 tooltip 是延迟 200ms+ 的灰色小气泡，**在 topbar 右上角 + 32px 按钮**的语境下用户报告看不到。
+  - **修复**：新增 CSS-only 自定义 tooltip —— `#options_button` 和 `.sp-appearance-toggle-btn` 元素加 `position: relative`；`:hover::after { content: attr(title); }` 浮一个主题色气泡**立即**显示（无延迟），位置 `bottom: calc(100% + 8px)` 在按钮上方 8px 居中。背景 `var(--newtab-text)` + 文字 `var(--newtab-bg)`，主题切换自动反色。`z-index: 1000` 保证在 topbar (z 100) / sp-overlay (z 110) / 任何 panel 之上。`pointer-events: none` 不挡点击。
+  - **JS 0 改动** —— 复用既有的 `title` 属性（CSS `attr(title)` 提取），button 模块也不用知道 tooltip 存在。
+  - **Native tooltip 副作用**：Chrome 在桌面端长 hover（~500ms+）可能仍会触发原生 tooltip 作为补充信息；先看到 CSS 自定义气泡，原生后出。用户视觉上是"看到 tooltip"，行为正确。
+
+### Changed
+- **Toggle 选中态颜色**：从 `opacity: 0.5 / 1` 改为 `color: var(--muted-foreground) / var(--primary)`。原方案靠明暗区分，用户反馈"选中状态不明显"——浅灰 + 主色（品牌色）对比度比"50% 透明文本 vs 100% 透明文本"明显得多。Unselected hover: `color` 从 `--muted-foreground` 渐变到 `--newtab-text`（仍比 selected 浅），保留 hover 反馈但不破坏 selected 视觉信号。Selected hover: 不变。
+
 ## [0.2.86] - 2026-06-20
 
 ### Changed
