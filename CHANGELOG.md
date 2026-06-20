@@ -5,6 +5,14 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.86] - 2026-06-20
+
+### Fixed
+- **切换主题时 console 大量 `oklch(...)` 不符合 `#rrggbb` 格式的警告**。根因：`switcher.ts:resolveCssColor()` 的"two hops"转换（`probe.style.color = v` + `getComputedStyle().color` 读两次）在 Chrome 111+ 是**假归一化**——CSS Color 4 规范规定 `getComputedStyle().color` 返回原 function 形式（oklch / lab / color() 等），**不**强制转 rgb。两次 read 拿到的是同一个 oklch 字符串，所以 `resolveCssColor("oklch(0.1418 0.0662 295.805)")` 实际返回的还是 `oklch(...)`。这个返回值随后被 `settings-panel.ts:refreshInputsFromSettings()` 直接设到 `<input type="color">.value`，浏览器拒绝非 `#rrggbb` 字符串 → 警告。功能正确是因为 oklch 仍是合法 CSS（作为 inline style 接受），但 input 不显示颜色 picker 选中的位置。
+  - **修复**：把 `resolveCssColor` 的主路径从「span + getComputedStyle two hops」换成「**canvas fillStyle**」。HTML Living Standard 强制要求 `ctx.fillStyle = v` 接受任何合法 CSS 颜色（oklch / lab / color() / hsl / named 等），**getter 永远返回归一化后的 `#rrggbb` 或 `rgb(...)`**。这是浏览器内置的、规范保证的 CSS 颜色归一化路径。getComputedStyle 路径保留为 fallback，仅处理 canvas 不接受的 `var(--foo)` / `color-mix(...)`（需要 cascade 解析）。
+  - **跨浏览器一致**：所有支持 CanvasRenderingContext2D 的浏览器（Chrome / Safari / Firefox / Edge 全覆盖）行为一致，无需 manifest `minimum_chrome_version` 上调。
+  - **影响面**：`applyTheme()` / `saveThemeChange()` / `refreshInputsFromSettings()` / `createColorInput()` 全部走 `resolveCssColor`，所以一次性覆盖所有"显示主题色到 input"和"读 inline style 写 storage"的路径。一次切换主题触发的 N 条警告 → 0 条；同时 storage 里残留的 oklch 值会在下次 `refreshInputsFromSettings()` 触发时**一次性自愈**为 hex。
+
 ## [0.2.83] - 2026-06-20
 
 ### Changed

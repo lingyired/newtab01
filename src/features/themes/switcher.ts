@@ -233,32 +233,44 @@ export function resolveCssColor(cssValue: string): string {
   const v = cssValue.trim();
   if (!v) return '';
   if (/^#[0-9a-f]{3,8}$/i.test(v)) return v;
-  if (/^(rgb|rgba)\(/i.test(v)) return v;
+  if (/^rgba?\(/i.test(v)) return v;
   if (typeof document === 'undefined') return v;
+
+  // Primary path: canvas fillStyle. The HTML Living Standard mandates
+  // that the `fillStyle` setter accepts any legal CSS color value
+  // (oklch / lab / color() / hsl / named colors / etc.) and the
+  // getter returns the value in a normalized form — either `#rrggbb`
+  // or `rgb(...)`. This is the canonical CSS-color normalizer and
+  // works identically across every browser with
+  // CanvasRenderingContext2D (universal support).
+  try {
+    const canvas = document.createElement('canvas');
+    canvas.width = 1;
+    canvas.height = 1;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      ctx.fillStyle = v;
+      const normalized = ctx.fillStyle;
+      if (/^#[0-9a-f]{3,8}$/i.test(normalized) || /^rgba?\(/i.test(normalized)) {
+        return normalized;
+      }
+    }
+  } catch {
+    // canvas path threw (extremely rare — e.g. some sandboxed
+    // contexts); fall through to the getComputedStyle fallback below.
+  }
+
+  // Fallback: getComputedStyle on a detached span. Canvas doesn't
+  // accept `var(--foo)` or `color-mix(...)` — these are valid CSS
+  // colors that need the cascade-resolved form. The browser does
+  // the resolution in computed style.
   const probe = document.createElement('span');
   probe.style.color = v;
   probe.style.display = 'none';
   document.body.appendChild(probe);
-  const first = getComputedStyle(probe).color;
+  const computed = getComputedStyle(probe).color;
   document.body.removeChild(probe);
-
-  // If the first pass already returned an rgb()/rgba() form, we're done.
-  if (/^rgba?\(/i.test(first)) return first;
-
-  // Otherwise the browser preserved the CSS Color 4 form. Re-stamp and
-  // re-read — by the second hop the value is in `rgb()` form. The
-  // `style.color` setter on a <span> accepts every color function and
-  // outputs an rgb() when serialized via getComputedStyle on the same
-  // element. Two hops are needed because the *first* hop preserves the
-  // input; the *second* hop (where the input is now the preserved
-  // function form) is what triggers the rgb() normalization in Chrome.
-  const probe2 = document.createElement('span');
-  probe2.style.color = first;
-  probe2.style.display = 'none';
-  document.body.appendChild(probe2);
-  const second = getComputedStyle(probe2).color;
-  document.body.removeChild(probe2);
-  return second || first || v;
+  return computed || v;
 }
 
 /**
