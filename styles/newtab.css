@@ -1158,6 +1158,144 @@
   100% { transform: translateX(100%); }
 }
 
+/* ─── Appearance Toggle (v0.2.87) ───
+ *
+ * 3-state pill (亮 / 跟随系统 / 暗) sitting to the left of the
+ * settings button in the topbar. Synced with Settings.darkMode
+ * via chrome.storage.onChanged — see src/newtab/appearance-toggle.ts
+ * for the JS side. Sits at the same 32px height as the settings
+ * button (per user direction "大小一致" → same height, not same
+ * width — width is auto, driven by content).
+ *
+ * Layout: position: absolute to avoid the #topbar flex flow (the
+ * search box is centered via flex; absolute children don't disturb
+ * that). right: 80px puts the toggle ~16px to the left of the
+ * settings button at right: 2% (settings button = 32px wide + 16px
+ * gap ≈ 48px from right; toggle ≈ 56px wide + 16px gap ≈ 72px
+ * from right; 80px is a safe value that survives theme changes
+ * that might slightly affect button width).
+ *
+ * Visual: light-gray pill background (var(--muted)), selected
+ * segment bumps opacity to 1 while unselected segments stay at
+ * 0.5. No background highlight on selected — the iOS-style
+ * "pill within a pill" would compete with the 32px-height
+ * constraint and look heavier than the reference image.
+ */
+.sp-appearance-toggle {
+  position: absolute;
+  right: 80px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 32px;
+  display: flex;
+  background: var(--muted);
+  border-radius: 16px;
+  padding: 0 4px;
+  z-index: 1;
+}
+.sp-appearance-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  /* v0.2.88: unselected segments now use var(--muted-foreground)
+   * (theme-aware light gray) at full opacity. Was var(--newtab-text)
+   * with opacity 0.5 — that worked for "dim vs not dim" but the
+   * user couldn't tell which segment was selected at a glance.
+   * Color-based distinction (light gray vs primary) is more
+   * legible than opacity-based. */
+  color: var(--muted-foreground);
+  cursor: pointer;
+  padding: 0 8px;
+  height: 100%;
+  border-radius: 14px;
+  transition: color 0.15s;
+}
+.sp-appearance-toggle-btn:hover {
+  /* Unselected hover: nudge toward the text color for affordance.
+   * Stays lighter than the selected segment (which uses var(--primary)),
+   * so the "this is the current mode" signal isn't disturbed. */
+  color: var(--newtab-text);
+}
+.sp-appearance-toggle-btn[aria-checked="true"] {
+  /* v0.2.88: selected segment uses var(--primary) — the theme's
+   * brand color. Together with var(--muted-foreground) on the
+   * unselected segments, this gives a clear color-based selected
+   * state (vs the prior opacity-based which read as "faded" rather
+   * than "different"). */
+  color: var(--primary);
+}
+.sp-appearance-toggle-btn[aria-checked="true"]:hover {
+  /* No color shift on hover for the selected segment — it's
+   * already the "current state" signal; dimming it would be
+   * confusing. */
+  color: var(--primary);
+}
+
+/* ─── v0.2.88 (revised v0.2.89): CSS-only tooltip for topbar buttons ───
+ *
+ * The native HTML `title` attribute gives a 200ms-delayed gray
+ * browser tooltip that's easy to miss on small icon buttons in a
+ * dark topbar. This rule extracts the `title` text and renders a
+ * theme-aware dark bubble immediately on hover (no delay).
+ *
+ * Applied to .sp-appearance-toggle-btn and #options_button. Both
+ * already set `title` (and `aria-label`) in their respective JS
+ * modules, so this rule needs no markup changes — just hover
+ * any of those buttons to see the tooltip.
+ *
+ * v0.2.89 fix: do NOT list #options_button in the position rule.
+ * #options_button has `position: absolute` from v0.2.84 (so it
+ * sits in the top-right corner of the viewport). The v0.2.88
+ * rule was setting `position: relative` on it, overriding the
+ * absolute positioning and shoving the gear back into the
+ * topbar's document flow (causing the "settings icon position
+ * broken" report). #options_button's `position: absolute` is
+ * ALSO a valid anchor for the ::after pseudo, so we leave it
+ * alone and only set `position: relative` on the toggle buttons
+ * (which previously had no position set).
+ *
+ * v0.2.89 fix: tooltip appears BELOW the button (`top: 100% +
+ * 8px`) instead of above (`bottom: 100% + 8px`). The topbar
+ * sits at the top of the viewport with the buttons right at
+ * the top edge — `bottom: 100% + 8px` puts the tooltip only
+ * 8px from the viewport's top, where it gets clipped or
+ * overlaps the URL bar in some window managers. `top: 100% +
+ * 8px` puts it safely below the topbar padding.
+ *
+ * Trade-off: the browser's native tooltip may also show after
+ * ~500ms of continuous hover (Chrome behavior on touch-capable
+ * devices; never on desktop). The CSS one appears first and
+ * reads cleaner; the native one is harmless if it follows.
+ *
+ * `pointer-events: none` so the pseudo-element never blocks the
+ * underlying button's click. `z-index` 1000 lifts above the
+ * topbar (z 100), the sp-overlay (z 110), and any panels. */
+.sp-appearance-toggle-btn {
+  position: relative;
+}
+#options_button:hover::after,
+.sp-appearance-toggle-btn:hover::after {
+  content: attr(title);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--newtab-text);
+  color: var(--newtab-bg);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1000;
+  /* Reset font-weight so the bubble doesn't inherit a bold style
+   * some buttons might have. */
+  font-weight: 400;
+}
+
 .sp-status--success {
   color: color-mix(in srgb, var(--primary) 80%, black);
 }
