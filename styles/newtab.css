@@ -108,7 +108,10 @@
   cursor: pointer;
   white-space: nowrap;
   transition-property: color, background-color, border-color, box-shadow, transform, opacity;
-  transition-duration: var(--newtab-link-transition-duration, var(--newtab-fade-ms));
+  /* v0.2.91: previously read from --newtab-link-transition-duration /
+   * --newtab-fade-ms (controllable via the "淡入淡出时长" option). Option
+   * removed — hardcode 200ms for hover color/bg smoothing. */
+  transition-duration: 200ms;
   transition-timing-function: ease-out;
 }
 
@@ -298,14 +301,6 @@
 .folder-action-btn:hover {
   opacity: 1;
   background-color: var(--newtab-highlight);
-}
-
-/* ─── Wrap (animation container for folder open/close) ─── */
-.wrap {
-  overflow: hidden;
-  transition-property: height, opacity;
-  transition-duration: var(--newtab-slide-ms);
-  transition-timing-function: ease-out;
 }
 
 /* ─── Columns ─── */

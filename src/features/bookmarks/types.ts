@@ -51,12 +51,10 @@ export interface Settings {
   shadowColor: string;
   shadowBlur: number;
   highlightRound: number;
-  fade: number;
   spacing: number;
   width: number;
   hPos: number;
   vMargin: number;
-  slide: number;
   hideOptions: number;
   lock: number;
   showTop: number;

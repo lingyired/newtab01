@@ -109,8 +109,6 @@
   --newtab-column-width: auto;
   --newtab-shadow-blur: 7px;
   --newtab-highlight-round: 0.2em;
-  --newtab-fade-ms: 200ms;
-  --newtab-slide-ms: 200ms;
 
   font-family: system-ui, -apple-system, sans-serif;
   font-size: 62.5%;

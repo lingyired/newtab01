@@ -376,27 +376,30 @@ function createRow(
 }
 
 function getDefaults(): Settings {
-  // Re-import defaults from settings module
   return {
     font: 'Sans-serif',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 400,
     theme: 'default',
     darkMode: 'system',
-    fontColor: '#555555',
-    backgroundColor: '#ffffff',
+    // The five palette fields are intentionally empty strings: see the
+    // matching block in src/lib/storage/settings.ts. `applyUserColorOverride`
+    // treats `''` as "no override" and removeProperty's the inline value;
+    // a non-empty hex would force a permanent override that clobbers the
+    // active theme's palette. Match storage defaults exactly so the revert
+    // button (↩) clears the override instead of stamping a hex.
+    fontColor: '',
+    backgroundColor: '',
     backgroundImage: '',
-    highlightColor: '#e4f4ff',
-    highlightFontColor: '#000000',
-    shadowColor: '#57b0ff',
+    highlightColor: '',
+    highlightFontColor: '',
+    shadowColor: '',
     shadowBlur: 1,
     highlightRound: 1,
-    fade: 1,
     spacing: 1,
     width: 1,
     hPos: 1,
     vMargin: 1,
-    slide: 1,
     hideOptions: 0,
     lock: 0,
     showTop: 1,
@@ -559,6 +562,13 @@ function createNumberInput(key: keyof Settings): HTMLInputElement {
   input.type = 'number';
   input.id = `sp-${key}`;
   input.value = String(getSetting(key));
+  // All scale()-driven settings accept fractional inputs (0.5, 1.5, etc.)
+  // — default `step="1"` would reject those as `stepMismatch` and make the
+  // browser show a validation error on commit. `step="0.1"` lets the user
+  // type any one-decimal-place value; values outside [0,1,2] still work
+  // because `change` fires regardless of validity and the scale() curve
+  // extrapolates linearly past the ends.
+  input.step = '0.1';
   input.addEventListener('change', () => saveSetting(key));
   return input;
 }
@@ -681,8 +691,6 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   container.appendChild(createRow('阴影颜色', createColorInput('shadowColor'), 'shadowColor', '书签高亮时四周光晕颜色；与"高亮颜色"共享同一 CSS 变量，修改会自动同步到高亮颜色。'));
   container.appendChild(createRow('阴影模糊', createNumberInput('shadowBlur'), 'shadowBlur', '高亮光晕的模糊半径，数值越大光晕越大越柔和。'));
   container.appendChild(createRow('高亮圆角', createNumberInput('highlightRound'), 'highlightRound', '书签高亮背景的圆角大小，0 为直角，数值越大越圆。'));
-  container.appendChild(createRow('淡入淡出时长', createNumberInput('fade'), 'fade', '鼠标悬停时颜色变化的过渡时长（毫秒）。'));
-  container.appendChild(createRow('滑动时长', createNumberInput('slide'), 'slide', '展开或折叠文件夹时的动画时长（毫秒）。'));
   container.appendChild(createRow('宽度', createNumberInput('width'), 'width', '新标签页主体区域的整体宽度（自动缩放时为百分比，否则为像素）。'));
   container.appendChild(createRow('水平位置', createNumberInput('hPos'), 'hPos', '主体区域在窗口内的水平位置比例，0 偏左、1 居中、2 偏右。'));
 
