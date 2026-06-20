@@ -308,7 +308,7 @@ splitManager.register(new IframeSplitEngine());
 ### 9.7 设置加载顺序
 - NewtabApp 必须先调用 `initSettingsStore()` 再初始化 layout store
 - 设置加载完成前显示 Loading 状态
-- 所有设置项（spacing、vMargin、columnWidth、align、shadowBlur、highlightRound、fadeMs、slideMs、lockColumns、showTopLevel、hideOptions、autoScale、numberTop）必须正确消费并实现
+- 所有设置项（spacing、vMargin、columnWidth、align、shadowBlur、highlightRound、lockColumns、showTopLevel、hideOptions、autoScale、numberTop）必须正确消费并实现
 
 ### 9.8 集成验证与代码同步
 - 根据测试结果修复集成问题

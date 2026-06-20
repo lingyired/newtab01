@@ -5,6 +5,33 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.91] - 2026-06-20
+
+### Removed
+- **「外观」tab 的「滑动时长」「淡入淡出时长」两个 transition 选项 + folder 展开/折叠动画整体移除**。
+  - **slide 不生效的根因**：`.wrap` CSS 规则（静态 + 动态）跟 `folder.ts` 的 `wrap.dataset.wrap = ''` 是 class vs attribute 错配，规则从 initial commit 起就是 dead code。同时 `folder.ts:toggleFolder` 走的是 mount/unmount 模式（`wrap.remove()` / `renderChildrenInto()`），CSS `transition: height` 对 mount/unmount 本来就不会触发。即使把 selector 改对，slide 仍然看不见。要让动画真正可见必须在 JS 端改成 height 测值动画（`scrollHeight` → 0 → remove / 0 → scrollHeight → auto），这是个独立的大改动，用户决定不维护这条路径。
+  - **fade 同步作废**：slide 移除后 fade 变成"调节 link hover 颜色过渡时长"——是**唯一**还在用的 transition，但作为单点可调参数已无价值（folder 没有动画了，UI 里的 transition 只剩 hover 颜色变化 + drag-start opacity），保留一个可调项让用户徒增困惑。一并移除。
+  - **改动范围**：
+    - `Settings.slide` / `Settings.fade` 两个字段 + types 移除
+    - `slideMs → slide` / `fadeMs → fade` legacy 迁移移除（`settings.ts` LEGACY_KEY_MAP）
+    - `styles/globals.css` 的 `--newtab-slide-ms` / `--newtab-fade-ms` 两个 var 移除
+    - `styles/newtab.css` 的 `.wrap` 块整段移除（slide）
+    - `styles/newtab.css` line 111 `#main a { transition-duration: ... }` 从 `var(--newtab-link-transition-duration, var(--newtab-fade-ms))` hardcode 为 `200ms`（fade）——保留 hover 颜色/bg 平滑过渡但不再让用户调
+    - `apply.ts` STYLE_KEYS 去 `'fade'` / `'slide'` + 两段动态规则删除
+    - `settings-panel.ts` 外观 tab 删「滑动时长」「淡入淡出时长」两行 + `getDefaults()` 删两个字段
+    - CLAUDE.md §9.7 设置项清单去 `fadeMs` / `slideMs`
+  - **保留**：`folder.ts` 里 `wrap.dataset.wrap = ''` 不动——JS 内部仍用它 querySelector 找元素做 mount/unmount，只是 CSS 不再针对它设规则。
+  - **影响**：folder 展开/折叠回到 instant render（预期行为）；link hover 仍 200ms 颜色/bg 平滑过渡（视觉基础保留）；两个 transition 选项不再出现在设置面板。
+
+### Changed
+- **`createNumberInput` 给所有 scale()-驱动 input 加 `step="0.1"`**（shadowBlur / highlightRound / spacing / vMargin / width / hPos / fontSize / fontWeight / numberTop / numberRecent / numberClosed / folderActionConfirmThreshold）。原默认 `step="1"` 让小数（如 0.5 / 1.5）触发 `stepMismatch`，浏览器在 input 上加 `:invalid` 红框 + tooltip 提示"请输入有效值"。虽然 `change` 事件大多数浏览器仍然 fire 且 value 仍是用户输入的字符串，但 UX 明显"这个 input 不接受我要的值"—— 容易让人误以为选项不生效。`step="0.1"` 覆盖所有用户合理的小数取值（scale 函数对 [0, 1, 2] 之外的输入线性外推，所以 0.3 / 1.7 等也合法）。fade / slide 已移除，不再列。
+
+### Fixed
+- **`settings-panel.ts` 的 `getDefaults()` 跟 `settings.ts` 的 storage defaults 不一致**（2 处）。
+  - `fontSize`：`16` → `18`。`settings.ts` 实际默认是 18（v0.2.55 migrate 后的值），但 `getDefaults()` 返回 16 —— 点设置面板里任一行的「恢复默认 ↩」会把字号重置到错误的 16。
+  - 5 个 palette 字段（`fontColor` / `backgroundColor` / `highlightColor` / `highlightFontColor` / `shadowColor`）：`#555555` / `#ffffff` / `#e4f4ff` / `#000000` / `#57b0ff` → `''`。`settings.ts` 注释明确说空字符串是"故意"的——`applyUserColorOverride` 把 `''` 当"no override"调 `removeProperty` 清掉 inline 值，theme palette 重新生效。如果 `getDefaults()` 返回 hex，「恢复默认 ↩」会把 hex 写进 storage 并 apply 为永久 override，**永久覆盖当前主题的对应 palette**——切到新主题时这五个 hex 还会跟着走，破坏主题切换。修复后恢复默认 = 清除 override = 让主题 palette 重新接管，行为跟 `settings.ts` 的语义对齐。
+  - 顺手删了误导的注释 `// Re-import defaults from settings module`（实际是手抄副本，从未被真正 re-import），换上一段跟 `settings.ts` 对齐的说明。
+
 ## [0.2.87] - 2026-06-20
 
 ### Added

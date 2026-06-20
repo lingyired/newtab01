@@ -42,7 +42,7 @@ type ColorKey = keyof typeof COLOR_KEYS;
  */
 const STYLE_KEYS: ReadonlySet<keyof Settings> = new Set<keyof Settings>([
   'font', 'fontSize', 'fontWeight',
-  'shadowBlur', 'highlightRound', 'fade', 'slide',
+  'shadowBlur', 'highlightRound',
   'spacing', 'vMargin', 'width', 'hPos', 'autoScale',
 ]);
 
@@ -100,14 +100,6 @@ function rebuildDynamicStyles(): void {
   // Border radius
   const highlightRound = scale(settings('highlightRound'), 0.2, 1.5);
   rules.push(`#main a { border-radius: ${highlightRound}em; }`);
-
-  // Fade transition
-  const fadeMs = scale(settings('fade'), 200, 1000);
-  rules.push(`#main a { transition-duration: ${fadeMs}ms; }`);
-
-  // Slide transition
-  const slideMs = scale(settings('slide'), 200, 1000);
-  rules.push(`.wrap { transition-duration: ${slideMs}ms; }`);
 
   // Spacing
   const lineHeight = scale(settings('spacing'), 2, 5.6, 0.8);
