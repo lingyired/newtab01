@@ -17,18 +17,32 @@ const USER_CSS_ELEMENT_ID = 'user-css';
  * the active theme palette. Each key maps to the inline-style property
  * it writes; see `applyUserColorOverride` for the write path.
  *
- * `shadowColor` is included for backwards-compat with the legacy Settings
- * type, but in the current CSS the `box-shadow` color is sourced from
- * `--newtab-highlight` (see newtab.css). The settings panel keeps the
- * two fields in sync on theme switches via `saveThemeChange`, and
- * editing either ultimately sets the same inline property.
+ * v0.2.100: `shadowColor` was previously aliased to
+ * `--newtab-highlight` (shared with `highlightColor`) because the
+ * v0.2.45-v0.2.52 hover-glow effect used the same color for both
+ * the highlight background and the box-shadow. The glow effect was
+ * removed in v0.2.53 but the alias stayed, which meant editing
+ * "shadow color" silently clobbered the folder / menu / undo
+ * button hover backgrounds. Now decoupled: `shadowColor` writes to
+ * `--newtab-shadow`, which is its own CSS var (globals.css:97),
+ * and the box-shadow rule in `rebuildDynamicStyles` falls back to
+ * `--newtab-highlight` only when shadowColor is unset.
  */
 const COLOR_KEYS = {
   backgroundColor: '--newtab-bg',
   fontColor: '--newtab-text',
   highlightColor: '--newtab-highlight',
   highlightFontColor: '--newtab-highlight-text',
-  shadowColor: '--newtab-highlight',
+  // v0.2.100: shadowColor was aliased to --newtab-highlight (shared
+  // with highlightColor) since the v0.2.45 hover-glow effect. The
+  // glow was removed in v0.2.53 but the alias stayed, which made
+  // editing "shadow color" silently clobber the folder/menu/undo
+  // button hover backgrounds. Decouple: shadowColor now controls
+  // only the box-shadow color on `#main a:hover` (see
+  // rebuildDynamicStyles), with a chained-fallback to
+  // --newtab-highlight when unset (globals.css:97) so a fresh
+  // install still shows the accent glow.
+  shadowColor: '--newtab-shadow',
 } as const satisfies Partial<Record<keyof Settings, string>>;
 type ColorKey = keyof typeof COLOR_KEYS;
 
@@ -192,7 +206,13 @@ export function rebuildDynamicStyles(): void {
 
   // Shadow
   const shadowBlur = scale(eff.shadowBlur, 7, 100);
-  rules.push(`#main a:hover { box-shadow: 0 0 ${shadowBlur}px var(--newtab-highlight); }`);
+  // v0.2.100: shadowColor was previously `--newtab-highlight`
+  // (aliased to highlightColor). Decoupled — `var(--newtab-shadow,
+  // var(--newtab-highlight))` keeps the default glow in sync with the
+  // highlight color (when shadowColor is empty / unset) but lets a
+  // user-set shadowColor paint the box-shadow independently of the
+  // folder/menu/undo button backgrounds.
+  rules.push(`#main a:hover { box-shadow: 0 0 ${shadowBlur}px var(--newtab-shadow, var(--newtab-highlight)); }`);
 
   // Border radius (v0.2.97: highlightRound is in px, written as
   //  `--newtab-link-radius` on `:root`. newtab.css:105 reads

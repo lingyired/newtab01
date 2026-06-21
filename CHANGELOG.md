@@ -5,6 +5,21 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.100] - 2026-06-21
+
+### Fixed
+- **阴影颜色 picker 改色后 input 又变回原色（display bug）**。v0.2.99 修了 #rrggbb 格式报错后浮出：per-theme `shadowColor` 的 picker 通过 `sourceKey = 'highlightColor'` 间接从 `highlightColor` storage 桶读值，但 `apply.ts` 写 `--newtab-highlight` 时 `writeResolvedColor('shadowColor', ...)` 是最后写（last-write-wins），所以 storage 的 `shadowColor` 桶是新值、`highlightColor` 桶是旧值。`refreshInputsFromSettings` 重读 picker 时拿到的是 highlightColor 桶的旧值 → 显示旧色。`applySettingsToDOM` 已经把 `--newtab-highlight` 覆盖为新色，但 picker 显示的是错值。
+- **阴影颜色与高亮颜色 picker 同步修改（design bug）**。根因是 `shadowColor` 与 `highlightColor` 共享 CSS 变量 `--newtab-highlight`（v0.2.45 hover-glow 时期遗留，glow 在 v0.2.53 移除后别名没拆）：box-shadow 颜色和 folder / menu / undo 按钮 hover 背景都走同一个 var，导致改 shadow 会静默改这些 UI 元素的背景。修：拆开。
+
+### Changed
+- **拆 `shadowColor` 与 `highlightColor` 的 CSS 变量共享**（v0.2.45 hover-glow 时代遗留）。新增 `--newtab-shadow` CSS 变量（`styles/globals.css:97`，默认 `var(--newtab-highlight)` 保持视觉兼容），`apply.ts` 的 `COLOR_KEYS.shadowColor` 从 `'--newtab-highlight'` 改为 `'--newtab-shadow'`，`rebuildDynamicStyles` 的 box-shadow 规则改用 `var(--newtab-shadow, var(--newtab-highlight))` chained fallback（unset 时回退到 highlight）。`settings-panel.ts` 的 `COLOR_INPUT_CSS_VAR.shadowColor` 同步改为 `'--newtab-shadow'`。
+- **移除 `shadowColor` ↔ `highlightColor` 的 sourceKey 镜像**：v0.2.99 起的 `applyUserColorOverride`、`createColorInput`、`refreshInputsFromSettings`（global + per-theme 两处）、`saveSetting`、`saveShadowColorChange`（整函数删除）、全局 ↩ revert、per-theme ↩ revert 里的 `key === 'shadowColor' ? 'highlightColor' : key` 全部去掉。`shadowColor` 现在是普通 5 色 picker，独立读写 `themeOverrides[theme][mode].shadowColor` 和 `--newtab-shadow`。
+- **`<details>` 阴影颜色行描述更新**（`settings-panel.ts:1086`）：从 "与"高亮颜色"共享同一 CSS 变量，修改会自动同步到高亮颜色" 改为 "默认与"高亮颜色"相同（共用同一色调），可独立设置为不同颜色"。
+
+### Migration
+- **对已有用户无破坏**：新装的 `--newtab-shadow` 默认 `var(--newtab-highlight)`，未设置 shadowColor 的用户视觉无变化（box-shadow 还是 highlight 色）。
+- 之前通过 `saveShadowColorChange` 镜像写入的 `themeOverrides[theme][mode].highlightColor` 值（即"间接设过 shadowColor"的用户）会在下次 `applySettingsToDOM` 时被独立解析为 highlightColor 自己的值，shadowColor 桶如果是空则保持空 → 视觉上 highlight 色不变；如果用户曾显式设过 shadowColor 桶的值，现在会真的控制 box-shadow 颜色（之前是被 highlight 桶覆盖而看不出效果）。
+
 ## [0.2.99] - 2026-06-21
 
 ### Fixed

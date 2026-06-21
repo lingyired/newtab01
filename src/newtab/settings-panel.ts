@@ -14,7 +14,7 @@ import {
 import { detectInputFormat, parseCssTheme } from '../features/themes/css-import';
 import { detectTweakcnUrl, toTweakcnJsonUrl } from '../features/themes/url-import';
 import { sendMessage } from '../lib/chrome/messages';
-import { applySettingChange, applyUserColorOverride } from '../features/settings/apply';
+import { applySettingChange } from '../features/settings/apply';
 import * as debug from '../lib/debug';
 import { renderColumns } from '../features/bookmarks/board';
 
@@ -309,7 +309,11 @@ const COLOR_INPUT_CSS_VAR: Partial<Record<keyof Settings, string>> = {
   fontColor: '--newtab-text',
   highlightColor: '--newtab-highlight',
   highlightFontColor: '--newtab-highlight-text',
-  shadowColor: '--newtab-highlight',
+  // v0.2.100: shadowColor was aliased to --newtab-highlight; now
+  // decoupled. The picker reads --newtab-shadow (which falls back
+  // to --newtab-highlight when unset, so a fresh install still
+  // shows the accent glow). Keep in sync with apply.ts COLOR_KEYS.
+  shadowColor: '--newtab-shadow',
 };
 
 /**
@@ -347,21 +351,23 @@ function resolveColorForInput(key: keyof Settings, stored: string): string {
  * elements without rebuilding the DOM. No-op for inputs that don't
  * exist (panel closed) or whose value already matches storage.
  *
- * The `shadowColor` input is displayed using the `highlightColor`
- * value because the two share a single CSS variable (`--newtab-highlight`)
- * — the user sees what is actually being rendered.
+ * v0.2.100: `shadowColor` is no longer aliased to `highlightColor` —
+ * the two now control separate CSS variables (`--newtab-shadow` and
+ * `--newtab-highlight` respectively), so each picker reads its own
+ * storage value. When the storage value is empty, `resolveColorForInput`
+ * falls back to the rendered CSS var so the picker still shows a
+ * valid #rrggbb.
  */
 function refreshInputsFromSettings(): void {
   for (const key of COLOR_INPUT_KEYS) {
     const input = document.getElementById(`sp-${key}`) as HTMLInputElement | null;
     if (!input || input.type !== 'color') continue;
-    const sourceKey: keyof Settings = key === 'shadowColor' ? 'highlightColor' : key;
-    // `resolveCssColor` is a no-op for plain hex/rgb (the common case)
-    // and rescues us from a stored `var()`/`color-mix()` string — which
-    // <input type="color"> would otherwise reject with "does not conform
-    // to the required format '#rrggbb'". v0.2.99: also fall back to the
-    // rendered CSS var when storage is ''.
-    const next = resolveColorForInput(key, String(getSetting(sourceKey) ?? ''));
+    // `resolveColorForInput` is a no-op for plain hex/rgb (the common
+    // case) and rescues us from a stored `var()`/`color-mix()` string
+    // — which <input type="color"> would otherwise reject with
+    // "does not conform to the required format '#rrggbb'". v0.2.99:
+    // also falls back to the rendered CSS var when storage is ''.
+    const next = resolveColorForInput(key, String(getSetting(key) ?? ''));
     if (input.value !== next) input.value = next;
   }
   // Theme + darkMode selects live on the same tabs as the color inputs;
@@ -403,12 +409,13 @@ function refreshInputsFromSettings(): void {
       | null;
     if (!input) continue;
     const next = readPerThemeValue(key);
-    // Color inputs: same `resolveCssColor` normalization as the global
-    //  color refresh above; `shadowColor` reads from `highlightColor`
-    //  in storage because they share a CSS variable.
+    // v0.2.100: color inputs. Use resolveColorForInput (same as the
+    //  global refresh above) — handles both `var()`/`color-mix()`
+    //  strings and empty storage. shadowColor now has its own CSS
+    //  var, so it reads from the shadowColor storage bucket (not
+    //  the highlightColor bucket as it did before v0.2.100).
     if (input instanceof HTMLInputElement && input.type === 'color') {
-      const sourceKey: keyof Settings = key === 'shadowColor' ? 'highlightColor' : key;
-      const resolved = resolveCssColor(String(readPerThemeValue(sourceKey) ?? ''));
+      const resolved = resolveColorForInput(key, String(readPerThemeValue(key) ?? ''));
       if (input.value !== resolved) input.value = resolved;
       continue;
     }
@@ -610,16 +617,11 @@ function createRow(
     //  paint the rendered theme color into the picker synchronously,
     //  instead of going through `saveSetting` (which would re-read
     //  input.value as a valid hex and persist the wrong value).
+    // v0.2.100: shadowColor is no longer mirrored to highlightColor,
+    //  so no special branch is needed — the normal `updateSetting`
+    //  path handles the storage clear.
     if (input instanceof HTMLInputElement && input.type === 'color') {
-      if (key === 'shadowColor') {
-        // Mirror the empty-string clear into highlightColor so the
-        // shared `--newtab-highlight` override is wiped on both
-        // storage keys, matching what `saveSetting('shadowColor')`
-        // does for non-empty edits.
-        void saveShadowColorChange('');
-      } else {
-        void updateSetting(key, '' as Settings[typeof key]);
-      }
+      void updateSetting(key, '' as Settings[typeof key]);
       input.value = resolveColorForInput(key, '');
       return;
     }
@@ -811,17 +813,10 @@ function saveSetting(key: keyof Settings, scope: InputScope = 'global'): void {
     return;
   }
 
-  // shadowColor shares --newtab-highlight with highlightColor in the CSS
-  // (see newtab.css `box-shadow: 0 0 var(--newtab-shadow-blur) var(--newtab-highlight)`).
-  // Editing only shadowColor would leave highlightColor stale, so the
-  // shared CSS variable would still render the old highlight color and
-  // a subsequent applySettingsToDOM (e.g. on a different storage edit)
-  // would write the old highlightColor back into --newtab-highlight.
-  // Mirror the value into highlightColor in a single atomic write.
-  if (key === 'shadowColor') {
-    void saveShadowColorChange(String(value));
-    return;
-  }
+  // shadowColor is a normal color field as of v0.2.100 (was
+  // previously aliased to highlightColor — see apply.ts COLOR_KEYS).
+  // The shared `--newtab-highlight` alias is gone; shadowColor writes
+  // to its own `--newtab-shadow` CSS var.
 
   void updateSetting(key, value as Settings[keyof Settings]);
   debug.log('settings-panel', 'saveSetting', { key, before, after: getSetting(key) });
@@ -835,26 +830,6 @@ function saveSetting(key: keyof Settings, scope: InputScope = 'global'): void {
   if (RERENDER_KEYS.has(key)) {
     void renderColumns();
   }
-}
-
-/**
- * Persist a shadowColor edit by mirroring it into highlightColor (the
- * CSS source for both the highlight background and the box-shadow color)
- * and re-asserting the inline `--newtab-highlight` override so the page
- * reflects the new value without waiting for the storage round-trip.
- */
-async function saveShadowColorChange(value: string): Promise<void> {
-  const beforeShadow = getSetting('shadowColor');
-  const beforeHighlight = getSetting('highlightColor');
-  await updateSettings({ shadowColor: value, highlightColor: value });
-  // applyUserColorOverride('highlightColor') reads from getSetting, which
-  // has just been updated by updateSettings, so it writes the new value
-  // into the inline --newtab-highlight.
-  applyUserColorOverride('highlightColor');
-  debug.log('settings-panel', 'saveShadowColorChange', {
-    from: { shadowColor: beforeShadow, highlightColor: beforeHighlight },
-    to: { shadowColor: value, highlightColor: value },
-  });
 }
 
 /**
@@ -956,20 +931,16 @@ function createColorInput(key: keyof Settings, scope: InputScope = 'global'): HT
   const input = document.createElement('input');
   input.type = 'color';
   input.id = inputId(key, scope);
-  // `shadowColor` is a legacy field that shares a CSS variable with
-  // `highlightColor`; render the picker with the value that's actually
-  // on screen so the user sees what the panel is editing.
-  const sourceKey: keyof Settings = key === 'shadowColor' ? 'highlightColor' : key;
-  // Per-theme per-mode: read the resolved value (override or
-  //  global fallback) so the picker reflects what's painted on
-  //  screen for the active theme+mode. We pass `key` (not
-  //  `sourceKey`) to `readPerThemeValue` so the type check
-  //  `isPerThemeKey(key)` lines up — `sourceKey` may be
-  //  `highlightColor` (when the input is shadowColor), which is
-  //  also a PerThemeKey, so the cast is safe.
+  // v0.2.100: shadowColor used to be aliased to highlightColor (the
+  // sourceKey indirection below read from the highlightColor storage
+  // bucket). Now decoupled — shadowColor has its own CSS var
+  // (--newtab-shadow), so we read the value the picker actually
+  // controls. resolveColorForInput still falls back to the rendered
+  // CSS var (with a chained fallback to --newtab-highlight) when
+  // storage is empty.
   const initial = scope === 'perTheme' && isPerThemeKey(key)
-    ? readPerThemeValue(key === 'shadowColor' ? sourceKey as PerThemeKey : key)
-    : getSetting(sourceKey);
+    ? readPerThemeValue(key)
+    : getSetting(key);
   // Normalize through resolveCssColor: if a user upgraded from a pre-0.2.36
   // build, their storage may still hold a `var()`/`color-mix()` string
   // written by the old saveThemeChange. <input type="color"> rejects
@@ -1112,7 +1083,7 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   details.appendChild(createRow('背景颜色', createColorInput('backgroundColor', 'perTheme'), 'backgroundColor', '新标签页的背景颜色（不设置背景图时生效）。', 'perTheme'));
   details.appendChild(createRow('高亮颜色', createColorInput('highlightColor', 'perTheme'), 'highlightColor', '鼠标悬停或当前选中书签时的背景高亮颜色。', 'perTheme'));
   details.appendChild(createRow('高亮文字颜色', createColorInput('highlightFontColor', 'perTheme'), 'highlightFontColor', '鼠标悬停或选中时书签文字的颜色。', 'perTheme'));
-  details.appendChild(createRow('阴影颜色', createColorInput('shadowColor', 'perTheme'), 'shadowColor', '书签高亮时四周光晕颜色；与"高亮颜色"共享同一 CSS 变量，修改会自动同步到高亮颜色。', 'perTheme'));
+  details.appendChild(createRow('阴影颜色', createColorInput('shadowColor', 'perTheme'), 'shadowColor', '书签高亮时四周光晕（box-shadow）的颜色。默认与"高亮颜色"相同（共用同一色调），可独立设置为不同颜色。', 'perTheme'));
   details.appendChild(createRow('阴影模糊', createNumberInput('shadowBlur', '0.1', 'perTheme'), 'shadowBlur', '高亮光晕的模糊半径，数值越大光晕越大越柔和。', 'perTheme'));
   // highlightRound: the description includes the active theme's
   //  computed `calc(var(--radius) - 2px)` in px so the user sees
