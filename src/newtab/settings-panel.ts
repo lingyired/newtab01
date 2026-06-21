@@ -428,6 +428,37 @@ function getDefaults(): Settings {
   };
 }
 
+/**
+ * Coerce a raw input value to match the type of the stored setting.
+ * HTMLSelectElement.value and the value of an unchecked HTMLInputElement
+ * are always strings, but several settings (newtab, lock, lockColumns,
+ * showTop, numberTop, ...) are typed as number in `Settings`. Without
+ * coercion, those values round-trip through chrome.storage as strings and
+ * break strict equality checks in consumers (e.g. `newtab === 1` would
+ * never match `'1'`, so "打开链接方式" silently has no effect).
+ *
+ * Reference value is whatever `getSetting` currently returns — for a
+ * fresh install that's the default (number), and for an upgraded user
+ * it's whatever the previous run wrote (potentially a string from a
+ * pre-fix saveSetting, which `coerceToSettingType` will rewrite on the
+ * next save). This covers all Settings keys without enumerating them.
+ */
+function coerceToSettingType<K extends keyof Settings>(key: K, value: unknown): unknown {
+  if (value === '' || value === undefined || value === null) return value;
+  const reference = getSetting(key);
+  if (typeof reference === 'number') {
+    if (typeof value === 'string') {
+      const num = Number(value);
+      if (!Number.isNaN(num)) return num;
+    }
+    return value;
+  }
+  if (typeof reference === 'boolean' && typeof value === 'string') {
+    return value === 'true' || value === '1';
+  }
+  return value;
+}
+
 function saveSetting(key: keyof Settings): void {
   const input = document.getElementById(`sp-${key}`);
   if (!input) return;
@@ -448,6 +479,13 @@ function saveSetting(key: keyof Settings): void {
   } else if (input instanceof HTMLTextAreaElement) {
     value = input.value;
   }
+
+  // Normalize the value type to match the setting's declared type
+  // (see coerceToSettingType comment). `updateSetting` writes through
+  // to chrome.storage; without this, a `<select>` with `<option value="1">`
+  // would persist the string '1' and downstream `getSetting('newtab')`
+  // consumers would see a string while the type schema says number.
+  value = coerceToSettingType(key, value);
 
   // Capture before/after for the debug log.
   const before = getSetting(key);

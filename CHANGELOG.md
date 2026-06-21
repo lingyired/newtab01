@@ -5,6 +5,18 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.95] - 2026-06-20
+
+### Fixed
+- **「打开链接方式」实际生效**（v0.2.94 只把 `newtab` 加进 `RERENDER_KEYS`，没有修真正根因）。根因：`saveSetting` 提取 `<select>` 值时直接 `value = input.value`（string），但 `Settings.newtab` 声明为 `number`，所以 `getSetting('newtab')` 返回 `'0'/'1'/'2'`（string），`link.ts` 的 `newtab === 1` 严格比较永远 false，结果「打开链接方式」三个选项全部无效果（默认 0 时与原行为一致，但 1/2 都退化为「不变」）。
+  - 修 1：`src/newtab/settings-panel.ts:saveSetting` 提取 value 后调 `coerceToSettingType(key, value)`，reference 当前存储值（默认 number），若是 number 就 `Number(value)` 规整；同步处理 boolean 字段（虽然当前 checkbox 路径已转 0/1，留作防御）。
+  - 修 2：`src/lib/storage/settings.ts:initSettings` 加 `coerceNumberSettings()` 一次性迁移：扫描 storage 里所有「defaults 是 number 但 stored 是 string」的字段，rewrite 并 `setSync()` 写回。处理 v0.2.94 及之前已经存进去的脏值（用户即使没重新打开面板，下次启动也会自动修复）。
+- **应用（apps）跟随「打开链接方式」设置**：apps 的 URL 走 `chrome://apps` / `appLaunchUrl`，命中 `link.ts:58-70` 的 chrome:// 分支，调 `openLink(url, newtab || (e.ctrlKey ? 2 : 0))`。修 1 之后 `newtab` 是 number，openLink 的 `if (newtab)` + `createTab(url, newtab === 1, ...)` 都正确分流。
+  - 选 0（同一标签）：`updateTab` 把当前 newtab 跳到 app（chrome:// 协议在 newtab override 里能跳）。
+  - 选 1（前台新标签）：`createTab(url, true, tab.id)`。
+  - 选 2（后台新标签）：`createTab(url, false, tab.id)`。
+  - 之前因为 string 误判 `newtab === 1` 永远 false，apps **总是**走 `createTab(url, false, ...)`，表现为「永远后台」，符合用户反馈「应用页面现在是新建后台页面的方式打开的」。
+
 ## [0.2.94] - 2026-06-20
 
 ### Fixed

@@ -227,7 +227,21 @@ export async function initSettings(): Promise<Settings> {
       await setSync(SETTINGS_KEY, merged);
       debug.log('settings', 'migrate legacy palette defaults -> empty (theme takes over)');
     }
-    currentSettings = merged;
+    // Coerce settings whose declared type is number but whose stored
+    // value is a string. Pre-0.2.95 saveSetting wrote the raw
+    // HTMLSelectElement.value (always string) directly, so e.g.
+    // `newtab` ended up as '0'/'1'/'2' instead of 0/1/2. Without this
+    // rewrite, every `getSetting('newtab') === 1` strict comparison in
+    // consumers (link click handler, etc.) silently failed. The fix
+    // mirrors coerceToSettingType in settings-panel.ts; doing it here
+    // also covers users who loaded the bad values before the panel
+    // was reopened.
+    const typed = coerceNumberSettings(merged);
+    if (typed.dirty) {
+      await setSync(SETTINGS_KEY, typed.next);
+      debug.log('settings', 'migrate string-typed number settings', typed.dirtyKeys);
+    }
+    currentSettings = typed.next;
   } else {
     await migrateLegacySettings();
     const after = await getSync<Settings>(SETTINGS_KEY);
@@ -236,6 +250,34 @@ export async function initSettings(): Promise<Settings> {
   initialized = true;
   debug.log('settings', 'initSettings', { fromStorage: !!stored, count: Object.keys(currentSettings).length });
   return currentSettings;
+}
+
+/**
+ * Walk the merged settings and rewrite any field whose declared type
+ * (per the `defaults` shape) is number but whose stored value is a
+ * numeric string. Returns a flag + key list so the caller can persist
+ * only when something actually changed.
+ */
+function coerceNumberSettings(merged: Settings): { next: Settings; dirty: boolean; dirtyKeys: string[] } {
+  let dirty = false;
+  const dirtyKeys: string[] = [];
+  const next: Settings = { ...merged };
+  for (const k of Object.keys(defaults) as Array<keyof Settings>) {
+    const reference = defaults[k];
+    if (typeof reference !== 'number') continue;
+    const v = next[k] as unknown;
+    if (typeof v === 'string' && v !== '') {
+      const num = Number(v);
+      if (!Number.isNaN(num)) {
+        // Cast drops the union so we can assign a narrowed number;
+        // we just verified typeof defaults[k] === 'number' above.
+        (next as unknown as Record<string, unknown>)[k] = num;
+        dirty = true;
+        dirtyKeys.push(String(k));
+      }
+    }
+  }
+  return { next, dirty, dirtyKeys };
 }
 
 /** Check if settings have been loaded */
