@@ -1,7 +1,7 @@
 // Special folders — topSites, recent, closed, devices, apps
 // Each returns BookmarkNode[] for rendering
 
-import type { BookmarkNode } from './types';
+import type { BookmarkNode, Settings } from './types';
 import { getSetting } from '../../lib/storage/settings';
 import {
   getTopSites,
@@ -11,6 +11,32 @@ import {
   getInstalledApps,
   restoreSession,
 } from '../../lib/chrome/bookmarks';
+
+/** Map from special folder ID to its `show*` setting key.
+ *  Hoisted from `layout-ops.ts` in v0.2.94 so board.ts can use
+ *  `isSpecialVisible` without creating a layout-ops → board import
+ *  cycle. board.ts and column.ts both import from this module. */
+export const SHOW_KEY_MAP: Record<string, keyof Settings> = {
+  apps: 'showApps',
+  top: 'showTop',
+  recent: 'showRecent',
+  closed: 'showClosed',
+  devices: 'showDevices',
+};
+
+/** True when a special folder ID is currently visible per the user's
+ *  `show*` setting. Returns true for any non-special ID (regular
+ *  bookmark folders) so the predicate is safe to use as a filter
+ *  on the whole `ids` list. */
+export function isSpecialVisible(id: string): boolean {
+  const key = SHOW_KEY_MAP[id];
+  if (!key) return true;
+  try {
+    return getSetting(key) !== 0;
+  } catch {
+    return true;
+  }
+}
 
 /** Get children for a special or regular bookmark node */
 export async function getChildren(node: BookmarkNode): Promise<BookmarkNode[]> {
@@ -102,7 +128,14 @@ async function getClosedNodes(): Promise<BookmarkNode[]> {
 
 /** Other Devices */
 async function getDevicesNodes(): Promise<BookmarkNode[]> {
-  const maxResults = getSetting('numberClosed');
+  // v0.2.94: the v0.2.x code read `getSetting('numberClosed')` here,
+  // which is the "最近关闭数量" setting — a copy/paste leftover that
+  // silently controlled how many devices this folder showed. There
+  // is no `numberDevices` setting in the UI, so hardcode 10 to match
+  // the other count defaults (`numberTop` / `numberRecent` /
+  // `numberClosed` all default to 10). If a future feature wants to
+  // expose a `numberDevices` slider, wire it here.
+  const maxResults = 10;
   const devices = await getDevices(maxResults);
   const nodes: BookmarkNode[] = [];
 

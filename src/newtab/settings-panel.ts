@@ -48,6 +48,13 @@ const RERENDER_KEYS: ReadonlySet<keyof Settings> = new Set([
   'columnWidth',
   'rememberOpen',
   'autoClose',
+  // v0.2.94: `newtab` is the open-link mode (current/foreground/background).
+  // Each bookmark <a> element has either `target='_blank'` (foreground) or
+  // a click handler (background) baked in at renderLink time. Changing
+  // the setting must trigger a full re-render so existing links pick up
+  // the new behavior. Without this entry, toggling "打开链接方式" silently
+  // had no effect until the next manual reload.
+  'newtab',
 ]);
 
 let panelEl: HTMLElement | null = null;
@@ -553,18 +560,23 @@ async function saveThemeChange(theme: string): Promise<void> {
   debug.log('settings-panel', 'saveThemeChange', { from: before, to: theme, bundle });
 }
 
-function createNumberInput(key: keyof Settings): HTMLInputElement {
+function createNumberInput(key: keyof Settings, step: string = '0.1'): HTMLInputElement {
   const input = document.createElement('input');
   input.type = 'number';
   input.id = `sp-${key}`;
   input.value = String(getSetting(key));
-  // All scale()-driven settings accept fractional inputs (0.5, 1.5, etc.)
+  // Most scale()-driven settings accept fractional inputs (0.5, 1.5, etc.)
   // — default `step="1"` would reject those as `stepMismatch` and make the
   // browser show a validation error on commit. `step="0.1"` lets the user
   // type any one-decimal-place value; values outside [0,1,2] still work
   // because `change` fires regardless of validity and the scale() curve
   // extrapolates linearly past the ends.
-  input.step = '0.1';
+  // v0.2.94: callers that want integer steps (e.g. count limits like
+  // `numberTop` / `numberRecent` / `numberClosed`) can pass `step="1"`
+  // to get a normal integer spinner and avoid the "5.1 / 5.2" UX of a
+  // fractional step. The default stays "0.1" so existing call sites
+  // (spacing, fontSize, shadowBlur, etc.) are unaffected.
+  input.step = step;
   input.addEventListener('change', () => saveSetting(key));
   return input;
 }
@@ -1095,11 +1107,11 @@ function renderFeaturesTab(): HTMLElement {
   const container = el('div', 'sp-tab-content');
 
   container.appendChild(createRow('显示常用网站', createCheckboxInput('showTop'), 'showTop', '是否在列中渲染"常用网站"特殊文件夹（来自 Chrome topSites）。'));
-  container.appendChild(createRow('常用网站数量', createNumberInput('numberTop'), 'numberTop', '限制"常用网站"中显示的条目数量。'));
+  container.appendChild(createRow('常用网站数量', createNumberInput('numberTop', '1'), 'numberTop', '限制"常用网站"中显示的条目数量。'));
   container.appendChild(createRow('显示最近访问', createCheckboxInput('showRecent'), 'showRecent', '是否在列中渲染"最近访问"特殊文件夹。'));
-  container.appendChild(createRow('最近访问数量', createNumberInput('numberRecent'), 'numberRecent', '限制"最近访问"中显示的条目数量。'));
+  container.appendChild(createRow('最近访问数量', createNumberInput('numberRecent', '1'), 'numberRecent', '限制"最近访问"中显示的条目数量。'));
   container.appendChild(createRow('显示最近关闭', createCheckboxInput('showClosed'), 'showClosed', '是否在列中渲染"最近关闭"特殊文件夹（来自 Chrome sessions）。'));
-  container.appendChild(createRow('最近关闭数量', createNumberInput('numberClosed'), 'numberClosed', '限制"最近关闭"中显示的条目数量。'));
+  container.appendChild(createRow('最近关闭数量', createNumberInput('numberClosed', '1'), 'numberClosed', '限制"最近关闭"中显示的条目数量。'));
   container.appendChild(createRow('显示其他设备', createCheckboxInput('showDevices'), 'showDevices', '是否显示来自其他已同步设备的标签页列表。'));
   container.appendChild(createRow('显示应用', createCheckboxInput('showApps'), 'showApps', '是否显示已安装的 Chrome 应用/扩展快捷入口。'));
   container.appendChild(createRow('显示根节点', createCheckboxInput('showRoot'), 'showRoot', '单文件夹列中是否保留根节点；关闭时会直接展开该文件夹的内容。'));

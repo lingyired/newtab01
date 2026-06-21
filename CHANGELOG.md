@@ -5,6 +5,25 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.94] - 2026-06-20
+
+### Fixed
+功能 tab 选项 bug 修复（基于 [docs/选项测试记录.md](./docs/选项测试记录.md) 「新增」段落）。branch：`fix/settings-options-bugs`（延续 v0.2.93）。
+
+- **5 个 show* toggle 实际生效**（`showTop` / `showApps` / `showRecent` / `showClosed` / `showDevices`）：根因——`verifyColumns` 只 ADD special ID 到列布局，从不 REMOVE，所以即使 toggle 关闭，special folder 仍存储在 columns 数组里并在每次 re-render 时渲染。
+  - 修：把 `SHOW_KEY_MAP` + `isSpecialVisible` 从 `layout-ops.ts` 移到 `bookmarks/special-folders.ts`（避开 layout-ops → board import cycle），让 `column.ts:renderColumn` 和 `board.ts:renderColumns` 都能导入。
+  - `column.ts:renderColumn` 用 `rawIds.filter((id) => isSpecialVisible(id))` 在渲染前过滤掉隐藏的 special。layout 存储里仍保留 ID——重新开启 toggle 后 special 在原位置回来。
+  - `board.ts:renderColumns` 用 `columns.filter(col => col.some(id => isSpecialVisible(id)))` 过滤整列，避免一整列全是隐藏 special 时渲染成空白 1/N 列 div。
+- **number input step 修复**：3 个 count 输入（`numberTop` / `numberRecent` / `numberClosed`）从 `step="0.1"` 改为 `step="1"`。
+  - `createNumberInput(key)` 加可选第二参 `step: string = '0.1'`，默认保持 0.1 不影响其他 scale 驱动的 setting（spacing / fontSize / shadowBlur 等）。
+  - 3 个 count 行显式传 `'1'`。
+- **`newtab`（打开链接方式）加入 `RERENDER_KEYS`**：原 `RERENDER_KEYS` 不含 `newtab`，所以改设置后既有的 `<a>` 元素仍带旧 `target` 属性 / 旧 click handler，必须刷新页面才生效。加 `'newtab'` 后切换会立即触发 `renderColumns()`，新 `<a>` 重新生成。
+- **`getDevicesNodes` 错 key 修复**（顺手）：`special-folders.ts:105` 原代码读 `getSetting('numberClosed')`（最近关闭数量）来控制 devices 数量，明显的 copy/paste 残留。改成 hardcode 10（与其他 count default 一致）。如果未来要暴露 `numberDevices` 滑块，在这一行 wire 即可。
+
+### Notes
+- 重新开启 show* toggle 后，special folder 在原列原位置恢复（layout 存储未变）。
+- 「功能」tab 的「显示根节点」与「布局」tab 的「显示顶层文件夹」是同字段（showRoot）的重复——按 v0.2.93 决策保留，本 PR 不动。
+
 ## [0.2.93] - 2026-06-20
 
 ### Fixed

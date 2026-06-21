@@ -1,7 +1,7 @@
 // Column rendering — creates a column div and renders its folder list
 
 import type { BookmarkNode } from './types';
-import { getSubTreeStub, getChildren } from './special-folders';
+import { getSubTreeStub, getChildren, isSpecialVisible } from './special-folders';
 import { renderFolder } from './folder';
 import { renderLink } from './link';
 import { getColumnMenuItems, renderMenu } from './context-menu';
@@ -11,8 +11,15 @@ import * as debug from '../../lib/debug';
 
 /** Render a single column at the given index into the target element */
 export async function renderColumn(index: number, target: HTMLElement, columns: string[][]): Promise<void> {
-  const ids = columns[index];
-  if (!ids || ids.length === 0) return;
+  // v0.2.94: filter out special folder IDs whose `show*` toggle is off.
+  // Previously `verifyColumns` only ADDED specials to the layout, so
+  // toggling `showTop=0` (etc.) had no visible effect — the special
+  // remained in the column and was rendered on every re-render. The
+  // layout in storage is left untouched (toggling back on restores the
+  // special at the same position).
+  const rawIds = columns[index] ?? [];
+  const ids = rawIds.filter((id) => isSpecialVisible(id));
+  if (ids.length === 0) return;
   debug.log('render', 'renderColumn', { index, ids, showRoot: !!getSetting('showRoot') });
 
   const inBookmarkBarContext = ids.includes('1');
