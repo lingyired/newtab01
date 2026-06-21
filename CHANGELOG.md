@@ -5,6 +5,32 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.93] - 2026-06-20
+
+### Fixed
+设置面板 8 个选项 bug 修复（基于 [docs/选项测试记录.md](./docs/选项测试记录.md)）。所有改动集中在 layout tab 的语义/接线 + 移除多余选项。branch：`fix/settings-options-bugs`。
+
+#### 布局 tab
+- **「行间距」修复语义**：原来是写 `#main a { line-height; padding-left/right }`（`apply.ts`），但 label 是「行间距」——视觉上两个相邻 link 之间的间距。改成写 `:root { --newtab-spacing: Xpx }`（specificity 0,1,0 盖过 globals.css 0），cascade 进 `newtab.css` 的 `gap: var(--newtab-spacing)`。scale 0.5/1/1.5 → 4px/10px/20px。link 的 line-height / padding 维持 `newtab.css` 静态 1.4 + `0.45em 0.8em 0.45em 1.2em` 不动。description 同步改为「书签链接之间的垂直间距（行与行之间的距离）」。
+- **「垂直边距」移除**：用户反馈「可以移除」。从 `Settings` 类型 + `defaults` + `STYLE_KEYS` + `settings-panel.ts` layout tab + `lib/storage/settings.ts` legacy migration 全链路删。同时 `globals.css` 那个「定义但未消费」的 `--newtab-vmargin` CSS var 一并清掉（CHANGELOG v0.2.79 提过「下个 PR 修」，本 PR 落地）。
+- **「对齐方式」实现为生效**：原 `apply.ts` 没消费 `align` 设置（只在 `RERENDER_KEYS` 里，没有对应 CSS 规则输出），切换无反应。改成 emit `#main { text-align: ${align} }`（column 是 `inline-block`，走 text-level flow）。从 `RERENDER_KEYS` 移除 align（不需 re-render，纯 CSS 规则更新）。description 加一句「需配合「列宽」使用（auto 模式下整组列填满整宽，无效果）」提醒用户。
+- **「锁定列」接线到右键菜单 + 列拖拽 + 列 drop**：
+  - 根因 1：`context-menu.ts` 之前 `const lock = false; // Will be read from settings when integrated`（未集成），所以即使开启「锁定列」，右键仍能看到「Move column / Remove column / Create new column / Remove folder」。改为 `Number(getSetting('lockColumns')) !== 0` 在 right-click 时读。
+  - 根因 2：`enableDragColumn` 之前只检查 `getSetting('lock')`，没看 `lockColumns`，所以「锁定列」开启时列头仍可拖。改为同时检查 `lock` 和 `lockColumns`。
+  - 根因 3：`drop-handler.ts` 的 `captureAndDrop` 调 `addColumn` 时没看 `lockColumns`，所以拖出多列场景仍能 addColumn。改为在 `addColumn` 分支前置 `if (getSetting('lockColumns')) return;`（`addRow` 不受影响，是列内 reorder 不是列结构变更）。
+- **「显示顶层文件夹」接线错误修复**：layout tab 的 toggle 之前绑 `showTop`，但实际渲染走 `getSetting('showRoot')`（`column.ts:21, 32`），所以关掉 toggle 完全无效。改绑 `showRoot`。功能 tab 的「显示根节点」（`settings-panel.ts`）本来就是 `showRoot` 字段，重复了但保留——按用户决策 layout tab 是用户测试时使用的地方，重复项保留为无关改动不动。
+- **「锁定拖拽」运行时重新检查**：
+  - 根因：`enableDragFolder` / `enableDragColumn` / `enableDragDrop` 都在 `enable*` 调用时一次性 check `getSetting('lock')`，之后设置变更不会重新生效。toggle 后仍可拖一次（因为旧的 dragstart listener 还在），刷新页面后才彻底锁住。
+  - 修：在 `dragstart` handler 内部再 `if (getSetting('lock')) { event.preventDefault(); return; }`，`drop-handler.ts` 的 `onDrop` 同理。这样 toggle 设置后**下一次** drag 立即生效，无需刷新、无需 re-render。`lockColumns` 复用同模式在 `dragstart` 重检（与上面「锁定列」修复共用一套代码）。
+
+#### 功能 tab
+- **「隐藏设置按钮」移除**：用户反馈「不允许隐藏」。从 `Settings` 类型 + `defaults` + `legacy migration`（`hideOptions` key）+ `settings-panel.ts` 功能 tab + `app.ts:158-161` 的 `if (getSetting('hideOptions'))` 隐藏齿轮的代码全链路删。设置按钮（齿轮）始终可见。
+- **「显示搜索栏」移除**：用户反馈「不允许隐藏」。从 `Settings` 类型 + `defaults` + `legacy migration`（`showSearchBar` key）+ `settings-panel.ts` 功能 tab + `topbar.ts` 的 `if (showSearch)` 包装 + `search-main.ts` 的 `if (getSetting('showSearch') === 0) return;` 早返回 + `undo-button.ts` 的 `renderUndoButton(topbar, showSearch)` 第二参数全链路删。搜索栏始终显示（`⌘K` 仍可唤起，是同一 DOM 节点）。顺手把 `search-main.ts` 那个不再使用的 `getSetting` import 删掉。
+
+### Notes
+- 所有被移除的 legacy 迁移 key 都不在活跃用户数据里（pre-0.2.30 才有可能出现），实测用户群体 > 99% 都是 0.2.30+ 直接拿 `Settings` 字段。
+- `align` 在 `columnWidth: auto`（默认）下无可见效果（整组列填满 100% 宽），需要「列宽」设固定值（如 `200px`）才能看出 left/center/right 的差异。已在 description 里写明。
+
 ## [0.2.92] - 2026-06-20
 
 ### Fixed

@@ -2,57 +2,55 @@
 // Also creates the static results container (positioned absolute below the
 // input) and the overlay backdrop (covers the page below the topbar).
 
-import { getSetting } from '../lib/storage/settings';
 import { setInputElement } from '../features/search/search-main';
 import { openSettingsPanel } from './settings-panel';
 import { renderUndoButton } from './undo-button';
 import { createAppearanceToggle } from './appearance-toggle';
 
-/** Create and render the topbar (and its associated search DOM). */
+/** Create and render the topbar (and its associated search DOM).
+ *  v0.2.93: the search bar is always rendered (previously gated by
+ *  `showSearch` setting, now removed per user request). */
 export function createTopbar(container: HTMLElement): void {
   const topbar = document.createElement('div');
   topbar.id = 'topbar';
 
   // Search box (centered)
-  const showSearch = getSetting('showSearch') !== 0;
-  if (showSearch) {
-    const searchWrap = document.createElement('div');
-    searchWrap.classList.add('search-wrap');
+  const searchWrap = document.createElement('div');
+  searchWrap.classList.add('search-wrap');
 
-    const searchInput = document.createElement('input');
-    searchInput.type = 'text';
-    searchInput.id = 'search-input';
-    searchInput.placeholder = 'Search bookmarks... (⌘K)';
-    searchInput.classList.add('search-input');
-    searchInput.setAttribute('aria-label', 'Search bookmarks');
-    searchInput.setAttribute('autocomplete', 'off');
-    searchInput.setAttribute('spellcheck', 'false');
+  const searchInput = document.createElement('input');
+  searchInput.type = 'text';
+  searchInput.id = 'search-input';
+  searchInput.placeholder = 'Search bookmarks... (⌘K)';
+  searchInput.classList.add('search-input');
+  searchInput.setAttribute('aria-label', 'Search bookmarks');
+  searchInput.setAttribute('autocomplete', 'off');
+  searchInput.setAttribute('spellcheck', 'false');
 
-    // Static results panel — positioned absolute below the input
-    const resultsEl = document.createElement('div');
-    resultsEl.id = 'search-results';
-    resultsEl.setAttribute('role', 'listbox');
-    resultsEl.setAttribute('aria-label', 'Search results');
+  // Static results panel — positioned absolute below the input
+  const resultsEl = document.createElement('div');
+  resultsEl.id = 'search-results';
+  resultsEl.setAttribute('role', 'listbox');
+  resultsEl.setAttribute('aria-label', 'Search results');
 
-    searchWrap.appendChild(searchInput);
-    searchWrap.appendChild(resultsEl);
-    topbar.appendChild(searchWrap);
+  searchWrap.appendChild(searchInput);
+  searchWrap.appendChild(resultsEl);
+  topbar.appendChild(searchWrap);
 
-    // Static overlay — full viewport, below the topbar in z-order
-    const overlayEl = document.createElement('div');
-    overlayEl.id = 'search-overlay';
-    overlayEl.setAttribute('aria-hidden', 'true');
+  // Static overlay — full viewport, below the topbar in z-order
+  const overlayEl = document.createElement('div');
+  overlayEl.id = 'search-overlay';
+  overlayEl.setAttribute('aria-hidden', 'true');
 
-    setInputElement(searchInput, resultsEl, overlayEl);
+  setInputElement(searchInput, resultsEl, overlayEl);
 
-    // Append overlay first so it's behind the topbar in stacking
-    container.appendChild(overlayEl);
-  }
+  // Append overlay first so it's behind the topbar in stacking
+  container.appendChild(overlayEl);
 
   // Undo button — sits to the right of the search box, hidden until a
-  // drop happens. Only relevant when the search box is visible (the
-  // topbar without a search input would leave an orphaned button).
-  renderUndoButton(topbar, showSearch);
+  // drop happens. v0.2.93: always created (was previously gated by
+  // `showSearch` so an empty topbar would not have an orphan button).
+  renderUndoButton(topbar);
 
   // v0.2.87: appearance toggle (亮 / 跟随系统 / 暗). Sits to the LEFT
   // of the settings button, same 32px height. Independent

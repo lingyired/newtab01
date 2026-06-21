@@ -45,7 +45,6 @@ const RERENDER_KEYS: ReadonlySet<keyof Settings> = new Set([
   'numberRecent',
   'numberClosed',
   'lockColumns',
-  'align',
   'columnWidth',
   'rememberOpen',
   'autoClose',
@@ -399,8 +398,6 @@ function getDefaults(): Settings {
     spacing: 1,
     width: 1,
     hPos: 1,
-    vMargin: 1,
-    hideOptions: 0,
     lock: 0,
     showTop: 1,
     showApps: 1,
@@ -408,7 +405,6 @@ function getDefaults(): Settings {
     showClosed: 1,
     showDevices: 1,
     showRoot: 1,
-    showSearch: 1,
     newtab: 0,
     rememberOpen: 1,
     autoClose: 0,
@@ -645,16 +641,15 @@ function createDarkModeSelectInput(): HTMLSelectElement {
 function renderLayoutTab(): HTMLElement {
   const container = el('div', 'sp-tab-content');
 
-  container.appendChild(createRow('行间距', createNumberInput('spacing'), 'spacing', '控制书签链接之间的垂直行高，数值越大行距越宽。'));
-  container.appendChild(createRow('垂直边距', createNumberInput('vMargin'), 'vMargin', '新标签页主体距离顶部的空白边距。'));
+  container.appendChild(createRow('行间距', createNumberInput('spacing'), 'spacing', '书签链接之间的垂直间距（行与行之间的距离）。'));
   container.appendChild(createRow('列宽', createTextInput('columnWidth'), 'columnWidth', '每列的宽度。可以填 auto（按列数等分）或具体值（如 200px、20%）。'));
   container.appendChild(createRow('对齐方式', createSelectInput('align', [
     { value: 'left', label: '左对齐' },
     { value: 'center', label: '居中' },
     { value: 'right', label: '右对齐' },
-  ]), 'align', '整组列在新标签页中的水平对齐方式。'));
+  ]), 'align', '整组列在新标签页中的水平对齐方式（需配合「列宽」使用，auto 模式下整组列填满整宽，无效果）。'));
   container.appendChild(createRow('锁定列', createCheckboxInput('lockColumns'), 'lockColumns', '开启后禁止通过拖拽改变列的位置和数量。'));
-  container.appendChild(createRow('显示顶层文件夹', createCheckboxInput('showTop'), 'showTop', '是否在列中渲染根级文件夹节点（关闭时直接显示其子项）。'));
+  container.appendChild(createRow('显示顶层文件夹', createCheckboxInput('showRoot'), 'showRoot', '是否在列中渲染根级文件夹节点（关闭时直接显示其子项）。'));
   container.appendChild(createRow('自动缩放', createCheckboxInput('autoScale'), 'autoScale', '开启后列宽与边距随窗口大小自动按比例缩放；关闭则使用固定像素值。'));
   container.appendChild(createRow('锁定拖拽', createCheckboxInput('lock'), 'lock', '开启后禁止通过拖拽移动或排序书签项。'));
 
@@ -1099,8 +1094,6 @@ function setCustomThemeStatus(
 function renderFeaturesTab(): HTMLElement {
   const container = el('div', 'sp-tab-content');
 
-  container.appendChild(createRow('隐藏设置按钮', createCheckboxInput('hideOptions'), 'hideOptions', '隐藏新标签页右上角的齿轮按钮；仍可通过 ⌘K 唤起搜索并打开设置。'));
-  container.appendChild(createRow('显示搜索栏', createCheckboxInput('showSearch'), 'showSearch', '关闭后顶栏的搜索框会隐藏，但 ⌘K 快捷键仍然可用。'));
   container.appendChild(createRow('显示常用网站', createCheckboxInput('showTop'), 'showTop', '是否在列中渲染"常用网站"特殊文件夹（来自 Chrome topSites）。'));
   container.appendChild(createRow('常用网站数量', createNumberInput('numberTop'), 'numberTop', '限制"常用网站"中显示的条目数量。'));
   container.appendChild(createRow('显示最近访问', createCheckboxInput('showRecent'), 'showRecent', '是否在列中渲染"最近访问"特殊文件夹。'));

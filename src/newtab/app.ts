@@ -154,12 +154,6 @@ export async function initApp(): Promise<void> {
     applySettingsToDOM();
     log('init', 'settings applied to DOM');
 
-    // Hide options button if configured
-    if (getSetting('hideOptions')) {
-      const optionsBtn = document.getElementById('options_button');
-      if (optionsBtn) optionsBtn.style.opacity = '0';
-    }
-
     // Open options if requested
     if (window.location.search === '?options' || window.location.hash === '#settings=1') {
       log('init', 'opening settings panel (?options / #settings=1)');

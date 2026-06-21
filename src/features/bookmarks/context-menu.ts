@@ -10,6 +10,7 @@ import { getCoords, addColumn, removeRow, removeColumn, getColumns } from '../dr
 import { captureSnapshot, pushSnapshot } from '../drag-drop/history';
 import { openAllLinks } from './folder-actions-handler';
 import { createTab } from '../../lib/chrome/bookmarks';
+import { getSetting } from '../../lib/storage/settings';
 
 /** Currently active menu element, if any */
 let activeMenu: HTMLUListElement | null = null;
@@ -167,8 +168,14 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
     });
   }
 
-  // Layout items (if not locked)
-  const lock = false; // Will be read from settings when integrated
+  // Layout items (if not locked) — v0.2.93: read `lockColumns` from
+  // storage at right-click time. Was hardcoded `false` (a "TODO when
+  // integrated" comment), so the menu kept showing "Create new column"
+  // / "Remove folder" / "Move column" / "Remove column" even when the
+  // user had the "锁定列" toggle on in the settings panel. Reading
+  // here (vs at module load) means toggling the setting takes effect
+  // on the next right-click without needing a page reload.
+  const lock = Number(getSetting('lockColumns')) !== 0;
   if (!lock) {
     const coords = getCoords(node.id);
 
@@ -246,8 +253,11 @@ export function getColumnMenuItems(index: number): (MenuItem | null)[] {
     items.push(...folderItems);
   }
 
-  // Column layout items
-  if (columns.length > 1) {
+  // Column layout items — gated by `lockColumns` (v0.2.93). Reading
+  // the setting at right-click time means the toggle takes effect
+  // immediately on the next menu, no page reload needed.
+  const columnsLocked = Number(getSetting('lockColumns')) !== 0;
+  if (!columnsLocked && columns.length > 1) {
     items.push(null); // separator
 
     if (index > 0) {

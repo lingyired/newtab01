@@ -78,6 +78,17 @@ function onDrop(event: DragEvent): void {
   event.stopPropagation();
   event.preventDefault();
 
+  // v0.2.93: re-check the lock state at drop time. `enableDragDrop`
+  // already checked at startup, but the user may have toggled the
+  // setting on after the page loaded. Without this guard, a drop
+  // that starts when `lock=0` would still apply its mutation even
+  // after the user flipped `lock=1` mid-drag.
+  if (getSetting('lock')) {
+    debug.log('drop', 'onDrop: lock is on, dropping');
+    clearDropTarget();
+    return;
+  }
+
   const dragIds = getDragIds();
   if (!dragIds) return;
 
@@ -144,6 +155,14 @@ async function captureAndDrop(
   if (dragIds.length === 1 && y !== null) {
     await addRow(dragIds[0]!, x, y);
   } else {
+    // Column-structure drop. v0.2.93: gate by `lockColumns` so the
+    // "锁定列" setting prevents new columns from being created via
+    // drag. `addRow` above is unchanged (in-column folder reorder
+    // is a single-column op, not a column-structure change).
+    if (getSetting('lockColumns')) {
+      debug.log('drop', 'captureAndDrop: lockColumns is on, refusing addColumn');
+      return;
+    }
     const rect = target.getBoundingClientRect();
     const relativeX = event.clientX - rect.left;
     // targetX is in the ORIGINAL array coordinate system (left half =
