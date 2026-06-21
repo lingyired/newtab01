@@ -25,6 +25,7 @@
 | `feat/dark-mode-setting` | 🗄 冻结 | darkMode 一等设置 + dark variant dropdown 修复（v0.2.75 + v0.2.76）| `f44a4cc` (v0.2.76) |
 | `feat/url-import` | 🗄 冻结 | tweakcn URL 粘贴导入 + JSON 路径移除（v0.2.77 + v0.2.78）| `427173f` (v0.2.78) |
 | `feat/settings-gear-reposition` | 🗄 冻结 | 设置齿轮重定位 + 缩放 + Lucide 图标（v0.2.84 + v0.2.85）| `813e51d` (v0.2.85) |
+| `fix/settings-options-bugs` | 🗄 冻结 | 设置面板 16 个选项 bug 修复（v0.2.93 → v0.2.96）| `c0bf492` (v0.2.93) |
 
 **为什么 v0.2.57 是 `main` 的基线（而不是 v0.2.36 / v0.2.59）**
 
