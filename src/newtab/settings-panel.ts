@@ -297,6 +297,52 @@ const COLOR_INPUT_KEYS: ReadonlyArray<keyof Settings> = [
 ];
 
 /**
+ * Mirror of `COLOR_KEYS` in features/settings/apply.ts. Maps each
+ * palette Settings key to the `--newtab-*` CSS variable that actually
+ * carries its color on screen. Used by `resolveColorForInput` to fall
+ * back to the *rendered* color when storage is empty (the default
+ * state for the 5 palette fields). Keep in sync with apply.ts —
+ * both maps describe "which setting writes to which CSS var".
+ */
+const COLOR_INPUT_CSS_VAR: Partial<Record<keyof Settings, string>> = {
+  backgroundColor: '--newtab-bg',
+  fontColor: '--newtab-text',
+  highlightColor: '--newtab-highlight',
+  highlightFontColor: '--newtab-highlight-text',
+  shadowColor: '--newtab-highlight',
+};
+
+/**
+ * Resolve the value to paint into a `<input type="color">` for the
+ * given palette Settings key. Always returns a valid `#rrggbb` string:
+ *
+ * - If the stored value resolves to a non-empty hex/rgb (or to a
+ *   `var()`/`color-mix()` that `resolveCssColor` can render), use it.
+ * - If the stored value is empty (the 5 palette fields default to
+ *   `''` to mean "no override, use the active theme"), fall back to
+ *   the color that's actually painted on screen by reading the
+ *   mapped `--newtab-*` variable off `<html>`. This both satisfies
+ *   `<input type="color">`'s `#rrggbb` requirement and shows the
+ *   user the color they're really editing — not a misleading
+ *   black/white placeholder.
+ * - Last-resort: `#000000` (only if the CSS var is also empty,
+ *   which shouldn't happen in practice since `globals.css` derives
+ *   all 4 vars from the 8 shadcn core vars).
+ */
+function resolveColorForInput(key: keyof Settings, stored: string): string {
+  const resolved = resolveCssColor(stored);
+  if (resolved) return resolved;
+  const cssVar = COLOR_INPUT_CSS_VAR[key];
+  if (cssVar && typeof document !== 'undefined') {
+    const rendered = getComputedStyle(document.documentElement)
+      .getPropertyValue(cssVar)
+      .trim();
+    if (rendered) return resolveCssColor(rendered);
+  }
+  return '#000000';
+}
+
+/**
  * Push the current `currentSettings` values into the visible <input>
  * elements without rebuilding the DOM. No-op for inputs that don't
  * exist (panel closed) or whose value already matches storage.
@@ -313,8 +359,9 @@ function refreshInputsFromSettings(): void {
     // `resolveCssColor` is a no-op for plain hex/rgb (the common case)
     // and rescues us from a stored `var()`/`color-mix()` string — which
     // <input type="color"> would otherwise reject with "does not conform
-    // to the required format '#rrggbb'".
-    const next = resolveCssColor(String(getSetting(sourceKey) ?? ''));
+    // to the required format '#rrggbb'". v0.2.99: also fall back to the
+    // rendered CSS var when storage is ''.
+    const next = resolveColorForInput(key, String(getSetting(sourceKey) ?? ''));
     if (input.value !== next) input.value = next;
   }
   // Theme + darkMode selects live on the same tabs as the color inputs;
@@ -558,6 +605,24 @@ function createRow(
     }
     const defaults = getDefaults();
     const defaultVal = defaults[key];
+    // v0.2.99: color inputs default to '' which <input type="color">
+    //  rejects. Save '' directly to storage (clears the override) and
+    //  paint the rendered theme color into the picker synchronously,
+    //  instead of going through `saveSetting` (which would re-read
+    //  input.value as a valid hex and persist the wrong value).
+    if (input instanceof HTMLInputElement && input.type === 'color') {
+      if (key === 'shadowColor') {
+        // Mirror the empty-string clear into highlightColor so the
+        // shared `--newtab-highlight` override is wiped on both
+        // storage keys, matching what `saveSetting('shadowColor')`
+        // does for non-empty edits.
+        void saveShadowColorChange('');
+      } else {
+        void updateSetting(key, '' as Settings[typeof key]);
+      }
+      input.value = resolveColorForInput(key, '');
+      return;
+    }
     if (input instanceof HTMLInputElement) {
       if (input.type === 'checkbox') {
         input.checked = Number(defaultVal) !== 0;
@@ -909,7 +974,10 @@ function createColorInput(key: keyof Settings, scope: InputScope = 'global'): HT
   // build, their storage may still hold a `var()`/`color-mix()` string
   // written by the old saveThemeChange. <input type="color"> rejects
   // those, so resolve them at the read site.
-  input.value = resolveCssColor(String(initial ?? ''));
+  // v0.2.99: also fall back to the rendered CSS variable when storage
+  // is empty (''), so the picker never gets the literal string '' which
+  // triggers "does not conform to '#rrggbb'".
+  input.value = resolveColorForInput(key, String(initial ?? ''));
   input.addEventListener('change', () => saveSetting(key, scope));
   return input;
 }

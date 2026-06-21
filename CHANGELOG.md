@@ -5,6 +5,18 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.99] - 2026-06-21
+
+### Fixed
+- **改色时 `<input type="color">` 报 "does not conform to '#rrggbb'"**（v0.2.97 引入 per-theme per-mode 后首次暴露）。根因：5 个调色板字段（`backgroundColor` / `fontColor` / `highlightColor` / `highlightFontColor` / `shadowColor`）的默认 storage 值是 `''`（"无 override，用主题色"），v0.2.97 之前的 `resolveCssColor('')` 也返回 `''`——这个空串被直接赋给 `<input type="color">.value`，浏览器拒绝。报错出现在 `newtab-*.js:5:8475` 之类的 asset 路径，因为是 v0.2.97 引入的"打开面板 / 切换主题"路径频繁触发（`createColorInput` 渲染 + `refreshInputsFromSettings` 监听 + 4 处 `input.value = ...`）。
+  - 修：新增 `resolveColorForInput(key, stored)` 辅助函数（`src/newtab/settings-panel.ts:332`）。三层回退保证永远返回合法 `#rrggbb`：
+    1. stored 非空 → 走原 `resolveCssColor`（处理 `var()` / `color-mix()` / oklch 等）
+    2. stored 为空 → 从 `<html>` 读对应的 `--newtab-*` CSS 变量（`COLOR_INPUT_CSS_VAR` 映射），用当前真正渲染到屏幕的颜色——既满足 picker 的 `#rrggbb` 格式要求，又让用户看到的是主题色而不是误导性的黑白占位
+    3. 极端兜底 `#000000`（CSS var 也为空时）
+  - 替换 5 处 `input.value = resolveCssColor(...)` → `input.value = resolveColorForInput(...)`：`createColorInput`、global `refreshInputsFromSettings`、per-theme `refreshInputsFromSettings`、per-theme revert、全局 revert。
+  - 全局 ↩ 按钮特殊处理：palette 字段 revert 写入的是 `''`（清 override），但 `saveSetting` 会从 `input.value` 反读——直接走 `updateSetting(key, '')` + 同步用 helper 刷 picker，避免 `saveSetting` 把"helper 渲染的 hex"误存进 storage（那会变成显式 override，跨主题切换时不会跟着主题走，破坏"revert = 用主题色"语义）。`shadowColor` revert 走 `saveShadowColorChange('')` 同步清 `highlightColor`。
+  - 影响：5 个颜色 picker 在 storage 为空时（全新安装 / 之前没改过颜色的用户）不再报错；picker 显示的就是当前主题色，用户编辑时看到的是他们真正在改的东西。
+
 ## [0.2.98] - 2026-06-21
 
 ### Changed
