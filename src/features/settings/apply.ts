@@ -102,7 +102,7 @@ function resolveEffectiveSettings(): {
 
   return {
     font: overrides?.font ?? String(getSetting('font') ?? 'Sans-serif'),
-    fontSize: overrides?.fontSize ?? Number(getSetting('fontSize') ?? 18),
+    fontSize: overrides?.fontSize ?? Number(getSetting('fontSize') ?? 16),
     fontWeight: overrides?.fontWeight ?? Number(getSetting('fontWeight') ?? 400),
     fontColor: overrides?.fontColor ?? String(getSetting('fontColor') ?? ''),
     backgroundColor: overrides?.backgroundColor ?? String(getSetting('backgroundColor') ?? ''),

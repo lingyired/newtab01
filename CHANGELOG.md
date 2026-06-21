@@ -5,6 +5,12 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.98] - 2026-06-21
+
+### Changed
+- **字号全局默认值 18 → 16**（v0.2.97 把 `fontSize` 改成 px 直接存后，18 显得偏大、视觉上压过 newtab 整体层级；16 是中性默认，更贴近 OS / Chrome zoom 基线）。同步把 `16` 从 `PRIOR_FONT_SIZE_DEFAULTS` 迁移集里移除（已经是新默认值，不再算「需要升级的旧值」）；`getDefaults()`（settings-panel.ts）和 `resolveEffectiveSettings()`（apply.ts）的 `?? 18` 兜底也改为 `?? 16`。**per-theme override 不受此影响**——已经在 `themeOverrides[theme][mode].fontSize` 写过的用户值原样保留。
+  - 影响范围：全新安装 / 之前未手动调过字号的用户的初始值。其他用户不受影响。
+
 ## [0.2.97] - 2026-06-21
 
 ### Changed

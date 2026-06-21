@@ -597,7 +597,7 @@ function createRow(
 function getDefaults(): Settings {
   return {
     font: 'Sans-serif',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 400,
     theme: 'default',
     darkMode: 'system',

@@ -9,7 +9,15 @@ const SETTINGS_KEY = 'settings';
 
 const defaults: Settings = {
   font: 'Sans-serif',
-  fontSize: 18,
+  // v0.2.98: 16px is the new global default for all themes. Pre-v0.2.97
+  //  the value was 18, which was a holdover from the 1.8em-on-62.5%-root
+  //  era (18 / 10 = 1.8). Now that fontSize is stored as raw px and
+  //  flows directly to `font-size: ${fontSize}px` on `#main a`, the
+  //  explicit "18" is one size too large for a typical 16px system
+  //  font scale and visually dominates the newtab. 16 is a
+  //  size-neutral default that respects the user's OS / Chrome zoom
+  //  (we use the inherited root font-size, not a hardcoded absolute).
+  fontSize: 16,
   fontWeight: 400,
   theme: 'default',
   darkMode: 'system',
@@ -114,8 +122,10 @@ export async function updateSetting<K extends keyof Settings>(key: K, value: Set
   debug.log('settings', `update ${String(key)}`, { from: old, to: value });
 }
 
-/** Prior fontSize defaults used in earlier versions — used to detect stale values to migrate */
-const PRIOR_FONT_SIZE_DEFAULTS = new Set<number>([16, 17.5, 19, 22]);
+/** Prior fontSize defaults used in earlier versions — used to detect stale values to migrate.
+ *  v0.2.98: removed 16 (now the current default; if a user has 16 it's the intended value,
+ *  not a stale one to migrate away from). */
+const PRIOR_FONT_SIZE_DEFAULTS = new Set<number>([17.5, 19, 22]);
 
 /**
  * Legacy per-key settings written by older versions of options/app.ts.

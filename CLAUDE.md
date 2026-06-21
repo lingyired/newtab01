@@ -26,7 +26,7 @@
 | `feat/url-import` | 🗄 冻结 | tweakcn URL 粘贴导入 + JSON 路径移除（v0.2.77 + v0.2.78）| `427173f` (v0.2.78) |
 | `feat/settings-gear-reposition` | 🗄 冻结 | 设置齿轮重定位 + 缩放 + Lucide 图标（v0.2.84 + v0.2.85）| `813e51d` (v0.2.85) |
 | `fix/settings-options-bugs` | 🗄 冻结 | 设置面板 16 个选项 bug 修复（v0.2.93 → v0.2.96）| `c0bf492` (v0.2.93) |
-| `feat/appearance-theme-overrides` | 🗄 冻结 | 外观 tab 10 选项 per-theme per-mode 化 + 高亮圆角改 px + 字号改 px 直接存（v0.2.97）| 见 git log |
+| `feat/appearance-theme-overrides` | 🗄 冻结 | 外观 tab 10 选项 per-theme per-mode 化 + 高亮圆角改 px + 字号改 px 直接存（v0.2.97）+ 字号默认值 18→16（v0.2.98）| 见 git log |
 
 **为什么 v0.2.57 是 `main` 的基线（而不是 v0.2.36 / v0.2.59）**
 
