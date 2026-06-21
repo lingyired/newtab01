@@ -39,13 +39,85 @@ type ColorKey = keyof typeof COLOR_KEYS;
  * switch can wipe them and a per-color user override can win the cascade.
  * Including them here would emit a hardcoded `color: #...` rule that
  * would always trump both the theme and any later inline override.
+ *
+ * `themeOverrides` is included (v0.2.97) so that editing a per-theme
+ * per-mode value (e.g. while the user is typing into the appearance
+ * panel's `<details>` input) re-runs the resolver rather than
+ * silently keeping the stale `dynamic-styles` block.
  */
 const STYLE_KEYS: ReadonlySet<keyof Settings> = new Set<keyof Settings>([
   'font', 'fontSize', 'fontWeight',
   'shadowBlur', 'highlightRound',
   'spacing', 'width', 'hPos', 'autoScale',
   'align',
+  'themeOverrides',
 ]);
+
+/**
+ * Resolve the 10 appearance-tab options for the *currently active*
+ * theme + appearance mode. Theme/darkMode/width/hPos/align/spacing/
+ * columnWidth/etc. are intentionally NOT resolved here — they remain
+ * global (see `ThemeModeOverrides` in features/bookmarks/types.ts).
+ *
+ * Resolution order, per key:
+ *   1. `themeOverrides[baseTheme][mode]?.[key]`  (per-theme per-mode override)
+ *   2. `Settings[key]`                            (global value)
+ *   3. hardcoded default in this function         (only for keys where
+ *      the global `Settings` value might still be the v0.2.96 default
+ *      that no longer makes sense — currently none, all 10 have a real
+ *      Settings default).
+ *
+ * `baseTheme` is the value of `Settings.theme` (no `-dark` suffix;
+ * `applyTheme` already normalizes that). `mode` is the resolved
+ * appearance mode (light / dark) derived from `darkMode` +
+ * `prefers-color-scheme` — same logic as `applyTheme.resolveTheme`
+ * in features/themes/switcher.ts. We re-derive it here rather than
+ * passing it in so the resolver is self-contained and safe to call
+ * from any context.
+ */
+function resolveEffectiveSettings(): {
+  font: string;
+  fontSize: number;
+  fontWeight: number;
+  fontColor: string;
+  backgroundColor: string;
+  highlightColor: string;
+  highlightFontColor: string;
+  shadowColor: string;
+  shadowBlur: number;
+  highlightRound: number;
+} {
+  const baseTheme = String(getSetting('theme') ?? 'default');
+  const darkMode = String(getSetting('darkMode') ?? 'system');
+  const mode: 'light' | 'dark' = darkMode === 'dark'
+    ? 'dark'
+    : darkMode === 'light'
+      ? 'light'
+      : (typeof window !== 'undefined'
+          && window.matchMedia?.('(prefers-color-scheme: dark)').matches)
+        ? 'dark'
+        : 'light';
+  const allOverrides = (getSetting('themeOverrides') ?? {}) as Record<string, { light?: Partial<Settings>; dark?: Partial<Settings> }>;
+  const overrides = allOverrides[baseTheme]?.[mode] as Partial<Settings> | undefined;
+
+  return {
+    font: overrides?.font ?? String(getSetting('font') ?? 'Sans-serif'),
+    fontSize: overrides?.fontSize ?? Number(getSetting('fontSize') ?? 18),
+    fontWeight: overrides?.fontWeight ?? Number(getSetting('fontWeight') ?? 400),
+    fontColor: overrides?.fontColor ?? String(getSetting('fontColor') ?? ''),
+    backgroundColor: overrides?.backgroundColor ?? String(getSetting('backgroundColor') ?? ''),
+    highlightColor: overrides?.highlightColor ?? String(getSetting('highlightColor') ?? ''),
+    highlightFontColor: overrides?.highlightFontColor ?? String(getSetting('highlightFontColor') ?? ''),
+    shadowColor: overrides?.shadowColor ?? String(getSetting('shadowColor') ?? ''),
+    shadowBlur: overrides?.shadowBlur ?? Number(getSetting('shadowBlur') ?? 1),
+    // `highlightRound` is now stored in px (v0.2.97). 0 = "use the
+    // active theme's `.rounded-md`" (newtab.css:105's
+    // `var(--newtab-link-radius, calc(var(--radius) - 2px))` kicks
+    // in). Positive values override the theme's rounded-md with a
+    // user px value.
+    highlightRound: overrides?.highlightRound ?? Number(getSetting('highlightRound') ?? 0),
+  };
+}
 
 /**
  * Write a single user color override as an inline custom property on the
@@ -77,15 +149,39 @@ export function applyUserColorOverride(key: ColorKey): void {
   log('apply', 'applyUserColorOverride', { key, cssVar, sourceKey, value });
 }
 
+/**
+ * Write one resolved color value as an inline custom property. Unlike
+ * `applyUserColorOverride`, this takes a string directly (the value
+ * returned by `resolveEffectiveSettings`) so it can be used in the
+ * per-theme per-mode path without going back through `Settings`.
+ * `key` is the COLOR_KEYS key (selects which `--newtab-*` CSS var to
+ * write) — pass the global Settings key, not the override bucket key,
+ * since the bucket uses the same Settings key names.
+ */
+function writeResolvedColor(key: ColorKey, value: string): void {
+  if (typeof document === 'undefined') return;
+  const cssVar = COLOR_KEYS[key];
+  const v = String(value ?? '').trim();
+  if (!v) {
+    document.documentElement.style.removeProperty(cssVar);
+    return;
+  }
+  document.documentElement.style.setProperty(cssVar, v);
+}
+
 /** Build (or replace) the `<style id="dynamic-styles">` node from current settings. */
-function rebuildDynamicStyles(): void {
-  const settings = getSetting;
+export function rebuildDynamicStyles(): void {
+  const eff = resolveEffectiveSettings();
   const rules: string[] = [];
 
-  // Font
-  rules.push(`#main a { font-family: "${settings('font')}"; }`);
-  rules.push(`#main a { font-size: ${settings('fontSize') / 10}em; }`);
-  rules.push(`#main a { font-weight: ${settings('fontWeight')}; }`);
+  // Font (v0.2.97: fontSize is now stored in px directly, no more
+  //  `/ 10 em` trick. The old `${fontSize / 10}em` + 62.5% root
+  //  font-size made Devtools show 1.8em instead of 18px, which
+  //  obscured coverage from the user's perspective. Direct px also
+  //  makes the "user sees what they set" promise explicit.)
+  rules.push(`#main a { font-family: "${eff.font}"; }`);
+  rules.push(`#main a { font-size: ${eff.fontSize}px; }`);
+  rules.push(`#main a { font-weight: ${eff.fontWeight}; }`);
 
   // Note: text/highlight colors are NOT emitted here. They are written
   // as inline custom properties on <html> by `applyTheme` and
@@ -95,12 +191,24 @@ function rebuildDynamicStyles(): void {
   // freeze the colors regardless of theme or per-color user edits.
 
   // Shadow
-  const shadowBlur = scale(settings('shadowBlur'), 7, 100);
+  const shadowBlur = scale(eff.shadowBlur, 7, 100);
   rules.push(`#main a:hover { box-shadow: 0 0 ${shadowBlur}px var(--newtab-highlight); }`);
 
-  // Border radius
-  const highlightRound = scale(settings('highlightRound'), 0.2, 1.5);
-  rules.push(`#main a { border-radius: ${highlightRound}em; }`);
+  // Border radius (v0.2.97: highlightRound is in px, written as
+  //  `--newtab-link-radius` on `:root`. newtab.css:105 reads
+  //  `var(--newtab-link-radius, calc(var(--radius) - 2px))`, so
+  //  if we DON'T emit a value here, the theme's `.rounded-md`
+  //  fallback kicks in. We only emit the rule when the user has
+  //  set a positive value — leaving the property unset is what
+  //  actually means "use theme default". `0` as an explicit value
+  //  would force a sharp 0px corner (the previous em-scale
+  //  behavior), which is the opposite of what we want.
+  //  The OLD implementation emitted `#main a { border-radius:
+  //  ${scale(highlightRound, 0.2, 1.5)}em }` which clobbered
+  //  the theme's --radius-derived value entirely.)
+  if (eff.highlightRound > 0) {
+    rules.push(`:root { --newtab-link-radius: ${eff.highlightRound}px; }`);
+  }
 
   // Spacing — drives the inter-row gap (--newtab-spacing), not the
   // line-height of each link. The v0.2.45-era implementation wrote
@@ -110,23 +218,26 @@ function rebuildDynamicStyles(): void {
   // (specificity 0,1,0) overrides the :where(:root) default in
   // globals.css (specificity 0) and cascades into the `gap` rules
   // in newtab.css. Scale 0.5/1/1.5 → 4px/10px/20px.
-  const rowGap = scale(settings('spacing'), 10, 20, 4);
+  const rowGap = scale(Number(getSetting('spacing')), 10, 20, 4);
   rules.push(`:root { --newtab-spacing: ${rowGap}px; }`);
 
-  // Width
-  if (settings('autoScale')) {
-    const widthPct = scale(settings('width'), 96, 100, 60);
+  // Width (global; per-theme per-mode override does not apply to
+  //  width/hPos per user decision — see docs/.../appearance-theme-
+  //  overrides-plan.md §4. These two are always read from the
+  //  global Settings object.)
+  if (getSetting('autoScale')) {
+    const widthPct = scale(Number(getSetting('width')), 96, 100, 60);
     // Horizontal position: 0 = left, 1 = center, 2 = right.
     // hPos=1 must keep #main visually centered — that is, margin-left
     // = half the slack between widthPct and the viewport (100%).
     const slackPct = 100 - widthPct;
-    const marginLeftPct = (settings('hPos') / 2) * slackPct;
+    const marginLeftPct = (Number(getSetting('hPos')) / 2) * slackPct;
     rules.push(`#main { width: ${widthPct}%; margin-left: ${marginLeftPct}%; }`);
   } else {
-    const widthPx = scale(settings('width'), 1200, 3000, 800);
+    const widthPx = scale(Number(getSetting('width')), 1200, 3000, 800);
     // Fixed-width mode: margin-left is computed against 100vw so the
     // hPos=1 position remains centered even when the window resizes.
-    rules.push(`#main { width: ${widthPx}px; margin-left: calc((${settings('hPos')} / 2) * (100vw - ${widthPx}px)); }`);
+    rules.push(`#main { width: ${widthPx}px; margin-left: calc((${Number(getSetting('hPos'))} / 2) * (100vw - ${widthPx}px)); }`);
   }
 
   // Vertical margin — removed in v0.2.93 (per user feedback that
@@ -143,7 +254,7 @@ function rebuildDynamicStyles(): void {
   // 100% and the alignment is a no-op. This matches HNTP's
   // behavior — `align` is meaningful when columns are sized
   // smaller than the available space.
-  rules.push(`#main { text-align: ${settings('align')}; }`);
+  rules.push(`#main { text-align: ${String(getSetting('align'))}; }`);
 
   const style = document.getElementById(STYLE_ELEMENT_ID) as HTMLStyleElement | null
     ?? Object.assign(document.createElement('style'), { id: STYLE_ELEMENT_ID });
@@ -183,12 +294,26 @@ function scale(value: number, mid: number, max: number, min: number = 0): number
  * changed). Calling `applyTheme` from this function would wipe
  * legitimate per-color user overrides every time any other setting
  * was edited.
+ *
+ * v0.2.97: 5 palette colors now read from `resolveEffectiveSettings`
+ * so per-theme per-mode overrides take effect on theme/darkMode
+ * changes. The colors are written via `writeResolvedColor` (a
+ * string-in / inline-style-out helper) rather than re-calling
+ * `applyUserColorOverride` (which would re-read the global
+ * `Settings` key, defeating the per-theme resolution).
  */
 export function applySettingsToDOM(): void {
   log('apply', 'applySettingsToDOM');
-  for (const key of Object.keys(COLOR_KEYS) as ColorKey[]) {
-    applyUserColorOverride(key);
-  }
+  const eff = resolveEffectiveSettings();
+  // Write all five palette colors from the resolved (per-theme
+  //  per-mode) values. Empty string → removeProperty so the
+  //  active theme's CSS variable renders through.
+  writeResolvedColor('backgroundColor', eff.backgroundColor);
+  writeResolvedColor('fontColor', eff.fontColor);
+  writeResolvedColor('highlightColor', eff.highlightColor);
+  writeResolvedColor('highlightFontColor', eff.highlightFontColor);
+  // shadowColor shares the highlightColor CSS var.
+  writeResolvedColor('shadowColor', eff.shadowColor);
   rebuildDynamicStyles();
   rebuildUserCss();
 }
@@ -201,18 +326,42 @@ export function applySettingsToDOM(): void {
  *   panel persists the resulting `{theme, 5 colors}` bundle via
  *   `updateSettings`; the storage.onChanged listener also re-runs
  *   `applySettingsToDOM` which reasserts the per-color overrides.
+ *   v0.2.97: `applyTheme` (themes/switcher.ts) now also calls
+ *   `rebuildDynamicStyles` at the end so the
+ *   `--newtab-link-radius` (and any other per-theme dynamic rule)
+ *   stays in sync with the new theme's `--radius`.
+ * - `darkMode` (v0.2.97) → since changing darkMode flips the
+ *   `mode` key in `themeOverrides`, a re-resolution of the 10
+ *   appearance values is needed. The simplest correct path is
+ *   a full `applySettingsToDOM` (color + dynamic-styles + user-css).
+ *   `applyTheme` also runs so the `<html data-theme>` attribute
+ *   tracks the new mode.
  * - any color key in `COLOR_KEYS` → `applyUserColorOverride` writes a
  *   single inline property. We do NOT call `rebuildDynamicStyles`
  *   here — the dynamic-styles block intentionally contains no color
  *   rules, so the page reflects the new value with no extra work.
+ *   v0.2.97 note: this path now uses the GLOBAL Settings value, not
+ *   the per-theme per-mode override. The settings-panel live-edit
+ *   for a per-theme color goes through `writePerThemeValue`, which
+ *   persists to `themeOverrides` and triggers a full
+ *   `applySettingsToDOM` (so the resolver runs end-to-end).
  * - any other key in `STYLE_KEYS` → `rebuildDynamicStyles` regenerates
  *   the dynamic <style> block (font, size, weight, spacing, etc.).
+ *   This calls `resolveEffectiveSettings`, so per-theme values are
+ *   honored on the very next render.
  * - `css` → `rebuildUserCss` swaps the user CSS node.
  */
 export function applySettingChange<K extends keyof Settings>(key: K): void {
   log('apply', 'applySettingChange', { key, value: getSetting(key) });
   if (key === 'theme') {
     applyTheme(String(getSetting('theme')));
+  }
+  if (key === 'darkMode') {
+    // darkMode change → re-resolve theme + mode, then re-apply
+    //  the whole thing (palette + dynamic-styles + user-css).
+    applyTheme(String(getSetting('theme')));
+    applySettingsToDOM();
+    return;
   }
   if (key in COLOR_KEYS) {
     applyUserColorOverride(key as ColorKey);

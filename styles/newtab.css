@@ -990,6 +990,63 @@
   background-color: var(--muted);
 }
 
+/* v0.2.97: per-theme per-mode option set (外观 tab 折叠区).
+ *  Native <details>/<summary> with a custom ::before triangle so
+ *  the indicator matches the Linear-style muted foreground used
+ *  elsewhere in the panel. The body of the <details> is just
+ *  more sp-row nodes, so the inner rows look identical to the
+ *  global ones; the border-top separates the two scopes
+ *  visually without inventing a new "section" widget. */
+.sp-theme-overrides {
+  margin-top: 16px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+.sp-theme-overrides > .sp-theme-overrides-summary {
+  cursor: pointer;
+  font-size: 1.3rem;
+  font-weight: 600;
+  color: var(--foreground);
+  padding: 6px 0;
+  list-style: none;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sp-theme-overrides > .sp-theme-overrides-summary::before {
+  content: '▸';
+  display: inline-block;
+  transition: transform 0.15s ease;
+  color: var(--muted-foreground);
+  font-size: 1.1rem;
+  width: 12px;
+  text-align: center;
+}
+.sp-theme-overrides[open] > .sp-theme-overrides-summary::before {
+  transform: rotate(90deg);
+}
+.sp-theme-overrides > .sp-theme-overrides-summary:hover {
+  color: var(--primary);
+}
+.sp-theme-overrides > .sp-theme-overrides-summary::-webkit-details-marker {
+  display: none;
+}
+
+/* v0.2.97: per-theme row variant — currently just a subtle
+ *  border-left accent so the user can tell at a glance which
+ *  rows in the panel are scoped to the (theme, mode) bucket.
+ *  Reuses the existing sp-row / sp-input / sp-revert rules,
+ *  so no per-row sizing override is needed. */
+.sp-row--per-theme {
+  border-left: 2px solid var(--border);
+  padding-left: 8px;
+  margin-left: -10px;
+}
+.sp-row--per-theme .sp-label {
+  color: var(--muted-foreground);
+}
+
 /* Textarea */
 .sp-textarea {
   width: 100%;

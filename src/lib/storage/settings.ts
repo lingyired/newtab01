@@ -30,7 +30,15 @@ const defaults: Settings = {
   highlightFontColor: '',
   shadowColor: '',
   shadowBlur: 1,
-  highlightRound: 1,
+  // v0.2.97: highlightRound is in px and the value `0` means
+  //  "use the active theme's `.rounded-md`" (see
+  //  rebuildDynamicStyles in features/settings/apply.ts).
+  //  Pre-v0.2.97 the value was a 0..2 em-scale (1 = 1em) which
+  //  clobbered the theme's --radius-derived rounded-md. 0 is
+  //  the only sensible default now; users that want a different
+  //  radius can set it via the per-theme per-mode options in
+  //  the appearance panel.
+  highlightRound: 0,
   spacing: 1,
   width: 1,
   hPos: 1,
@@ -54,6 +62,12 @@ const defaults: Settings = {
   align: 'left',
   debug: 0,
   folderActionConfirmThreshold: 10,
+  // Note: `themeOverrides` (features/bookmarks/types.ts) is intentionally
+  //  NOT in `defaults`. New users start with the field `undefined`; the
+  //  per-theme per-mode resolver (features/settings/apply.ts →
+  //  resolveEffectiveSettings) treats `undefined` as "no overrides"
+  //  and falls back to the global settings values. This keeps v0.2.96
+  //  storage shape compatible — no migration needed.
 };
 
 let currentSettings: Settings = { ...defaults };
@@ -214,6 +228,20 @@ export async function initSettings(): Promise<Settings> {
         debug.log('settings', 'migrate fontSize', { from: stored.fontSize, to: defaults.fontSize });
       }
     }
+    // v0.2.97: highlightRound unit changed from em-scale (0..2)
+    //  to px. Old em-scale value 1 → 1em = 16px (browsers) or
+    //  10px (62.5% root font-size). Under the new interpretation
+    //  the same stored value (1) would render as 1px, which is
+    //  visually almost identical to 0 (the new "use theme
+    //  default" sentinel). Migrating 1 → 0 keeps the
+    //  theme's `.rounded-md` as the effective default for
+    //  upgraders, which matches the pre-v0.2.97 intent of
+    //  the scale(1) "use the midpoint" semantic.
+    if (stored.highlightRound === 1) {
+      merged.highlightRound = 0;
+      await setSync(SETTINGS_KEY, merged);
+      debug.log('settings', 'migrate highlightRound 1 → 0 (em-scale → px, use theme default)');
+    }
     // See LEGACY_DEFAULT_PALETTE: clear dead pre-0.2.30 hex values so the
     // active theme's palette can render through (applyUserColorOverride
     // treats '' as "no override" and removeProperty's the inline value).
@@ -262,6 +290,12 @@ function coerceNumberSettings(merged: Settings): { next: Settings; dirty: boolea
   let dirty = false;
   const dirtyKeys: string[] = [];
   const next: Settings = { ...merged };
+  // `themeOverrides` is intentionally not iterated here — it is an object,
+  //  not a number, and is not in `defaults` (so Object.keys(defaults)
+  //  never surfaces it). v0.2.97 introduced the field; the
+  //  resolveEffectiveSettings resolver in features/settings/apply.ts
+  //  is the only place that reads it, and it tolerates `undefined`
+  //  as well as partial buckets.
   for (const k of Object.keys(defaults) as Array<keyof Settings>) {
     const reference = defaults[k];
     if (typeof reference !== 'number') continue;

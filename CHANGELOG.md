@@ -5,6 +5,26 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.97] - 2026-06-21
+
+### Changed
+- **外观 tab 的 10 个选项 per-theme per-mode 化**：字体 / 字号 / 字重 / 5 颜色 / 阴影模糊 / 高亮圆角 全部支持「当前主题+外观模式」独立覆盖，不再全局共享。新增 `Settings.themeOverrides: Record<themeId, { light?: Partial<Settings>; dark?: Partial<Settings> }>` 存储桶（存在 `chrome.storage.sync`，跨设备同步）。
+  - 外观 tab 加 `<details>` 折叠区承载 per-theme 选项；首次进入默认展开，之后记忆开/合状态（`localStorage['newtab01.appearance.themeOverrides.open']`）。
+  - 切换主题 / 暗色模式，这 10 个 input 的 value 自动从对应桶读（`themeOverrides[newTheme][newMode]?.key ?? Settings.key`）；切换瞬间 DOM 也跟着重算（`applySettingsToDOM` → `resolveEffectiveSettings`）。
+  - 10 个 input 的 revert（↩）按钮改为「清除当前主题+模式的 override」，不会动全局值。
+  - 主题 + 暗色模式 + 宽度 + 水平位置 仍然全局，不在覆盖范围。
+- **高亮圆角单位从 em scale 改为 px**：旧实现是 `#main a { border-radius: ${scale(highlightRound, 0.2, 1.5)}em }` 直接覆盖；新实现写 `--newtab-link-radius: ${highlightRound}px` 到 `:root`，配合 `newtab.css:105` 的 `var(--newtab-link-radius, calc(var(--radius) - 2px))` fallback。**用户填 0 时不 emit 该 CSS 变量，主题 .rounded-md 自动生效**；填 N → 强制 Npx。
+  - input 默认值 = 当前主题 `calc(var(--radius) - 2px)` 的 px 值（Codex = 4px，MX-Brutalist = 0px），用户能直接看到主题的派生圆角。
+  - 旧版 `highlightRound=1` 迁移到 `0`（保持 v0.2.96 之前的 em-scale midpoint 视觉等效）。
+- **字号改为 px 直接存**（顺手修不生效调查路径）：旧 `${fontSize / 10}em` 改为 `${fontSize}px`。Devtools 之前显示 1.8em（`fontSize=18` 默认），改后直接显示 18px，跟 input 数值一致，便于排查覆盖源。
+
+### Notes
+- `Settings.themeOverrides` 字段对老用户默认 `undefined` → 全部 10 项 fall back 到全局值，行为兼容 v0.2.96。`initSettings` 迁移只针对 `fontSize` 和 `highlightRound=1 → 0`，`themeOverrides` 不需要迁移。
+- `applySettingsToDOM` 内部新增 `resolveEffectiveSettings()` 解析器，storage.onChanged 触发时一并重算；listener 路径未改。
+- `applyTheme` (themes/switcher.ts) 末尾追加 `rebuildDynamicStyles()` 兜底，防止 listener 接走时漏算 dynamic-styles。
+- `removeCustomTheme` 同步清除 `themeOverrides[deletedThemeId]`，保持 storage 干净。
+- 字号 13.5px (= 18 × 0.75) 根因未在本 PR 复现；改 px 后如果用户仍看到 13.5px，怀疑点是 Chrome 浏览器缩放（`chrome://settings` → Page zoom）或 `#main` / 祖先有 font-size 75% 覆盖。排查：devtools 选中 `<a>` → Computed → font-size 是不是 18px，不是就往上找覆盖源。
+
 ## [0.2.96] - 2026-06-20
 
 ### Fixed

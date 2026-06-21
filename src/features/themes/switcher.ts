@@ -22,6 +22,7 @@
 import { getSetting } from '../../lib/storage/settings';
 import { log } from '../../lib/debug';
 import { listAllThemes, type ThemeListEntry } from './custom-themes';
+import { rebuildDynamicStyles } from '../settings/apply';
 
 /**
  * Canonical list of built-in themes. All built-in themes are sourced
@@ -202,6 +203,17 @@ export function applyTheme(theme: string): void {
   for (const cb of listeners) {
     cb(resolved);
   }
+  // v0.2.97: re-emit the dynamic-styles block so per-theme
+  //  --newtab-link-radius (and any other future per-theme
+  //  dynamic rule) is re-resolved against the new theme's
+  //  --radius + themeOverrides[newTheme][mode]. Normally
+  //  `applySettingsToDOM` (called via the storage.onChanged
+  //  listener after `saveThemeChange`'s `updateSettings`)
+  //  already does this, but calling it here as well makes
+  //  applyTheme safe to invoke directly from any caller
+  //  (e.g. unit tests, dev console) without the user
+  //  noticing stale per-theme values.
+  rebuildDynamicStyles();
 }
 
 /**

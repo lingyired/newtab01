@@ -27,6 +27,8 @@
 
 import { log } from '../../lib/debug';
 import { setHasDarkVariant } from './switcher';
+import { getSetting, updateSettings } from '../../lib/storage/settings';
+import type { Settings } from '../bookmarks/types';
 
 /** The 8 shadcn color variables we REQUIRE for any theme. The validator
  *  rejects a paste that doesn't define all 8 — they are the
@@ -341,6 +343,28 @@ export async function removeCustomTheme(name: CustomThemeName): Promise<boolean>
   // Clear the cache entry too — the theme is gone, hasDarkVariant
   // would otherwise still return true (stale) until next applyCustomThemes.
   setHasDarkVariant(userThemeId(name, 'light'), false);
+
+  // v0.2.97: also evict the per-theme per-mode override bucket
+  //  for this theme id, so chrome.storage.sync doesn't keep dead
+  //  weight around. The `themeOverrides` map is keyed by the
+  //  SAME id the dropdown uses (`user-<kebab>`), so we look up
+  //  by that id. Both light and dark buckets for this theme
+  //  disappear in one delete. We don't reapply the theme here
+  //  — the caller (settings-panel remove handler) will trigger
+  //  the theme switch / applySettingsToDOM as needed.
+  const themeId = userThemeId(name, 'light');
+  const all = getSetting('themeOverrides');
+  if (all && typeof all === 'object' && Object.prototype.hasOwnProperty.call(all, themeId)) {
+    // Clone the per-theme override map and drop the dead theme id.
+    // The cast stays narrow — `next` is still typed as
+    // `Settings.themeOverrides` so the spread/delete doesn't
+    // widen to `Record<string, unknown>`, which the Settings
+    // type would reject.
+    const next: Settings['themeOverrides'] = { ...(all as NonNullable<Settings['themeOverrides']>) };
+    delete next[themeId];
+    void updateSettings({ themeOverrides: next });
+  }
+
   return true;
 }
 
