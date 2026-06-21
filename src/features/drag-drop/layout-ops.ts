@@ -2,9 +2,8 @@
 // Manages the columns array, coords map, and persistence
 
 import type { Columns, CoordMap } from '../bookmarks/types';
-import type { Settings } from '../bookmarks/types';
 import { getLocal, setLocal } from '../../lib/storage';
-import { getSetting } from '../../lib/storage/settings';
+import { isSpecialVisible } from '../bookmarks/special-folders';
 import { renderColumns } from '../bookmarks/board';
 import { recordMovedOutForIds, unmarkMovedOut, SPECIAL_IDS as MOVED_OUT_SPECIAL_IDS, DEFAULT_ROOT_IDS } from '../bookmarks/moved-out';
 import { getBookmark } from '../../lib/chrome/bookmarks';
@@ -15,14 +14,9 @@ const LAYOUT_KEY = 'layout';
 /** Special folder IDs */
 const SPECIAL_IDS = ['apps', 'top', 'recent', 'closed', 'devices'];
 
-/** Map from special folder ID to settings key */
-const SHOW_KEY_MAP: Record<string, keyof Settings> = {
-  apps: 'showApps',
-  top: 'showTop',
-  recent: 'showRecent',
-  closed: 'showClosed',
-  devices: 'showDevices',
-};
+// SHOW_KEY_MAP and isSpecialVisible were moved to
+// `../bookmarks/special-folders.ts` in v0.2.94 so board.ts can use
+// them without creating a layout-ops → board import cycle.
 
 /** Current column layout */
 let columns: Columns = [];
@@ -80,17 +74,6 @@ export async function saveLayout(): Promise<void> {
   await setLocal(LAYOUT_KEY, columns);
   debug.log('layout', 'saveLayout', { columns: columns.map(c => c.length), total: columns.reduce((s, c) => s + c.length, 0) });
   await renderColumns();
-}
-
-/** Check if a special folder is visible */
-function isSpecialVisible(id: string): boolean {
-  const key = SHOW_KEY_MAP[id];
-  if (!key) return true;
-  try {
-    return getSetting(key) !== 0;
-  } catch {
-    return true;
-  }
 }
 
 /** Verify and fix column layout — ensure root folders are included */

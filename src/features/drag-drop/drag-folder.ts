@@ -12,6 +12,12 @@ import * as debug from '../../lib/debug';
  * class is toggled on `li` so the visual highlight wraps the WHOLE
  * subtree being moved, not just the header row. Drag listeners stay on
  * `header` since that's the actual draggable element.
+ *
+ * v0.2.93: re-check `lock` at dragstart time (not just at enable
+ * time) so toggling the lock on after a folder has been rendered
+ * takes effect on the NEXT drag attempt. Without this, an
+ * "already-enabled" folder could be dragged once after the toggle
+ * (the user's reported "lock 开启之后依然可以进行一次拖拽" symptom).
  */
 export function enableDragFolder(
   node: BookmarkNode,
@@ -23,6 +29,10 @@ export function enableDragFolder(
   header.draggable = true;
 
   header.addEventListener('dragstart', (event) => {
+    if (getSetting('lock')) {
+      event.preventDefault();
+      return;
+    }
     setDragIds([node.id]);
     if (event.dataTransfer) {
       event.dataTransfer.effectAllowed = 'copyMove';

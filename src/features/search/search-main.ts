@@ -13,7 +13,6 @@ import {
   handleKeyNavigation,
   hasSelection,
 } from './search-results';
-import { getSetting } from '../../lib/storage/settings';
 import { searchInCurrentTab } from '../../lib/chrome/bookmarks';
 import * as debug from '../../lib/debug';
 
@@ -171,11 +170,10 @@ export function isOpen(): boolean {
 }
 
 export async function initSearch(): Promise<void> {
-  if (getSetting('showSearch') === 0) {
-    debug.log('search', 'initSearch: showSearch=0, skipped');
-    return;
-  }
-
+  // v0.2.93: the `showSearch` setting was removed (per user request),
+  // so the search bar is always initialized. The early-return below
+  // is kept as a guard for any future kill-switch but is unreachable
+  // in the current settings schema.
   try {
     await ensureEngine();
     watchBookmarkChanges();

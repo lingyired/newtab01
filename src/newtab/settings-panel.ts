@@ -45,10 +45,16 @@ const RERENDER_KEYS: ReadonlySet<keyof Settings> = new Set([
   'numberRecent',
   'numberClosed',
   'lockColumns',
-  'align',
   'columnWidth',
   'rememberOpen',
   'autoClose',
+  // v0.2.94: `newtab` is the open-link mode (current/foreground/background).
+  // Each bookmark <a> element has either `target='_blank'` (foreground) or
+  // a click handler (background) baked in at renderLink time. Changing
+  // the setting must trigger a full re-render so existing links pick up
+  // the new behavior. Without this entry, toggling "打开链接方式" silently
+  // had no effect until the next manual reload.
+  'newtab',
 ]);
 
 let panelEl: HTMLElement | null = null;
@@ -399,8 +405,6 @@ function getDefaults(): Settings {
     spacing: 1,
     width: 1,
     hPos: 1,
-    vMargin: 1,
-    hideOptions: 0,
     lock: 0,
     showTop: 1,
     showApps: 1,
@@ -408,7 +412,6 @@ function getDefaults(): Settings {
     showClosed: 1,
     showDevices: 1,
     showRoot: 1,
-    showSearch: 1,
     newtab: 0,
     rememberOpen: 1,
     autoClose: 0,
@@ -423,6 +426,37 @@ function getDefaults(): Settings {
     debug: 0,
     folderActionConfirmThreshold: 10,
   };
+}
+
+/**
+ * Coerce a raw input value to match the type of the stored setting.
+ * HTMLSelectElement.value and the value of an unchecked HTMLInputElement
+ * are always strings, but several settings (newtab, lock, lockColumns,
+ * showTop, numberTop, ...) are typed as number in `Settings`. Without
+ * coercion, those values round-trip through chrome.storage as strings and
+ * break strict equality checks in consumers (e.g. `newtab === 1` would
+ * never match `'1'`, so "打开链接方式" silently has no effect).
+ *
+ * Reference value is whatever `getSetting` currently returns — for a
+ * fresh install that's the default (number), and for an upgraded user
+ * it's whatever the previous run wrote (potentially a string from a
+ * pre-fix saveSetting, which `coerceToSettingType` will rewrite on the
+ * next save). This covers all Settings keys without enumerating them.
+ */
+function coerceToSettingType<K extends keyof Settings>(key: K, value: unknown): unknown {
+  if (value === '' || value === undefined || value === null) return value;
+  const reference = getSetting(key);
+  if (typeof reference === 'number') {
+    if (typeof value === 'string') {
+      const num = Number(value);
+      if (!Number.isNaN(num)) return num;
+    }
+    return value;
+  }
+  if (typeof reference === 'boolean' && typeof value === 'string') {
+    return value === 'true' || value === '1';
+  }
+  return value;
 }
 
 function saveSetting(key: keyof Settings): void {
@@ -445,6 +479,13 @@ function saveSetting(key: keyof Settings): void {
   } else if (input instanceof HTMLTextAreaElement) {
     value = input.value;
   }
+
+  // Normalize the value type to match the setting's declared type
+  // (see coerceToSettingType comment). `updateSetting` writes through
+  // to chrome.storage; without this, a `<select>` with `<option value="1">`
+  // would persist the string '1' and downstream `getSetting('newtab')`
+  // consumers would see a string while the type schema says number.
+  value = coerceToSettingType(key, value);
 
   // Capture before/after for the debug log.
   const before = getSetting(key);
@@ -557,18 +598,23 @@ async function saveThemeChange(theme: string): Promise<void> {
   debug.log('settings-panel', 'saveThemeChange', { from: before, to: theme, bundle });
 }
 
-function createNumberInput(key: keyof Settings): HTMLInputElement {
+function createNumberInput(key: keyof Settings, step: string = '0.1'): HTMLInputElement {
   const input = document.createElement('input');
   input.type = 'number';
   input.id = `sp-${key}`;
   input.value = String(getSetting(key));
-  // All scale()-driven settings accept fractional inputs (0.5, 1.5, etc.)
+  // Most scale()-driven settings accept fractional inputs (0.5, 1.5, etc.)
   // — default `step="1"` would reject those as `stepMismatch` and make the
   // browser show a validation error on commit. `step="0.1"` lets the user
   // type any one-decimal-place value; values outside [0,1,2] still work
   // because `change` fires regardless of validity and the scale() curve
   // extrapolates linearly past the ends.
-  input.step = '0.1';
+  // v0.2.94: callers that want integer steps (e.g. count limits like
+  // `numberTop` / `numberRecent` / `numberClosed`) can pass `step="1"`
+  // to get a normal integer spinner and avoid the "5.1 / 5.2" UX of a
+  // fractional step. The default stays "0.1" so existing call sites
+  // (spacing, fontSize, shadowBlur, etc.) are unaffected.
+  input.step = step;
   input.addEventListener('change', () => saveSetting(key));
   return input;
 }
@@ -645,16 +691,15 @@ function createDarkModeSelectInput(): HTMLSelectElement {
 function renderLayoutTab(): HTMLElement {
   const container = el('div', 'sp-tab-content');
 
-  container.appendChild(createRow('行间距', createNumberInput('spacing'), 'spacing', '控制书签链接之间的垂直行高，数值越大行距越宽。'));
-  container.appendChild(createRow('垂直边距', createNumberInput('vMargin'), 'vMargin', '新标签页主体距离顶部的空白边距。'));
+  container.appendChild(createRow('行间距', createNumberInput('spacing'), 'spacing', '书签链接之间的垂直间距（行与行之间的距离）。'));
   container.appendChild(createRow('列宽', createTextInput('columnWidth'), 'columnWidth', '每列的宽度。可以填 auto（按列数等分）或具体值（如 200px、20%）。'));
   container.appendChild(createRow('对齐方式', createSelectInput('align', [
     { value: 'left', label: '左对齐' },
     { value: 'center', label: '居中' },
     { value: 'right', label: '右对齐' },
-  ]), 'align', '整组列在新标签页中的水平对齐方式。'));
+  ]), 'align', '整组列在新标签页中的水平对齐方式（需配合「列宽」使用，auto 模式下整组列填满整宽，无效果）。'));
   container.appendChild(createRow('锁定列', createCheckboxInput('lockColumns'), 'lockColumns', '开启后禁止通过拖拽改变列的位置和数量。'));
-  container.appendChild(createRow('显示顶层文件夹', createCheckboxInput('showTop'), 'showTop', '是否在列中渲染根级文件夹节点（关闭时直接显示其子项）。'));
+  container.appendChild(createRow('显示顶层文件夹', createCheckboxInput('showRoot'), 'showRoot', '是否在列中渲染根级文件夹节点（关闭时直接显示其子项）。'));
   container.appendChild(createRow('自动缩放', createCheckboxInput('autoScale'), 'autoScale', '开启后列宽与边距随窗口大小自动按比例缩放；关闭则使用固定像素值。'));
   container.appendChild(createRow('锁定拖拽', createCheckboxInput('lock'), 'lock', '开启后禁止通过拖拽移动或排序书签项。'));
 
@@ -1099,14 +1144,12 @@ function setCustomThemeStatus(
 function renderFeaturesTab(): HTMLElement {
   const container = el('div', 'sp-tab-content');
 
-  container.appendChild(createRow('隐藏设置按钮', createCheckboxInput('hideOptions'), 'hideOptions', '隐藏新标签页右上角的齿轮按钮；仍可通过 ⌘K 唤起搜索并打开设置。'));
-  container.appendChild(createRow('显示搜索栏', createCheckboxInput('showSearch'), 'showSearch', '关闭后顶栏的搜索框会隐藏，但 ⌘K 快捷键仍然可用。'));
   container.appendChild(createRow('显示常用网站', createCheckboxInput('showTop'), 'showTop', '是否在列中渲染"常用网站"特殊文件夹（来自 Chrome topSites）。'));
-  container.appendChild(createRow('常用网站数量', createNumberInput('numberTop'), 'numberTop', '限制"常用网站"中显示的条目数量。'));
+  container.appendChild(createRow('常用网站数量', createNumberInput('numberTop', '1'), 'numberTop', '限制"常用网站"中显示的条目数量。'));
   container.appendChild(createRow('显示最近访问', createCheckboxInput('showRecent'), 'showRecent', '是否在列中渲染"最近访问"特殊文件夹。'));
-  container.appendChild(createRow('最近访问数量', createNumberInput('numberRecent'), 'numberRecent', '限制"最近访问"中显示的条目数量。'));
+  container.appendChild(createRow('最近访问数量', createNumberInput('numberRecent', '1'), 'numberRecent', '限制"最近访问"中显示的条目数量。'));
   container.appendChild(createRow('显示最近关闭', createCheckboxInput('showClosed'), 'showClosed', '是否在列中渲染"最近关闭"特殊文件夹（来自 Chrome sessions）。'));
-  container.appendChild(createRow('最近关闭数量', createNumberInput('numberClosed'), 'numberClosed', '限制"最近关闭"中显示的条目数量。'));
+  container.appendChild(createRow('最近关闭数量', createNumberInput('numberClosed', '1'), 'numberClosed', '限制"最近关闭"中显示的条目数量。'));
   container.appendChild(createRow('显示其他设备', createCheckboxInput('showDevices'), 'showDevices', '是否显示来自其他已同步设备的标签页列表。'));
   container.appendChild(createRow('显示应用', createCheckboxInput('showApps'), 'showApps', '是否显示已安装的 Chrome 应用/扩展快捷入口。'));
   container.appendChild(createRow('显示根节点', createCheckboxInput('showRoot'), 'showRoot', '单文件夹列中是否保留根节点；关闭时会直接展开该文件夹的内容。'));

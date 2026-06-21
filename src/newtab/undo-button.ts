@@ -16,12 +16,12 @@ let undoBtn: HTMLButtonElement | null = null;
 
 /**
  * Create the undo button and append it to the given topbar container.
- * No-op if `showSearch` is false (the topbar is just the settings gear
- * in that case — adding a sibling with no search input looks orphaned).
+ * v0.2.93: the `showSearch` parameter was removed (the search bar is
+ * always shown now), so the no-op branch is gone and the button is
+ * always created. The caller in `topbar.ts` no longer passes the flag.
  */
-export function renderUndoButton(topbar: HTMLElement, showSearch: boolean): void {
+export function renderUndoButton(topbar: HTMLElement): void {
   if (undoBtn) return;
-  if (!showSearch) return;
 
   undoBtn = document.createElement('button');
   undoBtn.id = 'undo_button';

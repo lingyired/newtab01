@@ -54,8 +54,6 @@ export interface Settings {
   spacing: number;
   width: number;
   hPos: number;
-  vMargin: number;
-  hideOptions: number;
   lock: number;
   showTop: number;
   showApps: number;
@@ -63,7 +61,6 @@ export interface Settings {
   showClosed: number;
   showDevices: number;
   showRoot: number;
-  showSearch: number;
   newtab: number;
   rememberOpen: number;
   autoClose: number;

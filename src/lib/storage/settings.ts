@@ -34,8 +34,6 @@ const defaults: Settings = {
   spacing: 1,
   width: 1,
   hPos: 1,
-  vMargin: 1,
-  hideOptions: 0,
   lock: 0,
   showTop: 1,
   showApps: 1,
@@ -43,7 +41,6 @@ const defaults: Settings = {
   showClosed: 1,
   showDevices: 1,
   showRoot: 1,
-  showSearch: 1,
   newtab: 0,
   rememberOpen: 1,
   autoClose: 0,
@@ -122,17 +119,14 @@ const LEGACY_KEY_MAP: Record<string, (raw: unknown) => [keyof Settings, unknown]
   shadowBlur: (raw) => (typeof raw === 'number' ? ['shadowBlur', raw] : null),
   highlightRound: (raw) => (typeof raw === 'number' ? ['highlightRound', raw] : null),
   spacing: (raw) => (typeof raw === 'number' ? ['spacing', raw] : null),
-  vMargin: (raw) => (typeof raw === 'number' ? ['vMargin', raw] : null),
   columnWidth: (raw) => (typeof raw === 'string' ? ['columnWidth', raw] : null),
   align: (raw) => (typeof raw === 'string' ? ['align', raw] : null),
   lockColumns: (raw) => (typeof raw === 'boolean' ? ['lockColumns', raw ? 1 : 0] : null),
   showTopLevel: (raw) => (typeof raw === 'boolean' ? ['showTop', raw ? 1 : 0] : null),
   autoScale: (raw) => (typeof raw === 'boolean' ? ['autoScale', raw ? 1 : 0] : null),
-  hideOptions: (raw) => (typeof raw === 'boolean' ? ['hideOptions', raw ? 1 : 0] : null),
   numberTop: (raw) => (typeof raw === 'number' ? ['numberTop', raw] : null),
   numberRecent: (raw) => (typeof raw === 'number' ? ['numberRecent', raw] : null),
   showOtherDevices: (raw) => (typeof raw === 'boolean' ? ['showDevices', raw ? 1 : 0] : null),
-  showSearchBar: (raw) => (typeof raw === 'boolean' ? ['showSearch', raw ? 1 : 0] : null),
   openInNewTab: (raw) => {
     if (raw === 'same' || raw === 'foreground' || raw === 'background') {
       return ['newtab', raw === 'same' ? 0 : raw === 'foreground' ? 1 : 2];
@@ -233,7 +227,21 @@ export async function initSettings(): Promise<Settings> {
       await setSync(SETTINGS_KEY, merged);
       debug.log('settings', 'migrate legacy palette defaults -> empty (theme takes over)');
     }
-    currentSettings = merged;
+    // Coerce settings whose declared type is number but whose stored
+    // value is a string. Pre-0.2.95 saveSetting wrote the raw
+    // HTMLSelectElement.value (always string) directly, so e.g.
+    // `newtab` ended up as '0'/'1'/'2' instead of 0/1/2. Without this
+    // rewrite, every `getSetting('newtab') === 1` strict comparison in
+    // consumers (link click handler, etc.) silently failed. The fix
+    // mirrors coerceToSettingType in settings-panel.ts; doing it here
+    // also covers users who loaded the bad values before the panel
+    // was reopened.
+    const typed = coerceNumberSettings(merged);
+    if (typed.dirty) {
+      await setSync(SETTINGS_KEY, typed.next);
+      debug.log('settings', 'migrate string-typed number settings', typed.dirtyKeys);
+    }
+    currentSettings = typed.next;
   } else {
     await migrateLegacySettings();
     const after = await getSync<Settings>(SETTINGS_KEY);
@@ -242,6 +250,34 @@ export async function initSettings(): Promise<Settings> {
   initialized = true;
   debug.log('settings', 'initSettings', { fromStorage: !!stored, count: Object.keys(currentSettings).length });
   return currentSettings;
+}
+
+/**
+ * Walk the merged settings and rewrite any field whose declared type
+ * (per the `defaults` shape) is number but whose stored value is a
+ * numeric string. Returns a flag + key list so the caller can persist
+ * only when something actually changed.
+ */
+function coerceNumberSettings(merged: Settings): { next: Settings; dirty: boolean; dirtyKeys: string[] } {
+  let dirty = false;
+  const dirtyKeys: string[] = [];
+  const next: Settings = { ...merged };
+  for (const k of Object.keys(defaults) as Array<keyof Settings>) {
+    const reference = defaults[k];
+    if (typeof reference !== 'number') continue;
+    const v = next[k] as unknown;
+    if (typeof v === 'string' && v !== '') {
+      const num = Number(v);
+      if (!Number.isNaN(num)) {
+        // Cast drops the union so we can assign a narrowed number;
+        // we just verified typeof defaults[k] === 'number' above.
+        (next as unknown as Record<string, unknown>)[k] = num;
+        dirty = true;
+        dirtyKeys.push(String(k));
+      }
+    }
+  }
+  return { next, dirty, dirtyKeys };
 }
 
 /** Check if settings have been loaded */

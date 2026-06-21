@@ -5,6 +5,70 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.96] - 2026-06-20
+
+### Fixed
+- **apps 在「后台新标签」下打开两个后台标签页**（v0.2.95 修复 string→number 后暴露的次生 bug）。根因：`features/bookmarks/link.ts` 之前对 chrome:// / file:// URLs 同时走了「generic newtab 分支」+ 「chrome:// 分支」两套 click handler。`newtab === 2` 时 generic 分支加了一个 `addEventListener('click', ...)`，chrome:// 分支又加一个；同一 click 触发两个 handler → `openLink(url, 2)` 调两次 → 两个后台 tab。`apps` 的默认 launchUrl 是 `chrome://apps` 所以踩中。
+  - 修：把 `urlStart` 提到前面提取并算 `isChromeOrFile` boolean，generic newtab 分支（`a.target = '_blank'` 和 `addEventListener('click', ...)`）用 `if (!isChromeOrFile)` 跳过，chrome:// 分支保留。chrome:// / file:// URL 一律只走专用 click handler（`<a target="_blank" href="chrome://...">` 在扩展 newtab override 里不可靠，必须走 `chrome.tabs` API，所以让专用 handler 全权处理是对的）。
+  - 行为：`newtab=0/1/2` 对 chrome:// URL 全部通过 `openLink` → `createTab` / `updateTab` 走 chrome.tabs API，不会再双开。
+
+## [0.2.95] - 2026-06-20
+
+### Fixed
+- **「打开链接方式」实际生效**（v0.2.94 只把 `newtab` 加进 `RERENDER_KEYS`，没有修真正根因）。根因：`saveSetting` 提取 `<select>` 值时直接 `value = input.value`（string），但 `Settings.newtab` 声明为 `number`，所以 `getSetting('newtab')` 返回 `'0'/'1'/'2'`（string），`link.ts` 的 `newtab === 1` 严格比较永远 false，结果「打开链接方式」三个选项全部无效果（默认 0 时与原行为一致，但 1/2 都退化为「不变」）。
+  - 修 1：`src/newtab/settings-panel.ts:saveSetting` 提取 value 后调 `coerceToSettingType(key, value)`，reference 当前存储值（默认 number），若是 number 就 `Number(value)` 规整；同步处理 boolean 字段（虽然当前 checkbox 路径已转 0/1，留作防御）。
+  - 修 2：`src/lib/storage/settings.ts:initSettings` 加 `coerceNumberSettings()` 一次性迁移：扫描 storage 里所有「defaults 是 number 但 stored 是 string」的字段，rewrite 并 `setSync()` 写回。处理 v0.2.94 及之前已经存进去的脏值（用户即使没重新打开面板，下次启动也会自动修复）。
+- **应用（apps）跟随「打开链接方式」设置**：apps 的 URL 走 `chrome://apps` / `appLaunchUrl`，命中 `link.ts:58-70` 的 chrome:// 分支，调 `openLink(url, newtab || (e.ctrlKey ? 2 : 0))`。修 1 之后 `newtab` 是 number，openLink 的 `if (newtab)` + `createTab(url, newtab === 1, ...)` 都正确分流。
+  - 选 0（同一标签）：`updateTab` 把当前 newtab 跳到 app（chrome:// 协议在 newtab override 里能跳）。
+  - 选 1（前台新标签）：`createTab(url, true, tab.id)`。
+  - 选 2（后台新标签）：`createTab(url, false, tab.id)`。
+  - 之前因为 string 误判 `newtab === 1` 永远 false，apps **总是**走 `createTab(url, false, ...)`，表现为「永远后台」，符合用户反馈「应用页面现在是新建后台页面的方式打开的」。
+
+## [0.2.94] - 2026-06-20
+
+### Fixed
+功能 tab 选项 bug 修复（基于 [docs/选项测试记录.md](./docs/选项测试记录.md) 「新增」段落）。branch：`fix/settings-options-bugs`（延续 v0.2.93）。
+
+- **5 个 show* toggle 实际生效**（`showTop` / `showApps` / `showRecent` / `showClosed` / `showDevices`）：根因——`verifyColumns` 只 ADD special ID 到列布局，从不 REMOVE，所以即使 toggle 关闭，special folder 仍存储在 columns 数组里并在每次 re-render 时渲染。
+  - 修：把 `SHOW_KEY_MAP` + `isSpecialVisible` 从 `layout-ops.ts` 移到 `bookmarks/special-folders.ts`（避开 layout-ops → board import cycle），让 `column.ts:renderColumn` 和 `board.ts:renderColumns` 都能导入。
+  - `column.ts:renderColumn` 用 `rawIds.filter((id) => isSpecialVisible(id))` 在渲染前过滤掉隐藏的 special。layout 存储里仍保留 ID——重新开启 toggle 后 special 在原位置回来。
+  - `board.ts:renderColumns` 用 `columns.filter(col => col.some(id => isSpecialVisible(id)))` 过滤整列，避免一整列全是隐藏 special 时渲染成空白 1/N 列 div。
+- **number input step 修复**：3 个 count 输入（`numberTop` / `numberRecent` / `numberClosed`）从 `step="0.1"` 改为 `step="1"`。
+  - `createNumberInput(key)` 加可选第二参 `step: string = '0.1'`，默认保持 0.1 不影响其他 scale 驱动的 setting（spacing / fontSize / shadowBlur 等）。
+  - 3 个 count 行显式传 `'1'`。
+- **`newtab`（打开链接方式）加入 `RERENDER_KEYS`**：原 `RERENDER_KEYS` 不含 `newtab`，所以改设置后既有的 `<a>` 元素仍带旧 `target` 属性 / 旧 click handler，必须刷新页面才生效。加 `'newtab'` 后切换会立即触发 `renderColumns()`，新 `<a>` 重新生成。
+- **`getDevicesNodes` 错 key 修复**（顺手）：`special-folders.ts:105` 原代码读 `getSetting('numberClosed')`（最近关闭数量）来控制 devices 数量，明显的 copy/paste 残留。改成 hardcode 10（与其他 count default 一致）。如果未来要暴露 `numberDevices` 滑块，在这一行 wire 即可。
+
+### Notes
+- 重新开启 show* toggle 后，special folder 在原列原位置恢复（layout 存储未变）。
+- 「功能」tab 的「显示根节点」与「布局」tab 的「显示顶层文件夹」是同字段（showRoot）的重复——按 v0.2.93 决策保留，本 PR 不动。
+
+## [0.2.93] - 2026-06-20
+
+### Fixed
+设置面板 8 个选项 bug 修复（基于 [docs/选项测试记录.md](./docs/选项测试记录.md)）。所有改动集中在 layout tab 的语义/接线 + 移除多余选项。branch：`fix/settings-options-bugs`。
+
+#### 布局 tab
+- **「行间距」修复语义**：原来是写 `#main a { line-height; padding-left/right }`（`apply.ts`），但 label 是「行间距」——视觉上两个相邻 link 之间的间距。改成写 `:root { --newtab-spacing: Xpx }`（specificity 0,1,0 盖过 globals.css 0），cascade 进 `newtab.css` 的 `gap: var(--newtab-spacing)`。scale 0.5/1/1.5 → 4px/10px/20px。link 的 line-height / padding 维持 `newtab.css` 静态 1.4 + `0.45em 0.8em 0.45em 1.2em` 不动。description 同步改为「书签链接之间的垂直间距（行与行之间的距离）」。
+- **「垂直边距」移除**：用户反馈「可以移除」。从 `Settings` 类型 + `defaults` + `STYLE_KEYS` + `settings-panel.ts` layout tab + `lib/storage/settings.ts` legacy migration 全链路删。同时 `globals.css` 那个「定义但未消费」的 `--newtab-vmargin` CSS var 一并清掉（CHANGELOG v0.2.79 提过「下个 PR 修」，本 PR 落地）。
+- **「对齐方式」实现为生效**：原 `apply.ts` 没消费 `align` 设置（只在 `RERENDER_KEYS` 里，没有对应 CSS 规则输出），切换无反应。改成 emit `#main { text-align: ${align} }`（column 是 `inline-block`，走 text-level flow）。从 `RERENDER_KEYS` 移除 align（不需 re-render，纯 CSS 规则更新）。description 加一句「需配合「列宽」使用（auto 模式下整组列填满整宽，无效果）」提醒用户。
+- **「锁定列」接线到右键菜单 + 列拖拽 + 列 drop**：
+  - 根因 1：`context-menu.ts` 之前 `const lock = false; // Will be read from settings when integrated`（未集成），所以即使开启「锁定列」，右键仍能看到「Move column / Remove column / Create new column / Remove folder」。改为 `Number(getSetting('lockColumns')) !== 0` 在 right-click 时读。
+  - 根因 2：`enableDragColumn` 之前只检查 `getSetting('lock')`，没看 `lockColumns`，所以「锁定列」开启时列头仍可拖。改为同时检查 `lock` 和 `lockColumns`。
+  - 根因 3：`drop-handler.ts` 的 `captureAndDrop` 调 `addColumn` 时没看 `lockColumns`，所以拖出多列场景仍能 addColumn。改为在 `addColumn` 分支前置 `if (getSetting('lockColumns')) return;`（`addRow` 不受影响，是列内 reorder 不是列结构变更）。
+- **「显示顶层文件夹」接线错误修复**：layout tab 的 toggle 之前绑 `showTop`，但实际渲染走 `getSetting('showRoot')`（`column.ts:21, 32`），所以关掉 toggle 完全无效。改绑 `showRoot`。功能 tab 的「显示根节点」（`settings-panel.ts`）本来就是 `showRoot` 字段，重复了但保留——按用户决策 layout tab 是用户测试时使用的地方，重复项保留为无关改动不动。
+- **「锁定拖拽」运行时重新检查**：
+  - 根因：`enableDragFolder` / `enableDragColumn` / `enableDragDrop` 都在 `enable*` 调用时一次性 check `getSetting('lock')`，之后设置变更不会重新生效。toggle 后仍可拖一次（因为旧的 dragstart listener 还在），刷新页面后才彻底锁住。
+  - 修：在 `dragstart` handler 内部再 `if (getSetting('lock')) { event.preventDefault(); return; }`，`drop-handler.ts` 的 `onDrop` 同理。这样 toggle 设置后**下一次** drag 立即生效，无需刷新、无需 re-render。`lockColumns` 复用同模式在 `dragstart` 重检（与上面「锁定列」修复共用一套代码）。
+
+#### 功能 tab
+- **「隐藏设置按钮」移除**：用户反馈「不允许隐藏」。从 `Settings` 类型 + `defaults` + `legacy migration`（`hideOptions` key）+ `settings-panel.ts` 功能 tab + `app.ts:158-161` 的 `if (getSetting('hideOptions'))` 隐藏齿轮的代码全链路删。设置按钮（齿轮）始终可见。
+- **「显示搜索栏」移除**：用户反馈「不允许隐藏」。从 `Settings` 类型 + `defaults` + `legacy migration`（`showSearchBar` key）+ `settings-panel.ts` 功能 tab + `topbar.ts` 的 `if (showSearch)` 包装 + `search-main.ts` 的 `if (getSetting('showSearch') === 0) return;` 早返回 + `undo-button.ts` 的 `renderUndoButton(topbar, showSearch)` 第二参数全链路删。搜索栏始终显示（`⌘K` 仍可唤起，是同一 DOM 节点）。顺手把 `search-main.ts` 那个不再使用的 `getSetting` import 删掉。
+
+### Notes
+- 所有被移除的 legacy 迁移 key 都不在活跃用户数据里（pre-0.2.30 才有可能出现），实测用户群体 > 99% 都是 0.2.30+ 直接拿 `Settings` 字段。
+- `align` 在 `columnWidth: auto`（默认）下无可见效果（整组列填满 100% 宽），需要「列宽」设固定值（如 `200px`）才能看出 left/center/right 的差异。已在 description 里写明。
+
 ## [0.2.92] - 2026-06-20
 
 ### Fixed

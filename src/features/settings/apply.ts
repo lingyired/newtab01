@@ -43,7 +43,8 @@ type ColorKey = keyof typeof COLOR_KEYS;
 const STYLE_KEYS: ReadonlySet<keyof Settings> = new Set<keyof Settings>([
   'font', 'fontSize', 'fontWeight',
   'shadowBlur', 'highlightRound',
-  'spacing', 'vMargin', 'width', 'hPos', 'autoScale',
+  'spacing', 'width', 'hPos', 'autoScale',
+  'align',
 ]);
 
 /**
@@ -101,10 +102,16 @@ function rebuildDynamicStyles(): void {
   const highlightRound = scale(settings('highlightRound'), 0.2, 1.5);
   rules.push(`#main a { border-radius: ${highlightRound}em; }`);
 
-  // Spacing
-  const lineHeight = scale(settings('spacing'), 2, 5.6, 0.8);
-  const paddingH = scale(settings('spacing'), 0.8, 2, 0.4);
-  rules.push(`#main a { line-height: ${lineHeight}; padding-left: ${paddingH + 0.4}em; padding-right: ${paddingH}em; }`);
+  // Spacing — drives the inter-row gap (--newtab-spacing), not the
+  // line-height of each link. The v0.2.45-era implementation wrote
+  // `line-height` + horizontal padding to `#main a`, but the row gap
+  // is the more intuitive "行间距" semantic (the visual space between
+  // two adjacent link items). Writing to `:root --newtab-spacing`
+  // (specificity 0,1,0) overrides the :where(:root) default in
+  // globals.css (specificity 0) and cascades into the `gap` rules
+  // in newtab.css. Scale 0.5/1/1.5 → 4px/10px/20px.
+  const rowGap = scale(settings('spacing'), 10, 20, 4);
+  rules.push(`:root { --newtab-spacing: ${rowGap}px; }`);
 
   // Width
   if (settings('autoScale')) {
@@ -122,14 +129,21 @@ function rebuildDynamicStyles(): void {
     rules.push(`#main { width: ${widthPx}px; margin-left: calc((${settings('hPos')} / 2) * (100vw - ${widthPx}px)); }`);
   }
 
-  // Vertical margin
-  if (settings('autoScale')) {
-    const vMarginPct = scale(settings('vMargin'), 0, 5);
-    rules.push(`#main { margin-top: ${vMarginPct}%; }`);
-  } else {
-    const vMarginPx = scale(settings('vMargin'), 0, 200);
-    rules.push(`#main { margin-top: ${vMarginPx}px; }`);
-  }
+  // Vertical margin — removed in v0.2.93 (per user feedback that
+  // the setting was confusing and not particularly useful). The
+  // topbar's own `padding: 16px` (newtab.css) and `#main`'s flow
+  // provide enough top whitespace without an extra setting.
+
+  // Align — drives the column group's horizontal alignment via
+  // `text-align` on `#main`. Columns are `display: inline-block`,
+  // so they flow as text-level content and respect parent's
+  // text-align. The setting only has visible effect when columns
+  // don't fill `#main`'s full width (i.e., `columnWidth` is set
+  // to a fixed value); with `columnWidth: auto` the group fills
+  // 100% and the alignment is a no-op. This matches HNTP's
+  // behavior — `align` is meaningful when columns are sized
+  // smaller than the available space.
+  rules.push(`#main { text-align: ${settings('align')}; }`);
 
   const style = document.getElementById(STYLE_ELEMENT_ID) as HTMLStyleElement | null
     ?? Object.assign(document.createElement('style'), { id: STYLE_ELEMENT_ID });
