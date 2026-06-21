@@ -5,6 +5,13 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.96] - 2026-06-20
+
+### Fixed
+- **apps 在「后台新标签」下打开两个后台标签页**（v0.2.95 修复 string→number 后暴露的次生 bug）。根因：`features/bookmarks/link.ts` 之前对 chrome:// / file:// URLs 同时走了「generic newtab 分支」+ 「chrome:// 分支」两套 click handler。`newtab === 2` 时 generic 分支加了一个 `addEventListener('click', ...)`，chrome:// 分支又加一个；同一 click 触发两个 handler → `openLink(url, 2)` 调两次 → 两个后台 tab。`apps` 的默认 launchUrl 是 `chrome://apps` 所以踩中。
+  - 修：把 `urlStart` 提到前面提取并算 `isChromeOrFile` boolean，generic newtab 分支（`a.target = '_blank'` 和 `addEventListener('click', ...)`）用 `if (!isChromeOrFile)` 跳过，chrome:// 分支保留。chrome:// / file:// URL 一律只走专用 click handler（`<a target="_blank" href="chrome://...">` 在扩展 newtab override 里不可靠，必须走 `chrome.tabs` API，所以让专用 handler 全权处理是对的）。
+  - 行为：`newtab=0/1/2` 对 chrome:// URL 全部通过 `openLink` → `createTab` / `updateTab` 走 chrome.tabs API，不会再双开。
+
 ## [0.2.95] - 2026-06-20
 
 ### Fixed

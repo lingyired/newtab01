@@ -43,20 +43,30 @@ export function renderLink(node: BookmarkNode, target: HTMLElement): HTMLLIEleme
     });
   } else if (url) {
     const newtab = getSetting('newtab');
-    if (newtab === 1) {
-      // New foreground tab
-      a.target = '_blank';
-    } else if (newtab === 2) {
-      // New background tab
-      a.addEventListener('click', (e) => {
-        e.preventDefault();
-        openLink(url, newtab);
-      });
+    // chrome:// and file:/// URLs must be opened via the chrome.tabs API
+    // (the `<a target="_blank">` shortcut in the newtab override is
+    // unreliable for these schemes), so we route them through a single
+    // dedicated click handler below. Skip the generic newtab branch
+    // here — running both would attach two click listeners and open
+    // the URL twice (e.g. newtab=2 + apps' default `chrome://apps` URL
+    // would open two background tabs on every click).
+    const urlStart = url.substring(0, 6);
+    const isChromeOrFile = urlStart === 'chrome' || urlStart === 'file:/';
+    if (!isChromeOrFile) {
+      if (newtab === 1) {
+        // New foreground tab
+        a.target = '_blank';
+      } else if (newtab === 2) {
+        // New background tab
+        a.addEventListener('click', (e) => {
+          e.preventDefault();
+          openLink(url, newtab);
+        });
+      }
     }
 
     // Fix chrome:// and file:/// URLs
-    const urlStart = url.substring(0, 6);
-    if (urlStart === 'chrome' || urlStart === 'file:/') {
+    if (isChromeOrFile) {
       a.addEventListener('click', (e) => {
         e.preventDefault();
         openLink(url, newtab || (e.ctrlKey ? 2 : 0));
