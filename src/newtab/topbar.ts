@@ -16,20 +16,26 @@ let searchInputEl: HTMLInputElement | null = null;
 let searchResultsEl: HTMLDivElement | null = null;
 let settingsBtnEl: HTMLButtonElement | null = null;
 
-// v0.2.126: keyboard shortcut hint for the search box. Mac uses
-//  ⌘K, Windows / Linux / others use Ctrl+K. The key token lives
-//  outside the i18n catalog because it's not language-specific
-//  (translators shouldn't have to decide which OS the user is on).
-//  Cached at module load so the placeholder rebuild on locale
-//  change doesn't pay the platform-detect cost on every refresh.
-const SEARCH_SHORTCUT_HINT = isMacPlatform() ? '⌘K' : 'Ctrl+K';
+// v0.2.127: keyboard shortcut hint for the search box. The hint
+//  is evaluated PER-CALL rather than cached at module load —
+//  earlier versions cached the value in a module-level const
+//  that was evaluated at import time. On Mac Edge this raced
+//  with extension init and produced a stale 'false' result.
+//  Per-call cost is a few regex matches and is negligible.
+//  Mac uses ⌘K; Windows / Linux / others use Ctrl+K. The key
+//  token lives outside the i18n catalog because it's not
+//  language-specific (translators shouldn't have to decide
+//  which OS the user is on).
+function getSearchShortcutHint(): string {
+  return isMacPlatform() ? '⌘K' : 'Ctrl+K';
+}
 
 /** Build the search input placeholder: `t('topbar.search.placeholder')`
  *  plus a single trailing space + parenthesized shortcut hint. The
  *  hint is a platform-specific key (⌘K or Ctrl+K) appended in code
  *  so the i18n catalog stays OS-agnostic. */
 function buildSearchPlaceholder(): string {
-  return `${t('topbar.search.placeholder')} (${SEARCH_SHORTCUT_HINT})`;
+  return `${t('topbar.search.placeholder')} (${getSearchShortcutHint()})`;
 }
 
 /** Re-paint all topbar static strings (search placeholder + aria,

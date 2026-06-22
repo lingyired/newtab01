@@ -5,6 +5,12 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.128] - 2026-07-04
+
+### Fixed
+- **Mac Edge 上 ⌘K 还是不显示 — 临时加 debug log 定位**。v0.2.127 改 OR 逻辑后用户报告仍未生效，可能还有第二层 bug。在 `isMacPlatform()` 末尾加 `console.log('[newtab01:platform] isMacPlatform() =', false, '\n  signals:', signals)`，把 3 个信号（`userAgentData.platform` / `navigator.platform` / UA 字符串 sniff）的 raw value + matched 全部打印，让用户能直接 copy-paste 回 dev 看哪个信号没匹配上。
+  - 同时把 [topbar.ts](src/newtab/topbar.ts) 的 `SEARCH_SHORTCUT_HINT` 模块级 const 改成 `getSearchShortcutHint()` per-call 评估：v0.2.126 / v0.2.127 都在模块加载时跑了一次检测，extension init 期间可能 navigator 还没就绪；改成每次 placeholder 重算时再评估（成本是几个 regex 匹配，可忽略）。
+
 ## [0.2.127] - 2026-07-03
 
 ### Fixed

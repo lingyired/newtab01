@@ -14,6 +14,14 @@
 export function isMacPlatform(): boolean {
   if (typeof navigator === 'undefined') return false;
 
+  // v0.2.127: collect every signal so we can log them when the
+  //  user reports a wrong shortcut. The function still returns a
+  //  single boolean; the collected `signals` object is only
+  //  used for the one-off `console.log` at the bottom of this
+  //  function. To disable the log, comment out the line marked
+  //  `DEBUG_LOG`.
+  const signals: { name: string; raw: string; matched: boolean }[] = [];
+
   // 1. navigator.userAgentData.platform (Chrome 90+, also Edge).
   //    On macOS the userAgentData.platform string is "macOS" by
   //    default. On Edge on macOS this is reliable when the API
@@ -22,7 +30,11 @@ export function isMacPlatform(): boolean {
     userAgentData?: { platform?: string };
   }).userAgentData?.platform;
   if (typeof uaDataPlatform === 'string') {
-    if (/^mac/i.test(uaDataPlatform)) return true;
+    const matched = /^mac/i.test(uaDataPlatform);
+    signals.push({ name: 'userAgentData.platform', raw: uaDataPlatform, matched });
+    if (matched) return true;
+  } else {
+    signals.push({ name: 'userAgentData.platform', raw: '(undefined)', matched: false });
   }
 
   // 2. navigator.platform (legacy, but still present in every
@@ -37,7 +49,11 @@ export function isMacPlatform(): boolean {
     platform?: string;
   }).platform;
   if (typeof legacyPlatform === 'string') {
-    if (/^mac/i.test(legacyPlatform)) return true;
+    const matched = /^mac/i.test(legacyPlatform);
+    signals.push({ name: 'navigator.platform', raw: legacyPlatform, matched });
+    if (matched) return true;
+  } else {
+    signals.push({ name: 'navigator.platform', raw: '(undefined)', matched: false });
   }
 
   // 3. UA-string sniff (last-resort fallback). On macOS the UA
@@ -48,10 +64,18 @@ export function isMacPlatform(): boolean {
   //    portion of the UA is the most reliable cross-browser
   //    signal even in 2026.
   const ua = navigator.userAgent ?? '';
-  if (/Macintosh|Mac OS X|Mac_PowerPC/i.test(ua)) return true;
+  const matched = /Macintosh|Mac OS X|Mac_PowerPC/i.test(ua);
+  signals.push({ name: 'userAgent sniff', raw: ua, matched });
+  if (matched) return true;
 
-  // No signal matched Mac → assume non-Mac (the default Ctrl
-  // shortcut is the right answer for Windows / Linux / Chrome
-  // OS / Android / iPad-with-keyboard-in-desktop-mode / etc.).
+  // DEBUG_LOG: v0.2.127 — temporary diagnostic log so users on
+  //  Mac Edge (or any other browser where detection fails) can
+  //  copy-paste the result back to the developer. The output
+  //  shows the raw value of every signal, which one matched,
+  //  and the final decision. Remove this line once the bug is
+  //  closed.
+  // eslint-disable-next-line no-console
+  console.log('[newtab01:platform] isMacPlatform() =', false, '\n  signals:', signals);
+
   return false;
 }
