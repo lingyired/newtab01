@@ -153,6 +153,18 @@ export type CustomThemeEntry = {
   dark?: TweakcnJson;
   installedAt: number;
   updatedAt: number;
+  /**
+   * v0.2.104: original source URL for themes installed via the
+   *  "Import custom theme" URL path. Kept so the settings panel's
+   *  "Export settings" can emit `{ name, url }` entries that
+   *  re-install on import (fetch the URL again, run
+   *  validateThemeJson + installCustomTheme) instead of forcing
+   *  the user to re-paste. Themes installed via the CSS path
+   *  (no URL ever existed) leave this undefined and are skipped
+   *  on export. Optional + backward-compatible — pre-v0.2.104
+   *  storage shape (no `sourceUrl` field) reads back as
+   *  `undefined`, which export treats as "no URL, skip". */
+  sourceUrl?: string;
 };
 
 export type CustomThemesMap = Record<string, CustomThemeEntry>;
@@ -319,18 +331,40 @@ export async function readCustomThemes(): Promise<CustomThemesMap> {
     return {};
   }
 }
-/** Persist a single entry. Merges with existing map (keyed by name). */
-export async function installCustomTheme(entry: CustomThemeEntry): Promise<void> {
+/** Persist a single entry. Merges with existing map (keyed by name).
+ *
+ *  v0.2.104: accepts an optional 2nd `options` arg; when `sourceUrl`
+ *  is provided it's stamped onto the entry (overwriting any previous
+ *  value, so an upgrade from URL → CSS paste → URL again correctly
+ *  tracks the latest URL). CSS-path installs omit the arg and
+ *  `entry.sourceUrl` stays undefined. The merged `CustomThemeEntry`
+ *  type still permits `sourceUrl?: string` so the field is optional
+ *  on the storage side. */
+export async function installCustomTheme(
+  entry: CustomThemeEntry,
+  options?: { sourceUrl?: string },
+): Promise<void> {
   if (typeof chrome === 'undefined' || !chrome.storage?.local) {
     throw new Error('chrome.storage.local is not available');
   }
   const current = await readCustomThemes();
-  current[entry.light.name] = entry;
+  // Stamp sourceUrl onto the entry if the caller supplied one.
+  //  - v0.2.104: a same-name re-install (isUpdate=true) that was
+  //    originally URL-installed then later re-pasted via CSS will
+  //    pass undefined for sourceUrl; we drop the previous URL in
+  //    that case (the user "moved" the theme to a CSS source) so
+  //    the export pipeline doesn't resurrect a URL the user
+  //    considers obsolete.
+  const nextEntry: CustomThemeEntry =
+    options?.sourceUrl !== undefined
+      ? { ...entry, sourceUrl: options.sourceUrl }
+      : entry;
+  current[nextEntry.light.name] = nextEntry;
   await chrome.storage.local.set({ [STORAGE_KEY]: current });
   // Keep the dark-variant cache in switcher.ts in sync — applyTheme()
   // consults this to decide whether to append `-dark` to the data-theme
   // value when the user is in dark mode.
-  setHasDarkVariant(userThemeId(entry.light.name, 'light'), entry.dark != null);
+  setHasDarkVariant(userThemeId(nextEntry.light.name, 'light'), nextEntry.dark != null);
 }
 
 /** Remove an entry by name. Returns true if it was present, false otherwise. */

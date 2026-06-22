@@ -1356,20 +1356,31 @@ function buildThemeRowDescription(): HTMLElement {
  *  v0.2.77: dropped the `'json'` branch — direct raw JSON paste is
  *  gone in favour of URL paste (which produces a JSON object the
  *  same way). The URL path's `JSON.parse` is now reading the
- *  service worker's fetch response, not user input. */
+ *  service worker's fetch response, not user input.
+ *
+ *  v0.2.104: returned tuple now includes `sourceUrl` so the Apply
+ *  handler can pass it to `installCustomTheme` for the
+ *  "Export settings → custom themes" round-trip. URL path always
+ *  returns the *original* user-pasted URL (not the normalized JSON
+ *  URL the SW actually fetched) so an exported file shows what the
+ *  user originally pasted. CSS path always returns undefined
+ *  (no source URL exists). */
 async function runThemeValidation(
   raw: string,
   nameFromInput: string,
   existing: Awaited<ReturnType<typeof readCustomThemes>>,
-): Promise<Awaited<ReturnType<typeof validateThemeJson>>> {
+): Promise<{ result: Awaited<ReturnType<typeof validateThemeJson>>; sourceUrl: string | undefined }> {
   if (detectInputFormat(raw) === 'url') {
     // Step 1: shape check (no network yet)
     const kind = detectTweakcnUrl(raw);
     if (!kind) {
       return {
-        ok: false,
-        error:
-          'URL 格式不正确：tweakcn 主题 URL 应该是 https://tweakcn.com/themes/<id>',
+        result: {
+          ok: false,
+          error:
+            'URL 格式不正确：tweakcn 主题 URL 应该是 https://tweakcn.com/themes/<id>',
+        },
+        sourceUrl: undefined,
       };
     }
     // Step 2: normalize → JSON URL, fetch via service worker
@@ -1380,8 +1391,11 @@ async function runThemeValidation(
     });
     if (!fetched || !fetched.ok) {
       return {
-        ok: false,
-        error: `加载失败: ${fetched?.error ?? 'unknown'}`,
+        result: {
+          ok: false,
+          error: `加载失败: ${fetched?.error ?? 'unknown'}`,
+        },
+        sourceUrl: undefined,
       };
     }
     // Step 3: parse the response as JSON
@@ -1390,8 +1404,11 @@ async function runThemeValidation(
       parsed = JSON.parse(fetched.text);
     } catch (e) {
       return {
-        ok: false,
-        error: `JSON 解析失败: ${(e as Error).message}`,
+        result: {
+          ok: false,
+          error: `JSON 解析失败: ${(e as Error).message}`,
+        },
+        sourceUrl: undefined,
       };
     }
     // Step 4: user-supplied name overrides the JSON's name field,
@@ -1401,17 +1418,20 @@ async function runThemeValidation(
     if (nameFromInput && typeof parsed === 'object' && parsed !== null) {
       (parsed as { name?: string }).name = nameFromInput;
     }
-    return validateThemeJson(parsed, existing);
+    return { result: validateThemeJson(parsed, existing), sourceUrl: raw };
   }
   // CSS path (unchanged from v0.2.74 / v0.2.77)
   if (!nameFromInput) {
-    return { ok: false, error: '请先输入主题名称' };
+    return { result: { ok: false, error: '请先输入主题名称' }, sourceUrl: undefined };
   }
   const parsed = parseCssTheme(raw, nameFromInput);
   if (!parsed.ok) {
-    return { ok: false, error: `CSS 解析失败: ${parsed.error}` };
+    return {
+      result: { ok: false, error: `CSS 解析失败: ${parsed.error}` },
+      sourceUrl: undefined,
+    };
   }
-  return validateThemeJson(parsed.json, existing);
+  return { result: validateThemeJson(parsed.json, existing), sourceUrl: undefined };
 }
 
 /** Build the "Import custom theme" section: textarea + name input +
@@ -1503,13 +1523,18 @@ function buildCustomThemeImportSection(): HTMLElement {
     progress.classList.add('sp-progress--active');
     try {
       const existing = await readCustomThemes();
-      const result = await runThemeValidation(raw, nameInput.value.trim(), existing);
+      const { result, sourceUrl } = await runThemeValidation(raw, nameInput.value.trim(), existing);
       if (!result.ok) {
         setCustomThemeStatus(status, 'error', result.error);
         return;
       }
       try {
-        await installCustomTheme(result.entry);
+        // v0.2.104: stamp the source URL onto the entry so a later
+        //  "Export settings" can emit `{ name, url }` for round-trip
+        //  re-install. CSS-path installs pass undefined (no URL ever
+        //  existed); `installCustomTheme` no-ops the stamp in that
+        //  case so the entry's `sourceUrl` field stays undefined.
+        await installCustomTheme(result.entry, sourceUrl ? { sourceUrl } : undefined);
       } catch (e) {
         setCustomThemeStatus(
           status,
@@ -1691,6 +1716,20 @@ function renderAdvancedTab(): HTMLElement {
   //  (theme, mode) bucket by `initSettings` →
   //  `migrateLegacyGlobalCss` in `lib/storage/settings.ts`.
 
+  // v0.2.104: the 10 appearance-tab options now live in
+  //  `themeOverrides[themeId][mode]` (per-theme per-mode storage
+  //  introduced in v0.2.97; customCss added in v0.2.102). These
+  //  keys are silently dropped on export AND on import — exporting
+  //  them globally is misleading (they only apply to the current
+  //  theme + mode) and importing them to the global scope would
+  //  write back stale values that `resolveEffectiveSettings` would
+  //  then "win" over the user's actual per-theme overrides.
+  const PER_THEME_APPEARANCE_KEYS: ReadonlySet<keyof Settings> = new Set([
+    'font', 'fontSize', 'fontWeight',
+    'fontColor', 'backgroundColor', 'highlightColor', 'highlightFontColor', 'shadowColor',
+    'shadowBlur', 'highlightRound',
+  ]);
+
   // Import / Export
   const actionsRow = el('div', 'sp-actions');
 
@@ -1707,32 +1746,132 @@ function renderAdvancedTab(): HTMLElement {
       if (!file) return;
       const reader = new FileReader();
       reader.onload = () => {
-        try {
-          const imported = JSON.parse(reader.result as string) as Partial<Settings>;
-          // v0.2.102: only keep keys that are present in the
-          //  current `Settings` shape. Pre-v0.2.102 exported
-          //  files contain a `css` field that's no longer a
-          //  Settings key — silently drop it. (The actual CSS
-          //  value, if any, has already been migrated to
-          //  `themeOverrides[theme][mode].customCss` by
-          //  `initSettings`; this just stops `updateSetting('css', ...)`
-          //  from blowing up the import.)
-          const knownKeys = new Set(Object.keys(getDefaults()) as Array<keyof Settings>);
-          const filtered: Settings = { ...getDefaults() };
-          for (const [k, v] of Object.entries(imported) as Array<[keyof Settings, unknown]>) {
-            if (knownKeys.has(k)) {
-              (filtered as unknown as Record<string, unknown>)[k] = v;
+        void (async () => {
+          try {
+            const imported = JSON.parse(reader.result as string) as Partial<Settings> & {
+              // v0.2.104: top-level `customThemes` array carried in
+              //  the export. Each entry is `{ name, url }` —
+              //  re-installs by re-fetching the URL through the
+              //  service worker. CSS-pasted themes are not
+              //  exported (no source URL) so they don't appear
+              //  here. Optional — pre-v0.2.104 exports omit the
+              //  field; we no-op in that case.
+              customThemes?: Array<{ name?: string; url?: string }>;
+            };
+            // v0.2.102: only keep keys that are present in the
+            //  current `Settings` shape. Pre-v0.2.102 exported
+            //  files contain a `css` field that's no longer a
+            //  Settings key — silently drop it. (The actual CSS
+            //  value, if any, has already been migrated to
+            //  `themeOverrides[theme][mode].customCss` by
+            //  `initSettings`; this just stops `updateSetting('css', ...)`
+            //  from blowing up the import.)
+            //
+            // v0.2.104: ALSO drop the 10 per-theme appearance
+            //  fields (PER_THEME_APPEARANCE_KEYS) — they live in
+            //  themeOverrides now (re-importing them to the global
+            //  scope would create stale overrides that
+            //  `resolveEffectiveSettings` would then "win" over
+            //  the user's actual per-theme values). The top-level
+            //  `customThemes` array is processed separately below
+            //  and is skipped here (`customThemes` is not a
+            //  `keyof Settings`).
+            const knownKeys = new Set(Object.keys(getDefaults()) as Array<keyof Settings>);
+            const filtered: Settings = { ...getDefaults() };
+            for (const [k, v] of Object.entries(imported) as Array<[string, unknown]>) {
+              if (k === 'customThemes') continue;
+              const typedK = k as keyof Settings;
+              if (knownKeys.has(typedK) && !PER_THEME_APPEARANCE_KEYS.has(typedK)) {
+                (filtered as unknown as Record<string, unknown>)[k] = v;
+              }
             }
+            const entries = Object.entries(filtered) as [keyof Settings, unknown][];
+            for (const [k, v] of entries) {
+              void updateSetting(k, v as Settings[keyof Settings]);
+            }
+
+            // v0.2.104: re-install URL-tracked custom themes. Each
+            //  entry is `{ name?, url }` — we re-fetch the URL via
+            //  the service worker (same path the manual "Import
+            //  custom theme" URL branch uses), run
+            //  validateThemeJson, and install with `sourceUrl`
+            //  stamped on the entry so a future export still
+            //  emits the URL. The `name` field, if present,
+            //  overrides the JSON's `name` (same semantics as
+            //  the manual install path). Failures (bad URL, bad
+            //  JSON, validation reject) are logged and skipped
+            //  silently — the import shouldn't fail just
+            //  because one custom theme is broken.
+            const themes = imported.customThemes;
+            if (Array.isArray(themes) && themes.length > 0) {
+              for (const t of themes) {
+                if (!t || typeof t.url !== 'string' || !t.url) continue;
+                const kind = detectTweakcnUrl(t.url);
+                if (!kind) {
+                  console.warn('[import] 跳过无法识别的 custom theme URL:', t.url);
+                  continue;
+                }
+                const jsonUrl = toTweakcnJsonUrl(t.url);
+                const fetched = await sendMessage<
+                  { ok: true; text: string } | { ok: false; error: string }
+                >({ type: 'fetchThemeJson', url: jsonUrl });
+                if (!fetched || !fetched.ok) {
+                  console.warn(
+                    '[import] custom theme URL 加载失败:',
+                    t.url,
+                    fetched?.error,
+                  );
+                  continue;
+                }
+                let parsed: unknown;
+                try {
+                  parsed = JSON.parse(fetched.text);
+                } catch (e) {
+                  console.warn('[import] custom theme JSON 解析失败:', t.url, e);
+                  continue;
+                }
+                // `name` from the export overrides the JSON's name
+                //  (matches the manual install URL-path semantics).
+                if (typeof t.name === 'string' && t.name && parsed && typeof parsed === 'object') {
+                  (parsed as { name?: string }).name = t.name;
+                }
+                // Re-read existing on every iteration so the
+                //  next call's isUpdate detection sees the entry
+                //  we just installed.
+                const existing = await readCustomThemes();
+                const result = validateThemeJson(parsed, existing);
+                if (!result.ok) {
+                  console.warn(
+                    '[import] custom theme 校验失败:',
+                    t.name ?? t.url,
+                    result.error,
+                  );
+                  continue;
+                }
+                try {
+                  await installCustomTheme(result.entry, { sourceUrl: t.url });
+                } catch (e) {
+                  console.warn(
+                    '[import] custom theme 保存失败:',
+                    t.name ?? t.url,
+                    e,
+                  );
+                }
+              }
+              // Re-inject the <style id="custom-themes"> node so
+              //  newly installed themes render immediately,
+              //  without requiring a reload. Mirrors the manual
+              //  install path's post-install re-inject.
+              const finalMap = await readCustomThemes();
+              injectCustomThemesStyle(buildCustomThemesStyle(finalMap));
+            }
+
+            const content = document.getElementById('sp-content');
+            if (content) renderContent(content);
+          } catch {
+            alert('设置文件无效');
           }
-          const entries = Object.entries(filtered) as [keyof Settings, unknown][];
-          for (const [k, v] of entries) {
-            void updateSetting(k, v as Settings[keyof Settings]);
-          }
-          const content = document.getElementById('sp-content');
-          if (content) renderContent(content);
-        } catch {
-          alert('设置文件无效');
-        }
+        })();
       };
       reader.readAsText(file);
     });
@@ -1744,14 +1883,52 @@ function renderAdvancedTab(): HTMLElement {
   exportBtn.className = 'sp-btn';
   exportBtn.textContent = '导出设置';
   exportBtn.addEventListener('click', () => {
-    const settings = getSettings();
-    const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'newtab01-settings.json';
-    a.click();
-    URL.revokeObjectURL(url);
+    void (async () => {
+      const settings = getSettings();
+      // v0.2.104: strip the 10 per-theme appearance fields from
+      //  the exported settings. The cast widens `settings` to a
+      //  mutable object so we can build a new filtered map;
+      //  `themeOverrides` and all non-appearance settings pass
+      //  through unchanged. The 10 dropped fields are then
+      //  re-supplied by `themeOverrides` on import.
+      const exportedSettings: Record<string, unknown> = {};
+      for (const [k, v] of Object.entries(settings)) {
+        if (!PER_THEME_APPEARANCE_KEYS.has(k as keyof Settings)) {
+          exportedSettings[k] = v;
+        }
+      }
+      // v0.2.104: emit URL-tracked custom themes as
+      //  `{ name, url }` entries. CSS-pasted themes (no
+      //  `entry.sourceUrl`) are skipped — there's no portable
+      //  source for them — and the user is alerted at export
+      //  time so the omission is visible. An empty `urlThemes`
+      //  array still emits the field (forward-compat: import
+      //  code can `Array.isArray()` without an `in` check).
+      const map = await readCustomThemes();
+      const urlThemes: { name: string; url: string }[] = [];
+      let cssOnlyCount = 0;
+      for (const [name, entry] of Object.entries(map)) {
+        if (!entry) continue;
+        if (entry.sourceUrl) {
+          urlThemes.push({ name, url: entry.sourceUrl });
+        } else {
+          cssOnlyCount += 1;
+        }
+      }
+      if (cssOnlyCount > 0) {
+        alert(
+          `已导出 ${urlThemes.length} 个 URL 主题；另有 ${cssOnlyCount} 个 CSS 主题因无源 URL 而未导出。`,
+        );
+      }
+      const payload = { ...exportedSettings, customThemes: urlThemes };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'newtab01-settings.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    })();
   });
 
   actionsRow.appendChild(importBtn);

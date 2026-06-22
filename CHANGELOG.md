@@ -5,6 +5,23 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.104] - 2026-06-22
+
+### Changed
+- **高级 tab 导出的 JSON 不再包含 10 个 per-theme appearance 字段**。这 10 个字段（`font` / `fontSize` / `fontWeight` / 5 个 palette 颜色 / `shadowBlur` / `highlightRound`）自 v0.2.97 起已迁到 `themeOverrides[themeId][mode]`（per-theme per-mode 存储桶，v0.2.102 又把 `customCss` 加进去），全局 settings 里再保留这些值只会误导（它们实际只对当前主题 + 模式生效）。导出时按 `PER_THEME_APPEARANCE_KEYS` 集合过滤；`themeOverrides` 桶和所有非 appearance 设置（theme / darkMode / 布局 / 列宽 / align / 等）原样导出。
+- **高级 tab 导入时静默丢弃这 10 个 per-theme 字段**。与 v0.2.102 删 `css` 字段同路径：只接受 `getDefaults()` keys 中**且不在** `PER_THEME_APPEARANCE_KEYS` 中的字段。即便用户导入了 pre-v0.2.104 文件里残留的 `font` 等键，也不会污染全局 settings。`themeOverrides` 桶本身继续按 `Settings.themeOverrides` 类型透传。
+
+### Added
+- **`CustomThemeEntry.sourceUrl?: string` 字段**（`src/features/themes/custom-themes.ts`）。URL 安装路径（设置面板「自定义主题」tab 顶部"导入自定义主题"）在 `runThemeValidation` 检测到 URL 输入时，validation tuple 多返回一个 `sourceUrl: string`（保留**用户原始粘贴**的 URL，不走 SW normalize 后的 JSON URL），Apply handler 调 `installCustomTheme(entry, { sourceUrl })` 把它持久化到 entry 上。CSS paste 路径不传，entry 上 `sourceUrl` 保持 `undefined`。同一主题从 URL → CSS paste → URL 三次再安装时，最后一次的 URL 覆盖（最直觉）。
+- **高级 tab 导出 `customThemes: [{ name, url }]` 数组**。从 `chrome.storage.local.customThemes` 读出所有 entry，把有 `sourceUrl` 的挑出来按 `{ name, url: sourceUrl }` 序列化到导出文件顶层。**CSS paste 主题无源 URL 跳过**，并在 alert 提示「已导出 N 个 URL 主题；另有 M 个 CSS 主题因无源 URL 而未导出」——避免静默丢失用户主题。空数组仍然发出 `customThemes: []` 字段（forward-compat）。
+- **高级 tab 导入重装 URL 主题**。新加 `imported.customThemes: Array<{ name?, url }>` 处理块：每个 entry 走和手动安装 URL 主题一样的 `detectTweakcnUrl → toTweakcnJsonUrl → sendMessage('fetchThemeJson') → JSON.parse → validateThemeJson → installCustomTheme(entry, { sourceUrl: url })` 流程；`name` 字段（如果存在）覆盖 JSON 里的 `name`（与手动 URL 路径一致）。失败（URL 非法 / fetch 失败 / JSON parse 失败 / validate 失败 / install 失败）走 `console.warn` 跳过，**不**让一个坏主题阻止整个导入。所有装完之后重 inject `<style id="custom-themes">` 让新主题立刻可用。
+
+### Notes
+- `installCustomTheme` 签名扩展：`installCustomTheme(entry, options?: { sourceUrl?: string })`（`src/features/themes/custom-themes.ts:343`）。CSS 路径的所有现有调用点不传 2nd 参数（仍然兼容），URL 路径的 Apply handler（`src/newtab/settings-panel.ts:1537`）传 `sourceUrl` 字符串。
+- `runThemeValidation` 返回类型从 `Promise<ValidationResult>` 改为 `Promise<{ result: ValidationResult; sourceUrl: string | undefined }>`（`src/newtab/settings-panel.ts:1368`）。所有失败分支（URL 形状错 / fetch 失败 / JSON parse 失败 / CSS 缺 name / CSS parse 失败）都返回 `{ result: { ok: false, ... }, sourceUrl: undefined }`，让 Apply handler 的 `if (!result.ok)` 分支保持原样。
+- import 走的是用户原始粘贴的 URL（不是 SW 内部 normalize 后的 `/r/themes/<id>` JSON URL），所以 `detectTweakcnUrl` 会检测为 `'theme'` kind 并 `toTweakcnJsonUrl` 重新 normalize，逻辑闭合。
+- import 失败策略：单条 `console.warn` 后 continue；导入 settings 主体不受影响（已经在 import 上半段 `updateSetting` 写完）。`renderContent` 在最后统一重渲染，所以新装的 theme 会出现在下拉框 + 「自定义主题」列表里。
+
 ## [0.2.103] - 2026-06-22
 
 ### Fixed
