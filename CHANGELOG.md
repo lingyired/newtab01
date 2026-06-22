@@ -5,6 +5,16 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.123] - 2026-06-29
+
+### Changed
+- **i18n 文档体系建立**。feat/i18n 合并后，v0.2.117 ~ v0.2.122 的 6 个 commit 走完了"加 catalog → 迁移模块 → 加新 locale → 修 UX 回归"的完整周期，但缺少一份「以后任何改动都要考虑多语言」的工程规则文档。在三处落地：
+  - `CLAUDE.md` §0.1：分支清单追加 `feat/i18n` 行（标记冻结 + 版本段 + merge commit `bffc756`）
+  - `CLAUDE.md` §6.5：新增「i18n 多语言支持」段（架构 / fallback 链 / 跨设备同步 / live refresh / SW 独立表 / RTL / bundle 预算 / 修改规则）
+  - `CLAUDE.md` §9.9：新增「i18n 工程约束」段（强制 t() / 加 key 流程 / 改文案流程 / 静态配置对象模式 / placeholder 插值 / 不进 catalog 的内容 / 长 label 约束 / 测试）
+  - `.trae/rules/project_rules.md` §6：新增「i18n 规则」段（强制 / 加 key 流程 / 静态配置对象模式 / placeholder 插值 / 不进 catalog / RTL 适配 / 测试 checklist / 翻译质量）
+  - `docs/i18n.md`（新建）：i18n 开发文档（架构总览 / 核心 API / 修改流程 / live refresh 链路 / 模块分工表 / background SW 独立表 / RTL 适配 / 翻译校对流程 / 常见错误模式 / 校验清单）。AI 编码助手在新增 / 修改用户可见字符串前**必读**。
+
 ## [0.2.122] - 2026-06-28
 
 ### Fixed

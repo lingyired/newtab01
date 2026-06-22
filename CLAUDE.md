@@ -31,6 +31,7 @@
 | `feat/per-theme-custom-css` | 🗄 冻结 | 移除高级 tab 全局"自定义 CSS" + `Settings.css` 字段 + `<style id="user-css">` + 升级迁移；外观 tab `<details>` 末尾追加 per-theme per-mode `customCss` textarea + 注入 `<style id="user-theme-css">`（v0.2.102）+ 修切换主题/darkMode 时 textarea 不刷新的回归（v0.2.103）| 见 git log |
 | `feat/import-export-cleanup-and-custom-themes` | 🗄 冻结 | 高级 tab 导出 JSON 移除已迁到 `themeOverrides` 的 10 个 per-theme 字段（font / fontSize / fontWeight / 5 颜色 / shadowBlur / highlightRound）+ import 同步静默丢弃；`CustomThemeEntry` 加 `sourceUrl?` 字段记录 URL 安装时的原始 URL；导出 `customThemes: [{ name, url }]` 数组（CSS paste 主题无 URL 跳过并 alert）；import 走 fetch + validate + install 路径重装 URL 主题（v0.2.104）+ 修 storage.onChanged 只在 theme 变化时调 applyTheme、忽略 darkMode 变化的 bug 导致 import 后 darkMode 必须刷新才生效（v0.2.105）| 见 git log |
 | `feat/import-export-layout-and-custom-themes` | 🗄 冻结 | 高级 tab 导出 settings JSON 加可选 `layout: { columns, movedOut }` 字段（UI 默认勾选 checkbox「包含布局」）+ import 自动检测并恢复 layout（剥 special-folder IDs 避免异环境 force-enable）+ 走 history snapshot 撤销栈可手动 undo + 只动 newtab 显示（不调 `chrome.bookmarks.*` API）（v0.2.106）+ 保留特殊文件夹 ID 默认不勾 checkbox 垂直对齐（v0.2.107）+ Apps UX 反复 4 次回归最终改回 link 视觉 + UA 检测 `chrome://apps` / `edge://apps` + Apps link 复用 `enableDragFolder` 显式 `stopPropagation` 单独拖（v0.2.108 → v0.2.116）| 见 git log |
+| `feat/i18n` | 🗄 冻结 | i18n 多语言支持完整周期：types/index/catalog 脚手架 + en/zh（v0.2.117）→ 全模块迁移（v0.2.118）→ 8 新 locale（es/ar/hi/fr/pt/de/ja/ru）+ Arabic RTL（v0.2.119）→ background SW 10 语言表（v0.2.120）→ import button 完整动作短语 + long-label 换行 + panel in-place 刷新（v0.2.121）→ 去掉 trailing 省略号（v0.2.122）。合并到 main 见 `bffc756`。| 见 git log |
 
 **为什么 v0.2.57 是 `main` 的基线（而不是 v0.2.36 / v0.2.59）**
 
@@ -256,6 +257,25 @@ splitManager.register(new IframeSplitEngine());
   - `chrome.storage.sync.settings.theme` + `settings.darkMode` —— 跨设备同步用户偏好
   - `chrome.storage.local.customThemes` —— 运行时导入的主题，本地大对象（10MB 配额）
 
+### 6.5 i18n 多语言支持
+
+> v0.2.117 ~ v0.2.122 完整周期。**所有用户可见字符串必须走 `t()` 翻译**。详细开发文档见 [`docs/i18n.md`](docs/i18n.md)；新增/修改字符串前**必读**。
+
+- **目录结构**：`src/lib/i18n/` —— `types.ts`（`MessageKey` 联合 + `SUPPORTED_LOCALES` / `RTL_LOCALES` 列表）、`index.ts`（`t()` / `setLocale()` / `initLocale()` / `getLocale()` / `resolveLocale()` / `subscribe()` / `listLocales()` 运行时）、`catalog/<code>.ts`（10 份 locale bundle：`en` / `zh` / `es` / `ar` / `hi` / `fr` / `pt` / `de` / `ja` / `ru`）
+- **零依赖 + 编译期完整**：catalog 用 `as const satisfies LocaleMessages` 模式 —— 任何 catalog 漏 key、typo key、参数不一致都**编译期报错**。`CATALOG` 类型从 v0.2.119 起是 `Record<LocaleCode, LocaleBundle>`（10 项全部到位，Partial 已淘汰）。
+- **fallback 链** `当前选 → navigator.language → 'en'`：用户选 `'auto'` 且浏览器语言不在 10 种里 → fallback `'en'`。解析算法：先精确匹配（`'zh-CN'` 不命中 `'zh'`），再主子标签（`'zh-CN' → 'zh'`），最后 `'en'`
+- **跨设备同步**：`Settings.language: 'auto' | LocaleCode` 字段存在 `chrome.storage.sync`。`apply.ts` 监听 `chrome.storage.onChanged` 调 `setLocale()` → `subscribe()` 通知所有 UI 模块 in-place 刷新
+- **live refresh（不刷新页面）**：`applyLocaleToDom()` 在 `newtab/main.ts` 安装，订阅 i18n 模块；切语言时一次性刷新 `topbar` / `appearance-toggle` / `undo` / `search footer` / `renderColumns()`（特殊目录 title 重新走 `t()`）/ `refreshSettingsPanelLocale()`（in-place 重画打开中的 settings panel —— 不要 close+open，否则会闪）
+- **background SW 独立表**：SW 是独立 build chunk，不能 import newtab 的 i18n 模块（会拉 chrome bookmarks shims）。`src/background.ts` 维护独立 `SETTINGS_MENU_TITLES: Record<string, string>` 查表 10 项；`chrome.storage.onChanged` 监听 `settings.language` 变化时 `removeAll` + 重建 context menu
+- **Arabic RTL**：`<html dir="rtl">` 由 `setLocale()` 自动写；`styles/globals.css` 末尾的 `[dir="rtl"]` 规则强制 URL/hostname 显示节点（search-result-url / split-picker-url / picker-url / bookmark-url / search-result-host / sp-pill-url）走 LTR + `unicode-bidi: isolate`，search input 走 RTL + `text-align: right`。项目 CSS 全部用 `flex + gap`（CLAUDE.md §9.2），column 排布、topbar、settings panel 不需显式镜像
+- **bundle 预算**：10 个 locale × ~5KB unzipped ≈ 50KB，gzipped 后 ~16KB；newtab bundle 现在 26.91KB gzipped（含 i18n 全套），仍在 80KB 预算内
+- **修改规则**：
+  - 新增用户可见字符串：先在 `types.ts` 加 `MessageKey`，再在所有 10 个 catalog 补翻译（编译期强制）—— 漏一个就 build 不过
+  - 现有字符串改文案：改所有 10 个 catalog（grep `MessageKey` 反查也行 —— tsc 在 `'settings.xxx' = '...'` 处会因 `LocaleMessages` 联合报错）
+  - 静态结构里的 label / placeholder / title / aria-label 走 `t(key)` 现读现译 —— locale 切换时 in-place 更新
+  - 静态配置对象里只放 `titleKey: MessageKey` / `labelKey: MessageKey`（参考 `folder-actions.ts` / `appearance-toggle.ts` / `layout-picker.ts` 的模式），不要放裸字符串
+  - 动态拼接用户数据：用户提供的 URL、文件名、bookmark title 不进 catalog；只有**项目自有文案**进 catalog
+
 ---
 
 ## 7. 性能预算与策略
@@ -330,6 +350,21 @@ splitManager.register(new IframeSplitEngine());
   - 优先修复调用方（适配接口变化），不破坏已稳定模块
   - 接口冲突时与相关 Agent 协商统一，而非各自变体
   - 修复后必须实际运行验证，不可只靠 TypeScript 编译通过
+
+### 9.9 i18n 工程约束
+- **所有用户可见字符串必须走 `t()`**。HTML 文本（`<div>`, `<span>`, `<button>`, `<option>`, `<label>`）、`textContent`、`placeholder`、`title`、`aria-label`、`alert()` / `confirm()` 提示 —— 一律不允许硬编码中英文或其他裸字符串
+- **新增 key 的流程**：
+  1. 在 `src/lib/i18n/types.ts` 的 `LocaleMessages` 类型前一行加新 key 到 `MessageKey` 联合（`grep -n 'settings\.' types.ts` 找位置）
+  2. 改 `en.ts` 加翻译（`en` 是 source of truth；中文和其它语言可机器翻译，但术语与 en 一致）
+  3. 同步改 9 个其它 catalog —— tsc 因 `as const satisfies LocaleMessages` 会强制要求每个 catalog 都补
+  4. **新模块第一次 i18n 化时**，新加的 MessageKey 可能数十个。一次性加完并跑 `pnpm exec tsc --noEmit` 确认 0 error
+- **改文案**：先改 `en.ts`（source of truth），再同步改 9 个 catalog；不要只改一个 —— 否则 tsc 不会报但其他语言用户看到旧文案
+- **AI 翻译质量**：v0.2.117 周期内 9 种非英文 catalog 由 AI 一次性生成（hi / ar / ru 可能不自然）。`docs/i18n.md` 留校对入口；用户后续手动微调单个 key 即可，无需跑整个翻译流程
+- **静态配置对象用 `key` 字段**而不是裸字符串（参考 `folder-actions.ts` / `appearance-toggle.ts` / `layout-picker.ts` 的 `titleKey` / `labelKey` 模式）。在静态数组 / 对象里直接放 `'亮'` 之类的中文字符串会导致 tsc 报错且破坏切语言支持
+- **placeholder 插值**：t(key, params) 支持 `{name}` 占位符，例如 `t('folderAction.confirmOpenAll', { count })` → 「打开全部 8 个链接」。**禁止**用字符串模板拼接（`"打开" + count + "个链接"`），那会绕过 catalog
+- **不翻译的内容**：用户提供的 URL、文件名、bookmark title、theme id、内部错误堆栈、debug log —— 这些**不**进 catalog
+- **`.sp-label` / 长字符串**：v0.2.121 之后 `.sp-label` 走 `white-space: normal; word-break: break-word`，新加的 label 如果仍然太短会被截断就错了 —— 重新检查 label 内容。**禁止**加回 `nowrap` / `ellipsis`（会破坏非英文 locale）
+- **测试**：切到每种 locale 跑一遍主要 UI（settings panel 5 tab、popup、split-picker、search footer、context menu、文件夹右键、tab group 标题）确认字符串完整
 
 ---
 

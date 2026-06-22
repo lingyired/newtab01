@@ -91,7 +91,6 @@
 - 动效：快而克制 / 全站一致 / 纯装饰一律删
 
 ---
-
 ## 5. Warning Signs（违背原则的信号）
 
 若出现以下任一现象，立即停下并重新校准：
@@ -102,3 +101,79 @@
 - 使用 `innerHTML` 注入用户输入
 - 硬编码色值而非使用 CSS 变量
 - 动效是纯装饰、不强化层级
+
+---
+
+## 6. i18n 规则（用户可见字符串必须翻译）
+
+> v0.2.117 ~ v0.2.122 引入。详细开发文档见 [`docs/i18n.md`](../../docs/i18n.md)。
+
+### 6.1 强制性
+- **任何用户可见字符串都必须走 `t()` 翻译**，包括：
+  - HTML 文本（`<div>`, `<span>`, `<button>`, `<option>`, `<label>`, `<a>`, `<li>`, `<td>`, `<h1>`-`<h6>`, `<p>`）
+  - `textContent` / `innerText`
+  - `placeholder` / `value`（如果 value 是用户可见文字）
+  - `title` / `aria-label` / `alt`
+  - `alert()` / `confirm()` 提示
+  - `document.title`（动态部分）
+  - `meta` / `og:title` / `og:description`（如果暴露给浏览器）
+- **裸字符串是 bug**：在 PR 评审中如果看到 `textContent = 'Settings'` 这样的硬编码直接退回。例外是项目自有常量（非用户可见的内部 id / 标志位）
+
+### 6.2 添加 / 修改 key 的流程
+1. `src/lib/i18n/types.ts` 的 `MessageKey` 联合加 key
+2. `src/lib/i18n/catalog/en.ts` 加英文（**source of truth**）
+3. 9 个其它 catalog 同步加翻译 —— tsc 因 `as const satisfies LocaleMessages` 强制要求
+4. `pnpm exec tsc --noEmit` 确认 0 error
+5. 提交时 `pnpm build` 一次确认 vite 也没问题
+
+### 6.3 静态配置对象模式
+- **不要**在静态数组 / 对象里直接放裸字符串：
+  ```ts
+  // 错误
+  const OPTIONS = [
+    { value: 'light', title: '亮' },     // 切语言后永远是「亮」
+  ];
+  ```
+- **要**用 `key: MessageKey` 字段，渲染时 `t(opt.titleKey)`：
+  ```ts
+  // 正确
+  const OPTIONS: ReadonlyArray<{ value: 'light' | ...; titleKey: MessageKey }> = [
+    { value: 'light', titleKey: 'appearanceToggle.light' },
+  ];
+  // 在 createAppearanceToggle() 里：
+  // btn.title = t(opt.titleKey);
+  ```
+- 参考实现：[`folder-actions.ts`](../src/features/bookmarks/folder-actions.ts)、[`appearance-toggle.ts`](../src/newtab/appearance-toggle.ts)、[`layout-picker.ts`](../src/popup/layout-picker.ts)
+
+### 6.4 placeholder 插值
+- `t(key, params)` 支持 `{name}` 占位符：
+  ```ts
+  t('folderAction.confirmOpenAll', { count: urlCount })
+  // en: "Open all {count} links in this folder?"
+  // zh: "打开此文件夹中全部 {count} 个链接？"
+  ```
+- **禁止**用字符串模板拼接（`"打开" + count + "个链接"`）—— 那会绕过 catalog
+
+### 6.5 不进 catalog 的内容
+- 用户数据：URL、文件名、bookmark title、search query、chrome.bookmarks 返回的字段
+- 内部标识：theme id、storage key、错误代码、enum 值
+- Debug 日志（`console.log`）
+- CSS class 名、HTML 属性名（`id` / `name`）
+- `data-*` 属性（虽然出现在 DOM 里，但不展示给用户）
+
+### 6.6 RTL 适配
+- 项目 CSS 走 `flex + gap`（§3.3），`flex-direction: row` 在 `<html dir="rtl">` 下自动镜像
+- URL / hostname 显示节点需要 `direction: ltr; unicode-bidi: isolate`，避免 Arabic 文字中夹杂英文字符断行错乱。看 [`styles/globals.css`](../../styles/globals.css) 末尾 `[dir="rtl"]` 规则
+- 新增展示 URL 的元素（如某个新的浮层），需要把 selector 加进 globals.css 的 `[dir="rtl"]` 列表
+
+### 6.7 测试 checklist
+- 切到中文：「设置」面板 5 个 tab / popup / split-picker / search footer / 浏览器 action 右键「打开设置」/ 5 个特殊目录 title / context menu
+- 切到 Arabic (`ar`)：`<html dir="rtl">` 自动生效；URL 不跳行；search input 走 RTL
+- 切到「Follow browser」+ 浏览器语言为日文 → 命中 `ja`
+- 浏览器语言为瑞典文（不在 10 种里）→ fallback 到 `en`
+
+### 6.8 翻译质量
+- 9 种非英文 catalog 由 AI 翻译生成，**人工校对 hi / ar / ru** 优先（这些语言 AI 翻译错误率较高）
+- 校对入口：直接编辑 `src/lib/i18n/catalog/<code>.ts` 里的字符串。**不要**改 key 名字（那会破坏 MessageKey 联合 + tsc 会立刻报）
+
+---
