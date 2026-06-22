@@ -1371,8 +1371,15 @@
   top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: var(--newtab-text);
-  color: var(--newtab-bg);
+  /* v0.2.101: align with the `.folder-action-tooltip` palette
+   * (--muted bg + --muted-foreground text + 1px --muted-foreground
+   * 25% ring) so all three topbar buttons + the 3 folder action
+   * icons share the same tooltip look. The pre-v0.2.101 palette
+   * (`--newtab-text` bg + `--newtab-bg` text) read as a dark bubble
+   * that visually clashed with the muted-surface palette used
+   * everywhere else in the panel. */
+  background: var(--muted);
+  color: var(--muted-foreground);
   padding: 4px 10px;
   border-radius: 4px;
   font-size: 12px;
@@ -1383,6 +1390,7 @@
   /* Reset font-weight so the bubble doesn't inherit a bold style
    * some buttons might have. */
   font-weight: 400;
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--muted-foreground) 25%, transparent);
 }
 
 .sp-status--success {
