@@ -5,6 +5,13 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.127] - 2026-07-03
+
+### Fixed
+- **Mac Edge 上不显示 ⌘K 快捷键**。v0.2.126 的 `isMacPlatform()` 检测逻辑有 bug：三个信号走的是「第一个不匹配 Mac 就 return false」的优先级链 —— 当 Mac Edge 的 `navigator.userAgentData.platform` 返回空字符串或不匹配 `^mac` 时（Edge 在 macOS 上 userAgentData 需要 high-entropy permission 默认不返回 macOS），函数直接 return false，再也不去检查 `navigator.platform`（`MacIntel`）和 UA 字符串（`Macintosh; Mac OS X`）。
+  - 改为 OR 逻辑：三个信号**任一**说 Mac 就是 Mac。userAgentData 不匹配时不短路，继续检查 navigator.platform 和 UA 字符串。
+  - Mac Edge 的 UA 字符串包含 `Edg/<ver>` 但 OS 段是 `Macintosh; Mac OS X` —— 单独 sniff UA 的 OS 段是最可靠的跨浏览器信号。
+
 ## [0.2.126] - 2026-07-02
 
 ### Fixed
