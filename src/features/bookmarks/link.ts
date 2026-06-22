@@ -4,6 +4,7 @@ import type { BookmarkNode } from './types';
 import { createFavicon } from './favicon';
 import { getCurrentTab, createTab, updateTab } from '../../lib/chrome/bookmarks';
 import { getSetting } from '../../lib/storage/settings';
+import { enableDragFolder } from '../drag-drop/drag-folder';
 
 /** Render a single bookmark link as li > a */
 export function renderLink(node: BookmarkNode, target: HTMLElement): HTMLLIElement {
@@ -75,7 +76,13 @@ export function renderLink(node: BookmarkNode, target: HTMLElement): HTMLLIEleme
     const isChromeOrFile =
       url.startsWith('chrome:') ||
       url.startsWith('chrome-extension:') ||
-      url.startsWith('file:');
+      url.startsWith('file:') ||
+      // v0.2.116: Edge's internal URL scheme (edge://apps, edge://flags,
+      //  etc) must also go through the chrome.tabs API — Edge blocks
+      //  `<a target="_blank">` for edge:// URLs the same way Chrome
+      //  blocks it for chrome:// URLs (depending on context). This
+      //  branch is a no-op in Chrome (no `edge://` scheme exists).
+      url.startsWith('edge:');
     if (!isChromeOrFile) {
       if (newtab === 1) {
         // New foreground tab
@@ -107,6 +114,21 @@ export function renderLink(node: BookmarkNode, target: HTMLElement): HTMLLIEleme
   }
 
   li.appendChild(a);
+
+  // v0.2.116: Apps is a regular link (`<a href="chrome://apps">` /
+  //  `edge://apps`), not a folder — see `getSubTreeStub('apps')`.
+  //  Apps still needs to be individually draggable to other
+  //  columns (matching the four other special folders' drag
+  //  behaviour), so we reuse `enableDragFolder` on the link
+  //  element. `enableDragFolder` is already generic over the
+  //  header element type (accepts any `HTMLElement`), so wiring
+  //  it to an `<a>` works without a separate `enableDragLink`.
+  //  Without this, dragging the Apps link would bubble to the
+  //  parent column's dragstart and trigger whole-column drag.
+  if (node.id === 'apps') {
+    enableDragFolder(node, a, li);
+  }
+
   target.appendChild(li);
   return li;
 }

@@ -141,44 +141,6 @@ export async function initApp(): Promise<void> {
     await renderColumns();
     log('init', 'columns rendered');
 
-    // v0.2.111: when the user installs or uninstalls a Chrome
-    //  app, the Apps special folder's contents change. Re-render
-    //  the board so the Apps folder reflects the new app list
-    //  without a manual reload. The listener is registered here
-    //  (post-init) so `renderColumns` is bound to the live module
-    //  reference; the browser auto-cleans the listener on
-    //  page unload, no manual teardown needed.
-    //
-    //  Listener is filtered to app-type extensions only to
-    //  match the `getInstalledApps` filter — extensions /
-    //  themes would never appear in the Apps folder anyway, so
-    //  skipping them avoids needless re-renders when the user
-    //  installs a regular extension.
-    //
-    //  v0.2.113: switched from `type` literal check to
-    //  `appLaunchUrl` presence check to match the broader
-    //  `getInstalledApps` filter (which now also accepts
-    //  `packaged_app` / `platform_app` / `shared_module` —
-    //  see `lib/chrome/bookmarks.ts:70-91`). Same rationale as
-    //  in `getInstalledApps`: `appLaunchUrl` is the most
-    //  reliable "is app" signal Chrome exposes.
-    if (typeof chrome !== 'undefined' && chrome.management?.onInstalled) {
-      const isApp = (info: chrome.management.ExtensionInfo) =>
-        typeof info.appLaunchUrl === 'string' &&
-        info.appLaunchUrl.length > 0 &&
-        info.enabled;
-      chrome.management.onInstalled.addListener((info) => {
-        if (isApp(info)) void renderColumns();
-      });
-      chrome.management.onUninstalled.addListener((_extensionId) => {
-        // `onUninstalled` only carries the id (and uninstall
-        //  reason), not the type — to be safe and cheap, just
-        //  re-render on every uninstall; the render is a
-        //  no-op for users with no Apps folder open.
-        void renderColumns();
-      });
-    }
-
     // Initialize search (topbar input already registered via setInputElement)
     try {
       await initSearch();

@@ -5,6 +5,30 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.116] - 2026-06-22
+
+### Changed
+- **Apps 改回 link 视觉**（v0.2.95 原始设计）。v0.2.111-v0.2.115 的 folder 视觉 + `chrome.management.getAll()` 列真 app 方案在实践中不 work：Edge 的 PWA 不通过 `chrome.management` API 暴露（Edge PWA 注册到 OS 级，API 不可见），用户在 Chrome 上 Chrome Apps 也极少（Chrome Web Store 2020 起停止新 Chrome Apps）。v0.2.116 改回 link 视觉——`getSubTreeStub('apps')` **不**设 `children` 字段，让 `column.ts:renderNode` 走 `renderLink` 路径（普通 `<a href>` 链接样式），点击跳浏览器原生 apps 页。
+- **URL 浏览器检测**：用 `navigator.userAgent.includes('Edg/')` 区分 Edge vs Chrome——Chrome 走 `chrome://apps`，Edge 走 `edge://apps`。`'Edg/'` 是 Edge UA 独有 token（Chrome UA 包含 `'Chrome/...'` 但**不**含 `'Edg/'`）。
+- **`isChromeOrFile` 加 `edge://`**：`link.ts:75-85` 的 chrome.tabs API 短路条件新增 `url.startsWith('edge:')`——Edge 的 `edge://` URL（`edge://apps` / `edge://flags` 等）必须走 chrome.tabs API 而**不**是 `<a target>`，跟 `chrome://` 一致。Chrome 上 `edge://` scheme 不存在，是 no-op。
+
+### Added
+- **Apps link 单独拖**：`link.ts:renderLink` 检测 `node.id === 'apps'` 时调 `enableDragFolder(node, a, li)`——复用 folder 拖实现到 link 元素（`enableDragFolder` 接受 `HTMLElement` 已经 generic over header 类型，`<a>` 直接能用）。这样 Apps 拖到其他列是单独拖 Apps 节点（跟 top/recent/closed/devices 四个特殊 folder 的拖拽行为一致），**不**冒泡触发整列 column 拖。
+
+### Removed
+- **删 `chrome.management` 全部相关代码**：
+  - `lib/chrome/bookmarks.ts:70-109` 的 `getInstalledApps` 函数
+  - `features/bookmarks/special-folders.ts:182-204` 的 `getAppsNodes` 函数
+  - `features/bookmarks/special-folders.ts:42-70` `getChildren` 的 `case 'apps'` 分支
+  - `newtab/app.ts:144-180` 的 `chrome.management.onInstalled` / `onUninstalled` 监听器
+  - `manifest.json` 的 `management` permission
+- 这些代码 v0.2.111-v0.2.115 引入，v0.2.116 全部回滚。**`contextMenus` permission 保留**（v0.2.112 加的，SW `background.ts:25, 32` 调 `chrome.contextMenus` 需要，**与本任务无关**）。
+
+### Implementation Notes
+- **openLink export 保留**：v0.2.109 commit 描述说"Exported so that the Apps special-folder header in folder.ts can use"——这条理由 v0.2.116 不再成立（folder.ts 不再调 openLink），但 `openLink` 仍 export，**没有**外部 caller（v0.2.116 之前的搜索结果显示无人 import）。**仅**改注释不在本任务 scope（§2.3 精确编辑），**只** 删 v0.2.111-v0.2.115 引入的死代码，不动 v0.2.109 的 helper。
+- **UA 检测限制**：`navigator.userAgent` 在 Chromium 89+ 已有 `navigator.userAgentData.brands` 替代 API（Edge 暴露了 `{brand: 'Microsoft Edge', version: ...}`）。`includes('Edg/')` 是更老的 API 但 Chromium UA 永远包含这个 token（Edge 不会伪装成 Chrome），稳定可靠。
+- **v0.2.108-v0.2.115 Apps 处理历史**：v0.2.108 改 renderFolder 修"拖 Apps link 触发整列拖"bug（根因诊断错），v0.2.110 改回 link 视觉（注释说"浏览器不 bubble"——**部分错**，实际 v0.2.108 之前的 bug 来自 v0.2.95 之后某次 column dragstart handler 改 addEventListener 触发的 bubble），v0.2.111 再改 folder 视觉 + management API 列真 app（用户期望的扩展功能），v0.2.116 折中——**link 视觉 + 用 `enableDragFolder` 显式 stopPropagation** 解决 bubble 问题（这才是 v0.2.108 应该用的修法）。
+
 ## [0.2.115] - 2026-06-22
 
 ### Changed

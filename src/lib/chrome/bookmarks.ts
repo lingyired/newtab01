@@ -67,47 +67,6 @@ export function getDevices(maxResults: number): Promise<chrome.sessions.Device[]
   });
 }
 
-/** Get all installed apps.
- *
- *  Filter strategy: rely on the `appLaunchUrl` field's presence
- *  rather than the `type` literal. Chrome only populates
- *  `appLaunchUrl` for app-type items (hosted_app /
- *  legacy_packaged_app / packaged_app / platform_app /
- *  shared_module per chromium
- *  extensions/common/manifest.h:IsAppType), and never for plain
- *  extensions / themes. Matching on the `type` literal is
- *  brittle: @types/chrome's ExtensionType enum has a typo
- *  (`PACKAGE_APP = "package_app"` is missing the trailing `d`
- *  vs Chrome's actual `packaged_app` string), and the set of
- *  "is app" types has shifted over Chrome versions (e.g.
- *  `platform_app` is ChromeOS-only, `shared_module` is
- *  internal). `appLaunchUrl` presence is the most reliable
- *  signal Chrome exposes and matches the chrome://apps page's
- *  own listing logic. Also require `enabled` so disabled apps
- *  are not surfaced.
- *
- *  Note: `appLaunchUrl` is typed `string | undefined` in
- *  @types/chrome; the `typeof` guard keeps the comparison
- *  safe without a non-null assertion. */
-export function getInstalledApps(): Promise<chrome.management.ExtensionInfo[]> {
-  return new Promise((resolve) => {
-    if (chrome.management) {
-      chrome.management.getAll((extensions) => {
-        resolve(
-          extensions.filter(
-            (ext) =>
-              typeof ext.appLaunchUrl === 'string' &&
-              ext.appLaunchUrl.length > 0 &&
-              ext.enabled,
-          ),
-        );
-      });
-    } else {
-      resolve([]);
-    }
-  });
-}
-
 /** Get current tab info */
 export function getCurrentTab(): Promise<chrome.tabs.Tab | undefined> {
   return new Promise((resolve) => {

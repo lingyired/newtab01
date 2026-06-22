@@ -8,7 +8,6 @@ import {
   getRecentBookmarks,
   getRecentlyClosed,
   getDevices,
-  getInstalledApps,
   restoreSession,
 } from '../../lib/chrome/bookmarks';
 
@@ -43,20 +42,6 @@ export async function getChildren(node: BookmarkNode): Promise<BookmarkNode[]> {
   switch (node.type ?? node.id) {
     case 'top':
       return getTopSitesNodes();
-    case 'apps':
-      // v0.2.111: Apps special folder now lists installed apps
-      //  via chrome.management.getAll() (filtered to hosted_app +
-      //  legacy_packaged_app). Requires the `management` permission
-      //  declared in manifest.json. Each app becomes a regular
-      //  link node (id `app.<extensionId>`, url = appLaunchUrl)
-      //  that the existing `renderLink` path renders; the link
-      //  click path's `chrome-extension://` short-circuit (link.ts
-      //  chrome:// branch which also covers `chrome-extension`)
-      //  routes the launch through `chrome.tabs.update`, since
-      //  opening a `chrome-extension://<id>/_generated_background_page.html`
-      //  in a foreground tab via `<a target="_blank">` is
-      //  unreliable.
-      return getAppsNodes();
     case 'recent':
       return getRecentNodes();
     case 'closed':
@@ -75,12 +60,30 @@ export function getSubTreeStub(id: string): BookmarkNode {
     case 'top':
       return { id: 'top', title: 'Most visited', type: 'top', children: [] };
     case 'apps':
-      // v0.2.111: Apps has `children: []` so `column.ts:renderNode`
-      //  routes it through `renderFolder` (folder visual + can be
-      //  individually dragged by `enableDragFolder`). The actual
-      //  children are populated lazily by `getChildren` (case 'apps'
-      //  → getAppsNodes) when the user expands the Apps folder.
-      return { id: 'apps', title: 'Apps', type: 'apps', children: [] };
+      // v0.2.116: Apps is a single-link entry pointing to the
+      //  browser's native apps overview page — NOT a bookmark
+      //  container. The stub has no `children` field so
+      //  `column.ts:renderNode` routes it through `renderLink`
+      //  (a regular `<a href>` link with the link visual, not
+      //  the folder visual). The drag handler is wired up by
+      //  `link.ts:renderLink` (when `node.id === 'apps'` it
+      //  reuses `enableDragFolder` so Apps is individually
+      //  draggable to other columns, matching the four other
+      //  special folders' drag behaviour).
+      //
+      //  URL: pick the right browser scheme. Chrome uses
+      //  `chrome://apps`; Edge uses `edge://apps`. Detect via
+      //  userAgent — the unique Edge token is `Edg/`
+      //  (Chrome UA contains `Chrome/...` but NOT `Edg/`).
+      return {
+        id: 'apps',
+        title: 'Apps',
+        type: 'apps',
+        url: typeof navigator !== 'undefined' &&
+             navigator.userAgent?.includes('Edg/')
+          ? 'edge://apps'
+          : 'chrome://apps',
+      };
     case 'recent':
       return { id: 'recent', title: 'Recent bookmarks', type: 'recent', children: [] };
     case 'closed':
@@ -174,28 +177,4 @@ async function getDevicesNodes(): Promise<BookmarkNode[]> {
   }
 
   return nodes;
-}
-
-/** Apps */
-export async function getAppsNodes(): Promise<BookmarkNode[]> {
-  // v0.2.113: `getInstalledApps` now filters by `appLaunchUrl`
-  //  presence (and `enabled`) rather than the `type` literal,
-  //  so every item returned has a non-empty launch URL by
-  //  construction — the `?? 'chrome://apps'` fallback from
-  //  v0.2.111 is dead code and is removed.
-  const apps = await getInstalledApps();
-  return apps.map((app): BookmarkNode => {
-    const icons = app.icons?.map((i) => ({ url: i.url, size: i.size }));
-    // `appLaunchUrl` is guaranteed non-empty by the getInstalledApps
-    //  filter, but keep a defensive fallback for future schema
-    //  drift — the chrome://apps page is the user-visible home
-    //  for any item that lost its launch URL.
-    const url = app.appLaunchUrl && app.appLaunchUrl.length > 0
-      ? app.appLaunchUrl
-      : 'chrome://apps';
-    return makeNode(
-      `app.${app.id}`, app.name, url,
-      icons && icons.length > 0 ? { icons } : {},
-    );
-  });
 }
