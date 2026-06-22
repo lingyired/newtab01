@@ -24,14 +24,25 @@ import {
 } from './types';
 import { en } from './catalog/en';
 import { zh } from './catalog/zh';
-// v0.2.119: 8 more locales are added in this file by importing
-//  es / ar / hi / fr / pt / de / ja / ru from './catalog/*'. For
-//  v0.2.117 we ship en + zh only.
+import { es } from './catalog/es';
+import { ar } from './catalog/ar';
+import { hi } from './catalog/hi';
+import { fr } from './catalog/fr';
+import { pt } from './catalog/pt';
+import { de } from './catalog/de';
+import { ja } from './catalog/ja';
+import { ru } from './catalog/ru';
 
-// `Partial` because Phase A only ships 2 of the 10 supported
-// locales; the rest are added in v0.2.119. `t()` checks for a
-// missing bundle per-call and falls back to English.
-const CATALOG: Partial<Record<LocaleCode, LocaleBundle>> = { en, zh };
+// v0.2.119: all 10 supported locales are now present, so the
+// CATALOG can be typed as a full Record<LocaleCode, LocaleBundle>
+// (down from `Partial` in v0.2.117/118). t()'s fallback path
+// is preserved as a defensive measure — adding an 11th locale
+// and forgetting to import it will still produce English rather
+// than a missing-key error at runtime, while tsc catches the
+// missing-import at build time.
+const CATALOG: Record<LocaleCode, LocaleBundle> = {
+  en, zh, es, ar, hi, fr, pt, de, ja, ru,
+};
 
 let currentLocale: LocaleCode = 'en';
 const listeners = new Set<(locale: LocaleCode) => void>();

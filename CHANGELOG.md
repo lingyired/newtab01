@@ -5,6 +5,15 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.119] - 2026-06-25
+
+### Added
+- **i18n 8 个新 locale 完整上线**：西班牙语 (es)、阿拉伯语 (ar)、印地语 (hi)、法语 (fr)、葡萄牙语 (pt)、德语 (de)、日语 (ja)、俄语 (ru)。每个文件结构对齐 en.ts，使用 `as const satisfies LocaleMessages` 模式，编译期强制 keys 完整。`src/lib/i18n/index.ts` 的 `CATALOG` 类型从 `Partial<Record<LocaleCode, LocaleBundle>>` 收紧为 `Record<LocaleCode, LocaleBundle>`（10 项全部到位），新增语言时 tsc 会强制要求 import + 提供完整 keys。
+- **Arabic RTL 支持**。`i18n/index.ts` 的 `setLocale()` / `initLocale()` 自动写 `<html dir="rtl">` for `ar` (see `RTL_LOCALES` in [types.ts](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/lib/i18n/types.ts))。[styles/globals.css](file:///Users/lingsmbp/Documents/aiwork/newtab01/styles/globals.css) 末尾追加 `[dir="rtl"]` 规则：
+  - URL / hostname 显示节点（search result url、split picker、popup picker、bookmark url、sp-pill-url）强制 `direction: ltr; unicode-bidi: isolate` — 防止 host 名中间出现 Arabic 字符时断行错乱
+  - search input 在 RTL 下 `direction: rtl; text-align: right` — 跟随 UI 语言方向
+  - column 排布、topbar、settings panel 等不需显式镜像（项目 CSS 全部用 flex + gap，`<html dir="rtl">` 自动生效）
+
 ## [0.2.118] - 2026-06-24
 
 ### Changed
