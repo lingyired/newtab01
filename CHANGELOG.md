@@ -5,6 +5,59 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.100] - 2026-06-21
+
+### Fixed
+- **阴影颜色 picker 改色后 input 又变回原色（display bug）**。v0.2.99 修了 #rrggbb 格式报错后浮出：per-theme `shadowColor` 的 picker 通过 `sourceKey = 'highlightColor'` 间接从 `highlightColor` storage 桶读值，但 `apply.ts` 写 `--newtab-highlight` 时 `writeResolvedColor('shadowColor', ...)` 是最后写（last-write-wins），所以 storage 的 `shadowColor` 桶是新值、`highlightColor` 桶是旧值。`refreshInputsFromSettings` 重读 picker 时拿到的是 highlightColor 桶的旧值 → 显示旧色。`applySettingsToDOM` 已经把 `--newtab-highlight` 覆盖为新色，但 picker 显示的是错值。
+- **阴影颜色与高亮颜色 picker 同步修改（design bug）**。根因是 `shadowColor` 与 `highlightColor` 共享 CSS 变量 `--newtab-highlight`（v0.2.45 hover-glow 时期遗留，glow 在 v0.2.53 移除后别名没拆）：box-shadow 颜色和 folder / menu / undo 按钮 hover 背景都走同一个 var，导致改 shadow 会静默改这些 UI 元素的背景。修：拆开。
+
+### Changed
+- **拆 `shadowColor` 与 `highlightColor` 的 CSS 变量共享**（v0.2.45 hover-glow 时代遗留）。新增 `--newtab-shadow` CSS 变量（`styles/globals.css:97`，默认 `var(--newtab-highlight)` 保持视觉兼容），`apply.ts` 的 `COLOR_KEYS.shadowColor` 从 `'--newtab-highlight'` 改为 `'--newtab-shadow'`，`rebuildDynamicStyles` 的 box-shadow 规则改用 `var(--newtab-shadow, var(--newtab-highlight))` chained fallback（unset 时回退到 highlight）。`settings-panel.ts` 的 `COLOR_INPUT_CSS_VAR.shadowColor` 同步改为 `'--newtab-shadow'`。
+- **移除 `shadowColor` ↔ `highlightColor` 的 sourceKey 镜像**：v0.2.99 起的 `applyUserColorOverride`、`createColorInput`、`refreshInputsFromSettings`（global + per-theme 两处）、`saveSetting`、`saveShadowColorChange`（整函数删除）、全局 ↩ revert、per-theme ↩ revert 里的 `key === 'shadowColor' ? 'highlightColor' : key` 全部去掉。`shadowColor` 现在是普通 5 色 picker，独立读写 `themeOverrides[theme][mode].shadowColor` 和 `--newtab-shadow`。
+- **`<details>` 阴影颜色行描述更新**（`settings-panel.ts:1086`）：从 "与"高亮颜色"共享同一 CSS 变量，修改会自动同步到高亮颜色" 改为 "默认与"高亮颜色"相同（共用同一色调），可独立设置为不同颜色"。
+
+### Migration
+- **对已有用户无破坏**：新装的 `--newtab-shadow` 默认 `var(--newtab-highlight)`，未设置 shadowColor 的用户视觉无变化（box-shadow 还是 highlight 色）。
+- 之前通过 `saveShadowColorChange` 镜像写入的 `themeOverrides[theme][mode].highlightColor` 值（即"间接设过 shadowColor"的用户）会在下次 `applySettingsToDOM` 时被独立解析为 highlightColor 自己的值，shadowColor 桶如果是空则保持空 → 视觉上 highlight 色不变；如果用户曾显式设过 shadowColor 桶的值，现在会真的控制 box-shadow 颜色（之前是被 highlight 桶覆盖而看不出效果）。
+
+## [0.2.99] - 2026-06-21
+
+### Fixed
+- **改色时 `<input type="color">` 报 "does not conform to '#rrggbb'"**（v0.2.97 引入 per-theme per-mode 后首次暴露）。根因：5 个调色板字段（`backgroundColor` / `fontColor` / `highlightColor` / `highlightFontColor` / `shadowColor`）的默认 storage 值是 `''`（"无 override，用主题色"），v0.2.97 之前的 `resolveCssColor('')` 也返回 `''`——这个空串被直接赋给 `<input type="color">.value`，浏览器拒绝。报错出现在 `newtab-*.js:5:8475` 之类的 asset 路径，因为是 v0.2.97 引入的"打开面板 / 切换主题"路径频繁触发（`createColorInput` 渲染 + `refreshInputsFromSettings` 监听 + 4 处 `input.value = ...`）。
+  - 修：新增 `resolveColorForInput(key, stored)` 辅助函数（`src/newtab/settings-panel.ts:332`）。三层回退保证永远返回合法 `#rrggbb`：
+    1. stored 非空 → 走原 `resolveCssColor`（处理 `var()` / `color-mix()` / oklch 等）
+    2. stored 为空 → 从 `<html>` 读对应的 `--newtab-*` CSS 变量（`COLOR_INPUT_CSS_VAR` 映射），用当前真正渲染到屏幕的颜色——既满足 picker 的 `#rrggbb` 格式要求，又让用户看到的是主题色而不是误导性的黑白占位
+    3. 极端兜底 `#000000`（CSS var 也为空时）
+  - 替换 5 处 `input.value = resolveCssColor(...)` → `input.value = resolveColorForInput(...)`：`createColorInput`、global `refreshInputsFromSettings`、per-theme `refreshInputsFromSettings`、per-theme revert、全局 revert。
+  - 全局 ↩ 按钮特殊处理：palette 字段 revert 写入的是 `''`（清 override），但 `saveSetting` 会从 `input.value` 反读——直接走 `updateSetting(key, '')` + 同步用 helper 刷 picker，避免 `saveSetting` 把"helper 渲染的 hex"误存进 storage（那会变成显式 override，跨主题切换时不会跟着主题走，破坏"revert = 用主题色"语义）。`shadowColor` revert 走 `saveShadowColorChange('')` 同步清 `highlightColor`。
+  - 影响：5 个颜色 picker 在 storage 为空时（全新安装 / 之前没改过颜色的用户）不再报错；picker 显示的就是当前主题色，用户编辑时看到的是他们真正在改的东西。
+
+## [0.2.98] - 2026-06-21
+
+### Changed
+- **字号全局默认值 18 → 16**（v0.2.97 把 `fontSize` 改成 px 直接存后，18 显得偏大、视觉上压过 newtab 整体层级；16 是中性默认，更贴近 OS / Chrome zoom 基线）。同步把 `16` 从 `PRIOR_FONT_SIZE_DEFAULTS` 迁移集里移除（已经是新默认值，不再算「需要升级的旧值」）；`getDefaults()`（settings-panel.ts）和 `resolveEffectiveSettings()`（apply.ts）的 `?? 18` 兜底也改为 `?? 16`。**per-theme override 不受此影响**——已经在 `themeOverrides[theme][mode].fontSize` 写过的用户值原样保留。
+  - 影响范围：全新安装 / 之前未手动调过字号的用户的初始值。其他用户不受影响。
+
+## [0.2.97] - 2026-06-21
+
+### Changed
+- **外观 tab 的 10 个选项 per-theme per-mode 化**：字体 / 字号 / 字重 / 5 颜色 / 阴影模糊 / 高亮圆角 全部支持「当前主题+外观模式」独立覆盖，不再全局共享。新增 `Settings.themeOverrides: Record<themeId, { light?: Partial<Settings>; dark?: Partial<Settings> }>` 存储桶（存在 `chrome.storage.sync`，跨设备同步）。
+  - 外观 tab 加 `<details>` 折叠区承载 per-theme 选项；首次进入默认展开，之后记忆开/合状态（`localStorage['newtab01.appearance.themeOverrides.open']`）。
+  - 切换主题 / 暗色模式，这 10 个 input 的 value 自动从对应桶读（`themeOverrides[newTheme][newMode]?.key ?? Settings.key`）；切换瞬间 DOM 也跟着重算（`applySettingsToDOM` → `resolveEffectiveSettings`）。
+  - 10 个 input 的 revert（↩）按钮改为「清除当前主题+模式的 override」，不会动全局值。
+  - 主题 + 暗色模式 + 宽度 + 水平位置 仍然全局，不在覆盖范围。
+- **高亮圆角单位从 em scale 改为 px**：旧实现是 `#main a { border-radius: ${scale(highlightRound, 0.2, 1.5)}em }` 直接覆盖；新实现写 `--newtab-link-radius: ${highlightRound}px` 到 `:root`，配合 `newtab.css:105` 的 `var(--newtab-link-radius, calc(var(--radius) - 2px))` fallback。**用户填 0 时不 emit 该 CSS 变量，主题 .rounded-md 自动生效**；填 N → 强制 Npx。
+  - input 默认值 = 当前主题 `calc(var(--radius) - 2px)` 的 px 值（Codex = 4px，MX-Brutalist = 0px），用户能直接看到主题的派生圆角。
+  - 旧版 `highlightRound=1` 迁移到 `0`（保持 v0.2.96 之前的 em-scale midpoint 视觉等效）。
+- **字号改为 px 直接存**（顺手修不生效调查路径）：旧 `${fontSize / 10}em` 改为 `${fontSize}px`。Devtools 之前显示 1.8em（`fontSize=18` 默认），改后直接显示 18px，跟 input 数值一致，便于排查覆盖源。
+
+### Notes
+- `Settings.themeOverrides` 字段对老用户默认 `undefined` → 全部 10 项 fall back 到全局值，行为兼容 v0.2.96。`initSettings` 迁移只针对 `fontSize` 和 `highlightRound=1 → 0`，`themeOverrides` 不需要迁移。
+- `applySettingsToDOM` 内部新增 `resolveEffectiveSettings()` 解析器，storage.onChanged 触发时一并重算；listener 路径未改。
+- `applyTheme` (themes/switcher.ts) 末尾追加 `rebuildDynamicStyles()` 兜底，防止 listener 接走时漏算 dynamic-styles。
+- `removeCustomTheme` 同步清除 `themeOverrides[deletedThemeId]`，保持 storage 干净。
+- 字号 13.5px (= 18 × 0.75) 根因未在本 PR 复现；改 px 后如果用户仍看到 13.5px，怀疑点是 Chrome 浏览器缩放（`chrome://settings` → Page zoom）或 `#main` / 祖先有 font-size 75% 覆盖。排查：devtools 选中 `<a>` → Computed → font-size 是不是 18px，不是就往上找覆盖源。
+
 ## [0.2.96] - 2026-06-20
 
 ### Fixed

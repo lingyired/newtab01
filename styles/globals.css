@@ -95,6 +95,12 @@
   --newtab-highlight: var(--accent);
   --newtab-highlight-text: var(--accent-foreground);
   --newtab-drop-indicator: var(--primary);
+  /* v0.2.100: shadowColor is decoupled from highlightColor. Default
+   * falls back to --newtab-highlight so a fresh install looks the same
+   * as before, but a user-set shadowColor now controls only the
+   * box-shadow color (the link hover glow) without clobbering the
+   * folder/menu/undo button backgrounds. */
+  --newtab-shadow: var(--newtab-highlight);
   /* Drag-source highlight ring. Mirrors the right-click .selected
    * dotted family but uses --foreground (the text color, designed to
    * contrast with --background in every theme) so the dragged element

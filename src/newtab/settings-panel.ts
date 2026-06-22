@@ -1,7 +1,7 @@
 // Floating settings panel — rendered as a right-side drawer on the newtab page
 
 import { getSettings, getSetting, updateSetting, updateSettings } from '../lib/storage/settings';
-import type { Settings } from '../features/bookmarks/types';
+import type { Settings, ThemeModeOverrides } from '../features/bookmarks/types';
 import { applyTheme, listAllThemesWithLabels, resolveCssColor } from '../features/themes/switcher';
 import {
   buildCustomThemesStyle,
@@ -14,7 +14,7 @@ import {
 import { detectInputFormat, parseCssTheme } from '../features/themes/css-import';
 import { detectTweakcnUrl, toTweakcnJsonUrl } from '../features/themes/url-import';
 import { sendMessage } from '../lib/chrome/messages';
-import { applySettingChange, applyUserColorOverride } from '../features/settings/apply';
+import { applySettingChange } from '../features/settings/apply';
 import * as debug from '../lib/debug';
 import { renderColumns } from '../features/bookmarks/board';
 
@@ -60,6 +60,140 @@ const RERENDER_KEYS: ReadonlySet<keyof Settings> = new Set([
 let panelEl: HTMLElement | null = null;
 let overlayEl: HTMLElement | null = null;
 let currentTab: SettingsTab = 'layout';
+
+// --- Per-theme per-mode option helpers (v0.2.97) ---
+
+/**
+ * The 10 appearance-tab options that are per-theme per-mode.
+ * `theme` / `darkMode` themselves are NOT in this set — they
+ * control which bucket is read, so overwriting them per-theme
+ * would be circular. `width` / `hPos` are intentionally global
+ * per user decision (same reason the settings panel keeps them
+ * in the global half of the appearance tab).
+ *
+ * The keys must match `ThemeModeOverrides` in
+ * `features/bookmarks/types.ts` — TS will surface a compile error
+ * if they drift, thanks to the `satisfies` constraint.
+ */
+const PER_THEME_KEYS = [
+  'font', 'fontSize', 'fontWeight',
+  'fontColor', 'backgroundColor', 'highlightColor', 'highlightFontColor', 'shadowColor',
+  'shadowBlur', 'highlightRound',
+] as const satisfies ReadonlyArray<keyof ThemeModeOverrides>;
+type PerThemeKey = (typeof PER_THEME_KEYS)[number];
+
+/** Map a `keyof Settings` to the per-theme subset, if applicable. */
+function isPerThemeKey(k: keyof Settings): k is PerThemeKey {
+  return (PER_THEME_KEYS as ReadonlyArray<keyof Settings>).includes(k);
+}
+
+/** The base theme id (no `-dark` suffix) currently in storage. */
+function currentBaseTheme(): string {
+  return String(getSetting('theme') ?? 'default');
+}
+
+/** Resolve the current appearance mode (light | dark) from
+ *  `darkMode` + `prefers-color-scheme`. Mirrors the same logic
+ *  in features/settings/apply.ts → resolveEffectiveSettings so
+ *  the panel and the DOM write to the same bucket. */
+function currentMode(): 'light' | 'dark' {
+  const dm = String(getSetting('darkMode') ?? 'system');
+  if (dm === 'dark') return 'dark';
+  if (dm === 'light') return 'light';
+  return typeof window !== 'undefined'
+    && window.matchMedia?.('(prefers-color-scheme: dark)').matches
+    ? 'dark'
+    : 'light';
+}
+
+/** Read a per-theme per-mode value with global fallback.
+ *  Returns the override if the current theme+mode has one,
+ *  otherwise the global `Settings[key]`. */
+function readPerThemeValue<K extends PerThemeKey>(key: K): Settings[K] {
+  const t = currentBaseTheme();
+  const m = currentMode();
+  const all = (getSetting('themeOverrides') ?? {}) as Record<string, { light?: ThemeModeOverrides; dark?: ThemeModeOverrides }>;
+  const bucket = all[t]?.[m] as Partial<Settings> | undefined;
+  if (bucket && bucket[key] !== undefined) return bucket[key] as Settings[K];
+  return getSetting(key);
+}
+
+/** Has the user explicitly overridden this key for the current
+ *  theme+mode? Used by the revert button to decide between
+ *  "clear this override" (per-theme) vs. "reset to global default"
+ *  (per-key, like the other rows). */
+function hasPerThemeOverride<K extends PerThemeKey>(key: K): boolean {
+  const t = currentBaseTheme();
+  const m = currentMode();
+  const all = (getSetting('themeOverrides') ?? {}) as Record<string, { light?: ThemeModeOverrides; dark?: ThemeModeOverrides }>;
+  return all[t]?.[m]?.[key] !== undefined;
+}
+
+/** Persist a per-theme per-mode value. Performs shallow copies
+ *  on each level so we never mutate the existing `themeOverrides`
+ *  tree in place — that lets `chrome.storage.onChanged` and the
+ *  panel's own refresh see a clean diff and not get tangled in
+ *  an identity check. */
+function writePerThemeValue<K extends PerThemeKey>(key: K, value: Settings[K]): void {
+  const t = currentBaseTheme();
+  const m = currentMode();
+  const all = { ...(getSetting('themeOverrides') ?? {}) } as Record<string, { light?: ThemeModeOverrides; dark?: ThemeModeOverrides }>;
+  const themeBucket = { ...(all[t] ?? {}) } as { light?: ThemeModeOverrides; dark?: ThemeModeOverrides };
+  const modeBucket = { ...(themeBucket[m] ?? {}) } as Partial<Settings>;
+  modeBucket[key] = value;
+  themeBucket[m] = modeBucket as ThemeModeOverrides;
+  all[t] = themeBucket;
+  void updateSettings({ themeOverrides: all });
+}
+
+/** Remove the override for `key` in the current theme+mode.
+ *  The user-facing value falls back to the global `Settings[key]`.
+ *  Cleans up empty intermediate objects (a theme bucket that
+ *  becomes { light: {}, dark: {} } is fully removed). */
+function clearPerThemeValue<K extends PerThemeKey>(key: K): void {
+  const t = currentBaseTheme();
+  const m = currentMode();
+  const all = { ...(getSetting('themeOverrides') ?? {}) } as Record<string, { light?: ThemeModeOverrides; dark?: ThemeModeOverrides }>;
+  const themeBucket = all[t];
+  if (!themeBucket) return;
+  const modeBucket = { ...(themeBucket[m] ?? {}) } as Partial<Settings>;
+  delete (modeBucket as Record<string, unknown>)[key];
+  themeBucket[m] = modeBucket as ThemeModeOverrides;
+  if (Object.keys(modeBucket).length === 0) {
+    delete (themeBucket as Record<string, unknown>)[m];
+  }
+  if (Object.keys(themeBucket).length === 0) {
+    delete all[t];
+  } else {
+    all[t] = themeBucket;
+  }
+  void updateSettings({ themeOverrides: all });
+}
+
+/** Compute the px value of `calc(var(--radius) - 2px)` for the
+ *  currently active theme. Used as the default placeholder for
+ *  the per-theme `highlightRound` input — the user can see
+ *  "this theme wants 4px corners" and either keep it (type
+ *  nothing, leave the value at 0 / unset) or override with a
+ *  custom px value. */
+function computeThemeRoundedMdPx(): number {
+  if (typeof document === 'undefined') return 4;
+  const root = document.documentElement;
+  const r = getComputedStyle(root).getPropertyValue('--radius').trim();
+  if (!r) return 4;
+  // 0.375rem / 6px / 0 are the formats tweakcn emits.
+  const remMatch = r.match(/^([\d.]+)rem$/);
+  if (remMatch && remMatch[1] !== undefined) {
+    const rem = parseFloat(remMatch[1]);
+    // 1rem = 16px is the browser default; we do NOT divide by the
+    // root font-size because the dynamic-styles block writes
+    // `--newtab-link-radius` in raw px, independent of root scale.
+    return Math.max(0, Math.round(rem * 16 - 2));
+  }
+  const pxMatch = r.match(/^([\d.]+)px$/);
+  if (pxMatch && pxMatch[1] !== undefined) return Math.max(0, Math.round(parseFloat(pxMatch[1]) - 2));
+  return 4;
+}
 
 /** Open the floating settings panel */
 export function openSettingsPanel(): void {
@@ -163,24 +297,77 @@ const COLOR_INPUT_KEYS: ReadonlyArray<keyof Settings> = [
 ];
 
 /**
+ * Mirror of `COLOR_KEYS` in features/settings/apply.ts. Maps each
+ * palette Settings key to the `--newtab-*` CSS variable that actually
+ * carries its color on screen. Used by `resolveColorForInput` to fall
+ * back to the *rendered* color when storage is empty (the default
+ * state for the 5 palette fields). Keep in sync with apply.ts —
+ * both maps describe "which setting writes to which CSS var".
+ */
+const COLOR_INPUT_CSS_VAR: Partial<Record<keyof Settings, string>> = {
+  backgroundColor: '--newtab-bg',
+  fontColor: '--newtab-text',
+  highlightColor: '--newtab-highlight',
+  highlightFontColor: '--newtab-highlight-text',
+  // v0.2.100: shadowColor was aliased to --newtab-highlight; now
+  // decoupled. The picker reads --newtab-shadow (which falls back
+  // to --newtab-highlight when unset, so a fresh install still
+  // shows the accent glow). Keep in sync with apply.ts COLOR_KEYS.
+  shadowColor: '--newtab-shadow',
+};
+
+/**
+ * Resolve the value to paint into a `<input type="color">` for the
+ * given palette Settings key. Always returns a valid `#rrggbb` string:
+ *
+ * - If the stored value resolves to a non-empty hex/rgb (or to a
+ *   `var()`/`color-mix()` that `resolveCssColor` can render), use it.
+ * - If the stored value is empty (the 5 palette fields default to
+ *   `''` to mean "no override, use the active theme"), fall back to
+ *   the color that's actually painted on screen by reading the
+ *   mapped `--newtab-*` variable off `<html>`. This both satisfies
+ *   `<input type="color">`'s `#rrggbb` requirement and shows the
+ *   user the color they're really editing — not a misleading
+ *   black/white placeholder.
+ * - Last-resort: `#000000` (only if the CSS var is also empty,
+ *   which shouldn't happen in practice since `globals.css` derives
+ *   all 4 vars from the 8 shadcn core vars).
+ */
+function resolveColorForInput(key: keyof Settings, stored: string): string {
+  const resolved = resolveCssColor(stored);
+  if (resolved) return resolved;
+  const cssVar = COLOR_INPUT_CSS_VAR[key];
+  if (cssVar && typeof document !== 'undefined') {
+    const rendered = getComputedStyle(document.documentElement)
+      .getPropertyValue(cssVar)
+      .trim();
+    if (rendered) return resolveCssColor(rendered);
+  }
+  return '#000000';
+}
+
+/**
  * Push the current `currentSettings` values into the visible <input>
  * elements without rebuilding the DOM. No-op for inputs that don't
  * exist (panel closed) or whose value already matches storage.
  *
- * The `shadowColor` input is displayed using the `highlightColor`
- * value because the two share a single CSS variable (`--newtab-highlight`)
- * — the user sees what is actually being rendered.
+ * v0.2.100: `shadowColor` is no longer aliased to `highlightColor` —
+ * the two now control separate CSS variables (`--newtab-shadow` and
+ * `--newtab-highlight` respectively), so each picker reads its own
+ * storage value. When the storage value is empty, `resolveColorForInput`
+ * falls back to the rendered CSS var so the picker still shows a
+ * valid #rrggbb.
  */
 function refreshInputsFromSettings(): void {
   for (const key of COLOR_INPUT_KEYS) {
     const input = document.getElementById(`sp-${key}`) as HTMLInputElement | null;
     if (!input || input.type !== 'color') continue;
-    const sourceKey: keyof Settings = key === 'shadowColor' ? 'highlightColor' : key;
-    // `resolveCssColor` is a no-op for plain hex/rgb (the common case)
-    // and rescues us from a stored `var()`/`color-mix()` string — which
-    // <input type="color"> would otherwise reject with "does not conform
-    // to the required format '#rrggbb'".
-    const next = resolveCssColor(String(getSetting(sourceKey) ?? ''));
+    // `resolveColorForInput` is a no-op for plain hex/rgb (the common
+    // case) and rescues us from a stored `var()`/`color-mix()` string
+    // — which <input type="color"> would otherwise reject with
+    // "does not conform to the required format '#rrggbb'". v0.2.99:
+    // also falls back to the rendered CSS var when storage is ''.
+    const next = resolveColorForInput(key, String(getSetting(key) ?? ''));
     if (input.value !== next) input.value = next;
   }
   // Theme + darkMode selects live on the same tabs as the color inputs;
@@ -197,6 +384,43 @@ function refreshInputsFromSettings(): void {
   if (darkModeSelect) {
     const next = String(getSetting('darkMode') ?? 'system');
     if (darkModeSelect.value !== next) darkModeSelect.value = next;
+  }
+
+  // v0.2.97 per-theme per-mode inputs: a storage.onChanged (typically
+  //  cross-tab sync) may have updated either `theme`, `darkMode`, or
+  //  `themeOverrides`. Update the 10 per-theme input values to
+  //  reflect the new resolved (theme, mode) bucket, and refresh the
+  //  <summary> text so the user sees which bucket they're editing.
+  //  We do NOT touch the `<details>` open/closed state — that's a
+  //  user-driven UI choice and lives in localStorage, not storage.
+  const summaryEl = document.querySelector<HTMLElement>('.sp-theme-overrides-summary');
+  if (summaryEl) {
+    const t = currentBaseTheme();
+    const m = currentMode();
+    const label = THEME_LABELS[t] ?? t;
+    const nextText = `当前主题外观（${label} · ${m === 'dark' ? '暗' : '亮'}）`;
+    if (summaryEl.textContent !== nextText) summaryEl.textContent = nextText;
+  }
+  for (const key of PER_THEME_KEYS) {
+    const inputId_ = inputId(key, 'perTheme');
+    const input = document.getElementById(inputId_) as
+      | HTMLInputElement
+      | HTMLSelectElement
+      | null;
+    if (!input) continue;
+    const next = readPerThemeValue(key);
+    // v0.2.100: color inputs. Use resolveColorForInput (same as the
+    //  global refresh above) — handles both `var()`/`color-mix()`
+    //  strings and empty storage. shadowColor now has its own CSS
+    //  var, so it reads from the shadowColor storage bucket (not
+    //  the highlightColor bucket as it did before v0.2.100).
+    if (input instanceof HTMLInputElement && input.type === 'color') {
+      const resolved = resolveColorForInput(key, String(readPerThemeValue(key) ?? ''));
+      if (input.value !== resolved) input.value = resolved;
+      continue;
+    }
+    const nextStr = String(next);
+    if (input.value !== nextStr) input.value = nextStr;
   }
 }
 
@@ -323,28 +547,84 @@ function renderAppearanceTabSyncPlaceholder(): HTMLElement {
 
 // --- Setting row helpers ---
 
+/**
+ * Scope for an input row. `global` (default) reads/writes the
+ * raw `Settings[key]`. `perTheme` reads/writes
+ * `themeOverrides[baseTheme][mode]?.[key]` with global fallback
+ * (see per-theme helpers above). The two scopes use different
+ * IDs for `<input>`/`<select>` elements so the same `key`
+ * (e.g. `fontColor`) can co-exist as one global row and one
+ * per-theme row without `getElementById` collisions.
+ */
+type InputScope = 'global' | 'perTheme';
+
+function inputId(key: keyof Settings, scope: InputScope): string {
+  return scope === 'perTheme' ? `sp-perTheme-${key}` : `sp-${key}`;
+}
+
 function createRow(
   label: string,
   input: HTMLElement,
   key: keyof Settings,
   description?: string | HTMLElement,
+  scope: InputScope = 'global',
 ): HTMLElement {
   const row = el('div', 'sp-row');
   if (description) row.classList.add('sp-row--with-desc');
+  if (scope === 'perTheme') row.classList.add('sp-row--per-theme');
 
   const labelEl = el('label', 'sp-label');
   labelEl.textContent = label;
-  labelEl.setAttribute('for', `sp-${key}`);
+  labelEl.setAttribute('for', inputId(key, scope));
 
   const inputWrap = el('div', 'sp-input');
 
   const revertBtn = el('button', 'sp-revert') as HTMLButtonElement;
   revertBtn.type = 'button';
-  revertBtn.title = '恢复默认';
+  revertBtn.title = scope === 'perTheme' && hasPerThemeOverride(key as PerThemeKey)
+    ? '清除当前主题+模式的覆盖（恢复为全局值）'
+    : '恢复默认';
   revertBtn.textContent = '↩';
   revertBtn.addEventListener('click', () => {
+    if (scope === 'perTheme' && hasPerThemeOverride(key as PerThemeKey)) {
+      // v0.2.97 per-theme revert: clear the override for the
+      //  current theme+mode, then re-render the input value
+      //  to reflect the global fallback. Distinct from the
+      //  global revert (↩) below, which sets the underlying
+      //  Settings[key] to its hardcoded default.
+      const k = key as PerThemeKey;
+      clearPerThemeValue(k);
+      const next = readPerThemeValue(k);
+      if (input instanceof HTMLInputElement) {
+        if (input.type === 'color') {
+          input.value = resolveCssColor(String(next ?? ''));
+        } else {
+          input.value = String(next);
+        }
+      } else if (input instanceof HTMLSelectElement) {
+        input.value = String(next);
+      }
+      // `clearPerThemeValue` wrote a new themeOverrides object
+      //  to storage, which fires chrome.storage.onChanged and
+      //  runs applySettingsToDOM through the apply.ts listener.
+      //  No further DOM work needed here.
+      return;
+    }
     const defaults = getDefaults();
     const defaultVal = defaults[key];
+    // v0.2.99: color inputs default to '' which <input type="color">
+    //  rejects. Save '' directly to storage (clears the override) and
+    //  paint the rendered theme color into the picker synchronously,
+    //  instead of going through `saveSetting` (which would re-read
+    //  input.value as a valid hex and persist the wrong value).
+    // v0.2.100: shadowColor is no longer mirrored to highlightColor,
+    //  so no special branch is needed — the normal `updateSetting`
+    //  path handles the storage clear.
+    if (input instanceof HTMLInputElement && input.type === 'color') {
+      void updateSetting(key, '' as Settings[typeof key]);
+      input.value = resolveColorForInput(key, '');
+      return;
+    }
     if (input instanceof HTMLInputElement) {
       if (input.type === 'checkbox') {
         input.checked = Number(defaultVal) !== 0;
@@ -356,7 +636,7 @@ function createRow(
     } else if (input instanceof HTMLTextAreaElement) {
       input.value = String(defaultVal);
     }
-    saveSetting(key);
+    saveSetting(key, scope);
   });
 
   inputWrap.appendChild(input);
@@ -384,7 +664,7 @@ function createRow(
 function getDefaults(): Settings {
   return {
     font: 'Sans-serif',
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 400,
     theme: 'default',
     darkMode: 'system',
@@ -401,7 +681,11 @@ function getDefaults(): Settings {
     highlightFontColor: '',
     shadowColor: '',
     shadowBlur: 1,
-    highlightRound: 1,
+    // v0.2.97: highlightRound default 0 means "use the active
+    //  theme's `.rounded-md`" — see comments in
+    //  lib/storage/settings.ts and features/settings/apply.ts.
+    //  Pre-v0.2.97 the default was 1 (midpoint of the em scale).
+    highlightRound: 0,
     spacing: 1,
     width: 1,
     hPos: 1,
@@ -459,8 +743,8 @@ function coerceToSettingType<K extends keyof Settings>(key: K, value: unknown): 
   return value;
 }
 
-function saveSetting(key: keyof Settings): void {
-  const input = document.getElementById(`sp-${key}`);
+function saveSetting(key: keyof Settings, scope: InputScope = 'global'): void {
+  const input = document.getElementById(inputId(key, scope));
   if (!input) return;
 
   let value: unknown;
@@ -487,8 +771,24 @@ function saveSetting(key: keyof Settings): void {
   // consumers would see a string while the type schema says number.
   value = coerceToSettingType(key, value);
 
-  // Capture before/after for the debug log.
-  const before = getSetting(key);
+  // Capture before/after for the debug log. The "before" reads
+  // from the same scope the user is editing so the diff is
+  // meaningful (per-theme overrides can have a different
+  // "before" than the global value).
+  const before = scope === 'perTheme' && isPerThemeKey(key)
+    ? readPerThemeValue(key)
+    : getSetting(key);
+
+  // Per-theme per-mode path (v0.2.97): write to the override
+  // bucket instead of the global Settings[key]. Goes through
+  // updateSettings({ themeOverrides }) which fires
+  // chrome.storage.onChanged → applySettingsToDOM. The resolver
+  // picks up the new value on the next render.
+  if (scope === 'perTheme' && isPerThemeKey(key)) {
+    void writePerThemeValue(key, value as Settings[typeof key]);
+    debug.log('settings-panel', 'saveSetting (perTheme)', { key, before, after: value });
+    return;
+  }
 
   // Theme changes are special: a single user action must atomically
   // persist the new theme id plus the five palette colors that the theme
@@ -513,17 +813,10 @@ function saveSetting(key: keyof Settings): void {
     return;
   }
 
-  // shadowColor shares --newtab-highlight with highlightColor in the CSS
-  // (see newtab.css `box-shadow: 0 0 var(--newtab-shadow-blur) var(--newtab-highlight)`).
-  // Editing only shadowColor would leave highlightColor stale, so the
-  // shared CSS variable would still render the old highlight color and
-  // a subsequent applySettingsToDOM (e.g. on a different storage edit)
-  // would write the old highlightColor back into --newtab-highlight.
-  // Mirror the value into highlightColor in a single atomic write.
-  if (key === 'shadowColor') {
-    void saveShadowColorChange(String(value));
-    return;
-  }
+  // shadowColor is a normal color field as of v0.2.100 (was
+  // previously aliased to highlightColor — see apply.ts COLOR_KEYS).
+  // The shared `--newtab-highlight` alias is gone; shadowColor writes
+  // to its own `--newtab-shadow` CSS var.
 
   void updateSetting(key, value as Settings[keyof Settings]);
   debug.log('settings-panel', 'saveSetting', { key, before, after: getSetting(key) });
@@ -537,26 +830,6 @@ function saveSetting(key: keyof Settings): void {
   if (RERENDER_KEYS.has(key)) {
     void renderColumns();
   }
-}
-
-/**
- * Persist a shadowColor edit by mirroring it into highlightColor (the
- * CSS source for both the highlight background and the box-shadow color)
- * and re-asserting the inline `--newtab-highlight` override so the page
- * reflects the new value without waiting for the storage round-trip.
- */
-async function saveShadowColorChange(value: string): Promise<void> {
-  const beforeShadow = getSetting('shadowColor');
-  const beforeHighlight = getSetting('highlightColor');
-  await updateSettings({ shadowColor: value, highlightColor: value });
-  // applyUserColorOverride('highlightColor') reads from getSetting, which
-  // has just been updated by updateSettings, so it writes the new value
-  // into the inline --newtab-highlight.
-  applyUserColorOverride('highlightColor');
-  debug.log('settings-panel', 'saveShadowColorChange', {
-    from: { shadowColor: beforeShadow, highlightColor: beforeHighlight },
-    to: { shadowColor: value, highlightColor: value },
-  });
 }
 
 /**
@@ -598,11 +871,23 @@ async function saveThemeChange(theme: string): Promise<void> {
   debug.log('settings-panel', 'saveThemeChange', { from: before, to: theme, bundle });
 }
 
-function createNumberInput(key: keyof Settings, step: string = '0.1'): HTMLInputElement {
+function createNumberInput(
+  key: keyof Settings,
+  step: string = '0.1',
+  scope: InputScope = 'global',
+): HTMLInputElement {
   const input = document.createElement('input');
   input.type = 'number';
-  input.id = `sp-${key}`;
-  input.value = String(getSetting(key));
+  input.id = inputId(key, scope);
+  // v0.2.97 per-theme per-mode: read the value through the
+  //  resolver so a theme+mode override (or the global fallback)
+  //  is what the input shows initially. Switching theme+mode
+  //  re-runs this read because the panel is re-rendered in full
+  //  (see renderAppearanceTab).
+  const initial = scope === 'perTheme' && isPerThemeKey(key)
+    ? readPerThemeValue(key)
+    : getSetting(key);
+  input.value = String(initial);
   // Most scale()-driven settings accept fractional inputs (0.5, 1.5, etc.)
   // — default `step="1"` would reject those as `stepMismatch` and make the
   // browser show a validation error on commit. `step="0.1"` lets the user
@@ -614,17 +899,22 @@ function createNumberInput(key: keyof Settings, step: string = '0.1'): HTMLInput
   // to get a normal integer spinner and avoid the "5.1 / 5.2" UX of a
   // fractional step. The default stays "0.1" so existing call sites
   // (spacing, fontSize, shadowBlur, etc.) are unaffected.
+  // v0.2.97 highlightRound: now stored in px, so step "0.1" is
+  //  appropriate (e.g. 4.5px for a slight rounded look).
   input.step = step;
-  input.addEventListener('change', () => saveSetting(key));
+  input.addEventListener('change', () => saveSetting(key, scope));
   return input;
 }
 
-function createTextInput(key: keyof Settings): HTMLInputElement {
+function createTextInput(key: keyof Settings, scope: InputScope = 'global'): HTMLInputElement {
   const input = document.createElement('input');
   input.type = 'text';
-  input.id = `sp-${key}`;
-  input.value = String(getSetting(key));
-  input.addEventListener('change', () => saveSetting(key));
+  input.id = inputId(key, scope);
+  const initial = scope === 'perTheme' && isPerThemeKey(key)
+    ? readPerThemeValue(key)
+    : getSetting(key);
+  input.value = String(initial);
+  input.addEventListener('change', () => saveSetting(key, scope));
   return input;
 }
 
@@ -637,36 +927,54 @@ function createCheckboxInput(key: keyof Settings): HTMLInputElement {
   return input;
 }
 
-function createColorInput(key: keyof Settings): HTMLInputElement {
+function createColorInput(key: keyof Settings, scope: InputScope = 'global'): HTMLInputElement {
   const input = document.createElement('input');
   input.type = 'color';
-  input.id = `sp-${key}`;
-  // `shadowColor` is a legacy field that shares a CSS variable with
-  // `highlightColor`; render the picker with the value that's actually
-  // on screen so the user sees what the panel is editing.
-  const sourceKey: keyof Settings = key === 'shadowColor' ? 'highlightColor' : key;
+  input.id = inputId(key, scope);
+  // v0.2.100: shadowColor used to be aliased to highlightColor (the
+  // sourceKey indirection below read from the highlightColor storage
+  // bucket). Now decoupled — shadowColor has its own CSS var
+  // (--newtab-shadow), so we read the value the picker actually
+  // controls. resolveColorForInput still falls back to the rendered
+  // CSS var (with a chained fallback to --newtab-highlight) when
+  // storage is empty.
+  const initial = scope === 'perTheme' && isPerThemeKey(key)
+    ? readPerThemeValue(key)
+    : getSetting(key);
   // Normalize through resolveCssColor: if a user upgraded from a pre-0.2.36
   // build, their storage may still hold a `var()`/`color-mix()` string
   // written by the old saveThemeChange. <input type="color"> rejects
   // those, so resolve them at the read site.
-  input.value = resolveCssColor(String(getSetting(sourceKey) ?? ''));
-  input.addEventListener('change', () => saveSetting(key));
+  // v0.2.99: also fall back to the rendered CSS variable when storage
+  // is empty (''), so the picker never gets the literal string '' which
+  // triggers "does not conform to '#rrggbb'".
+  input.value = resolveColorForInput(key, String(initial ?? ''));
+  input.addEventListener('change', () => saveSetting(key, scope));
   return input;
 }
 
-function createSelectInput(key: keyof Settings, options: { value: string; label: string }[]): HTMLSelectElement {
+function createSelectInput(
+  key: keyof Settings,
+  options: { value: string; label: string }[],
+  scope: InputScope = 'global',
+): HTMLSelectElement {
   const select = document.createElement('select');
-  select.id = `sp-${key}`;
+  select.id = inputId(key, scope);
+  const current = String(
+    scope === 'perTheme' && isPerThemeKey(key)
+      ? readPerThemeValue(key)
+      : getSetting(key),
+  );
   for (const opt of options) {
     const option = document.createElement('option');
     option.value = opt.value;
     option.textContent = opt.label;
-    if (String(getSetting(key)) === opt.value) {
+    if (current === opt.value) {
       option.selected = true;
     }
     select.appendChild(option);
   }
-  select.addEventListener('change', () => saveSetting(key));
+  select.addEventListener('change', () => saveSetting(key, scope));
   return select;
 }
 
@@ -726,18 +1034,71 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
       '决定主题使用浅色还是深色变体。选「跟随系统」会随 macOS / Windows 的外观设置自动切换。',
     ),
   );
-  container.appendChild(createRow('字体', createTextInput('font'), 'font', '书签链接使用的字体名称，例如 "PingFang SC"、Inter、Arial。'));
-  container.appendChild(createRow('字号', createNumberInput('fontSize'), 'fontSize', '书签链接的字号（单位：px）。'));
-  container.appendChild(createRow('字重', createNumberInput('fontWeight'), 'fontWeight', '书签链接的字重，常用值：400 正常、500 中等、600 半粗、700 粗体。'));
-  container.appendChild(createRow('文字颜色', createColorInput('fontColor'), 'fontColor', '书签链接在默认状态下的文字颜色。'));
-  container.appendChild(createRow('背景颜色', createColorInput('backgroundColor'), 'backgroundColor', '新标签页的背景颜色（不设置背景图时生效）。'));
-  container.appendChild(createRow('高亮颜色', createColorInput('highlightColor'), 'highlightColor', '鼠标悬停或当前选中书签时的背景高亮颜色。'));
-  container.appendChild(createRow('高亮文字颜色', createColorInput('highlightFontColor'), 'highlightFontColor', '鼠标悬停或选中时书签文字的颜色。'));
-  container.appendChild(createRow('阴影颜色', createColorInput('shadowColor'), 'shadowColor', '书签高亮时四周光晕颜色；与"高亮颜色"共享同一 CSS 变量，修改会自动同步到高亮颜色。'));
-  container.appendChild(createRow('阴影模糊', createNumberInput('shadowBlur'), 'shadowBlur', '高亮光晕的模糊半径，数值越大光晕越大越柔和。'));
-  container.appendChild(createRow('高亮圆角', createNumberInput('highlightRound'), 'highlightRound', '书签高亮背景的圆角大小，0 为直角，数值越大越圆。'));
+  // width / hPos are global (v0.2.97 per user decision) and
+  //  stay in the main flow, alongside theme + darkMode.
   container.appendChild(createRow('宽度', createNumberInput('width'), 'width', '新标签页主体区域的整体宽度（自动缩放时为百分比，否则为像素）。'));
   container.appendChild(createRow('水平位置', createNumberInput('hPos'), 'hPos', '主体区域在窗口内的水平位置比例，0 偏左、1 居中、2 偏右。'));
+
+  // v0.2.97 per-theme per-mode block: 10 options whose values
+  //  can be customized per (theme, light/dark) bucket. The
+  //  <details> wraps them so the appearance tab's top half
+  //  (the 4 global options) stays focused; the per-theme
+  //  controls live in a discoverable but not always-on
+  //  surface.
+  const details = document.createElement('details');
+  details.className = 'sp-theme-overrides';
+  // First-visit: open. After that: remember the user's choice
+  //  via localStorage (separate from chrome.storage.sync so
+  //  it's per-device, not per-account — UI state isn't worth
+  //  cross-device syncing).
+  const LS_KEY = 'newtab01.appearance.themeOverrides.open';
+  const remembered = localStorage.getItem(LS_KEY);
+  details.open = remembered === null ? true : remembered === 'true';
+  details.addEventListener('toggle', () => {
+    localStorage.setItem(LS_KEY, String(details.open));
+  });
+
+  const summary = document.createElement('summary');
+  summary.className = 'sp-theme-overrides-summary';
+  // The summary text shows which (theme, mode) bucket the 10
+  //  inputs below are editing, so the user always knows what
+  //  their changes affect. Updates on theme/darkMode change
+  //  because the panel re-renders on those events.
+  const baseTheme = currentBaseTheme();
+  const mode = currentMode();
+  const themeLabel = THEME_LABELS[baseTheme] ?? baseTheme;
+  summary.textContent = `当前主题外观（${themeLabel} · ${mode === 'dark' ? '暗' : '亮'}）`;
+  details.appendChild(summary);
+
+  // 10 per-theme per-mode options. Each `createRow` and
+  //  `createXInput` is invoked with `scope: 'perTheme'` so
+  //  the input ID is namespaced (`sp-perTheme-${key}`) and
+  //  the read/write paths go through the per-theme helpers
+  //  above. Revert (↩) on these rows clears the current
+  //  theme+mode override — see createRow.
+  details.appendChild(createRow('字体', createTextInput('font', 'perTheme'), 'font', '书签链接使用的字体名称，例如 "PingFang SC"、Inter、Arial。', 'perTheme'));
+  details.appendChild(createRow('字号', createNumberInput('fontSize', '0.1', 'perTheme'), 'fontSize', '书签链接的字号（单位：px）。', 'perTheme'));
+  details.appendChild(createRow('字重', createNumberInput('fontWeight', '0.1', 'perTheme'), 'fontWeight', '书签链接的字重，常用值：400 正常、500 中等、600 半粗、700 粗体。', 'perTheme'));
+  details.appendChild(createRow('文字颜色', createColorInput('fontColor', 'perTheme'), 'fontColor', '书签链接在默认状态下的文字颜色。', 'perTheme'));
+  details.appendChild(createRow('背景颜色', createColorInput('backgroundColor', 'perTheme'), 'backgroundColor', '新标签页的背景颜色（不设置背景图时生效）。', 'perTheme'));
+  details.appendChild(createRow('高亮颜色', createColorInput('highlightColor', 'perTheme'), 'highlightColor', '鼠标悬停或当前选中书签时的背景高亮颜色。', 'perTheme'));
+  details.appendChild(createRow('高亮文字颜色', createColorInput('highlightFontColor', 'perTheme'), 'highlightFontColor', '鼠标悬停或选中时书签文字的颜色。', 'perTheme'));
+  details.appendChild(createRow('阴影颜色', createColorInput('shadowColor', 'perTheme'), 'shadowColor', '书签高亮时四周光晕（box-shadow）的颜色。默认与"高亮颜色"相同（共用同一色调），可独立设置为不同颜色。', 'perTheme'));
+  details.appendChild(createRow('阴影模糊', createNumberInput('shadowBlur', '0.1', 'perTheme'), 'shadowBlur', '高亮光晕的模糊半径，数值越大光晕越大越柔和。', 'perTheme'));
+  // highlightRound: the description includes the active theme's
+  //  computed `calc(var(--radius) - 2px)` in px so the user sees
+  //  "this theme wants 4px corners" before deciding whether to
+  //  override.
+  const themeRoundPx = computeThemeRoundedMdPx();
+  details.appendChild(createRow(
+    '高亮圆角',
+    createNumberInput('highlightRound', '0.1', 'perTheme'),
+    'highlightRound',
+    `书签高亮背景的圆角大小（px）。填 0 → 使用当前主题的 .rounded-md（当前主题 = ${themeRoundPx}px）。`,
+    'perTheme',
+  ));
+
+  container.appendChild(details);
 
   return container;
 }
