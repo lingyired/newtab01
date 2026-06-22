@@ -5,6 +5,15 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.107] - 2026-06-22
+
+### Changed
+- **layout 导出/导入现在包含特殊文件夹 ID（`apps` / `top` / `recent` / `closed` / `devices`）**。v0.2.106 走的是「全部剥掉、verifyColumns 按当前 show* 补回」路径，问题是用户精心把 `top` / `apps` 拖到特定列、特定位置的布局会丢失。v0.2.107 反转策略：**保留**这些 ID，import 走 `saveLayout → verifyColumns`（`layout-ops.ts:80-127`）按当前 `showTop / showApps / ...` 开关过滤**可见性**（不显示的折叠进背景），但 `coords` map 仍写入 `coords['top'] = ...`，所以用户日后开 `showTop=1` 立即回到原位置，**不会**被 verifyColumns 弹到默认的特殊列。跨环境：B 拿 A 的 JSON，`showTop=0` 则 `top` 不显示；B 自己开 `showTop=1` 时按 A 导出的位置插入。
+- **「包含布局」checkbox 默认取消勾选**。v0.2.106 默认勾选（「重装/换设备/换 profile 时一键完整恢复是最常见用法」），v0.2.107 改回默认不勾——特殊文件夹位置已包含在导出里是用户用得上的功能，但 layout payload（每列 folder 顺序 + movedOut map）仍然不算「偏好设置」，对单纯想备份设置的用户是大量冗余数据。默认不勾让「导出设置」按钮保持「导设置」的语义；需要完整恢复的用手动勾选。
+
+### Fixed
+- **「包含布局」checkbox 文字与勾勾垂直方向不对齐**。v0.2.106 把 `<input>` + `<label>` 直接放进了通用的 `.sp-actions` row，inline 元素走 text baseline，box 浮在顶部、label 落 baseline，差几像素。v0.2.107 单独建 `.sp-export-options` 容器，`display: flex; align-items: center; gap: 8px`，并加 `cursor: pointer; user-select: none` 到 label 上。位置锁定到 box 中心 + 文字 baseline（flex 默认 stretch 改 center 后两轴都光学居中）。
+
 ## [0.2.106] - 2026-06-22
 
 ### Added

@@ -1105,6 +1105,30 @@
   padding-top: 8px;
 }
 
+/* v0.2.107: dedicated flex row for the "包含布局" export
+ *  checkbox + label. Uses `align-items: center` so the
+ *  checkbox and the label text sit on the same optical
+ *  baseline. The previous `.sp-actions` row had no
+ *  vertical-alignment declaration and used `<input>` +
+ *  `<label>` as inline elements, which led to the box
+ *  floating to the top while the text sat on the baseline
+ *  (visually misaligned by a few pixels depending on the
+ *  theme's font metrics).
+ *
+ *  Also `gap: 8px` (slightly tighter than `.sp-actions`'s
+ *  10px) for a tighter checkbox-label relationship. */
+.sp-export-options {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 6px;
+}
+
+.sp-export-options .sp-checkbox-label {
+  cursor: pointer;
+  user-select: none;
+}
+
 .sp-btn {
   padding: 6px 14px;
   border: 1px solid var(--border);
