@@ -71,29 +71,36 @@ export function renderAllNodes(
 
 /** Render a single bookmark node (folder or link)
  *
- *  v0.2.108: Apps special folder routed through `renderFolder`
- *  even though its stub has no `children` field.
+ *  v0.2.110: reverted v0.2.108 special routing for Apps.
  *
- *  Background: `getSubTreeStub('apps')` returns
- *  `{ id: 'apps', title: 'Apps', type: 'apps', url: 'chrome://apps' }`
- *  — no `children` because Apps is a URL page
- *  (chrome://apps), not a bookmark container. The four other
- *  special folders (top/recent/closed/devices) all have
- *  `children: []`, so the naive `if (node.children)` check
- *  sends them to `renderFolder` (which calls
- *  `enableDragFolder` and makes them individually
- *  draggable). Apps falls through to `renderLink`, which
- *  doesn't call `enableDragFolder` — so dragging the Apps
- *  header bubbled up to the column's draggable region and
- *  triggered whole-column drag instead.
+ *  Background: v0.2.108 added `|| node.type === 'apps'` to send
+ *  Apps through `renderFolder` (in order to call `enableDragFolder`
+ *  so dragging the Apps header wouldn't fall through to the
+ *  column's drag handler). v0.2.109 then overrode Apps' click
+ *  behaviour in `renderFolder` to navigate to `chrome://apps`,
+ *  preserving the folder visual. The result was a visual
+ *  regression: Apps header looked like a folder and rendered an
+ *  empty `< Empty >` placeholder when expanded, even though
+ *  clicking it correctly navigated to `chrome://apps`.
  *
- *  Fix: special-folder type `apps` is routed to
- *  `renderFolder` explicitly. `renderFolder` already calls
- *  `enableDragFolder(node, header, li)` unconditionally, so
- *  Apps becomes individually draggable. The "0 children"
- *  action-icon branch inside `renderFolder` is a no-op
- *  visually for Apps (no bookmark children), which matches
- *  the semantic that Apps isn't a folder of bookmarks.
+ *  The pre-v0.2.95 Apps UI was a regular bookmark link (an
+ *  `<a href="chrome://apps">`), rendered by `renderLink`. That
+ *  link element is natively `draggable = true` (HTML5 default for
+ *  `<a href>`), and dragging a link does NOT bubble up to the
+ *  parent column's dragstart — the link itself becomes the drag
+ *  subject. So Apps-as-link works correctly: drag the header →
+ *  it drags as a single link (which is what the user expects
+ *  for a "navigate to chrome://apps" entry); click the header →
+ *  navigates to chrome://apps in the configured tab mode.
+ *
+ *  v0.2.110 reverts the `|| node.type === 'apps'` clause. The
+ *  v0.2.109 Apps short-circuit in `folder.ts` is kept as dead
+ *  code for defence-in-depth — it only fires if some future
+ *  change in this file routes Apps through `renderFolder`
+ *  again, in which case clicking the header still navigates
+ *  to chrome://apps instead of expanding into an empty
+ *  folder. The `openLink` export in `link.ts` is kept for
+ *  the same reason.
  */
 function renderNode(
   node: BookmarkNode,
@@ -101,7 +108,7 @@ function renderNode(
   depth: number,
   inBookmarkBarContext: boolean,
 ): void {
-  if (node.children || node.type === 'apps') {
+  if (node.children) {
     renderFolder(node, target, depth, inBookmarkBarContext);
   } else {
     renderLink(node, target);

@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.110] - 2026-06-22
+
+### Fixed
+- **Apps header 显示 v0.2.108 视觉回归：folder 外观 + 展开后 `< Empty >` 占位**。v0.2.108 把 Apps 路由进 `renderFolder` 修「拖 Apps header 触发整列 column 拖拽」bug，但 v0.2.109 改了点击行为后 Apps header 仍是 folder 视觉，展开后看到空 folder 占位（`getSubTreeStub('apps')` 无 `children` 字段）。修：**回滚 v0.2.108 的 `renderNode` 改动**——Apps 重新走 `renderLink` 路径，恢复 v0.2.95 之前的 link 视觉（一个 `<a href="chrome://apps">` 的链接样式）。**根因纠正**：v0.2.108 诊断错了——「拖 link header 触发整列拖」不是因为 link 没 draggable，而是 v0.2.108 之前的某个改动让 Apps 走了非 draggable 的 header 元素。实际上 `<a href>` HTML5 默认 `draggable=true`，拖 link 时浏览器不向上 bubble 到 column 的 dragstart，link 自身成为 drag subject，无需任何特殊路由。`v0.2.109` 的 `folder.ts` 顶部 `node.type === 'apps'` 特殊分支保留作为 dead-code 防御性 short-circuit（万一未来再误路由到 renderFolder，click 仍跳 `chrome://apps`）；`link.ts:91` 的 `openLink` export 同样保留无害。
+
 ## [0.2.109] - 2026-06-22
 
 ### Changed
