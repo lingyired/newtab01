@@ -7,6 +7,7 @@
 import type { Settings } from '../bookmarks/types';
 import { getSetting, replaceSettings } from '../../lib/storage/settings';
 import { applyTheme } from '../themes/switcher';
+import { resolveLocale, setLocale } from '../../lib/i18n';
 import { log } from '../../lib/debug';
 
 const STYLE_ELEMENT_ID = 'dynamic-styles';
@@ -474,6 +475,17 @@ export function installSettingsChangeListener(): void {
     const oldValue = changes[FULL_KEY].oldValue as Settings | undefined;
     if (newValue) {
       replaceSettings(newValue);
+    }
+    // v0.2.117: language change → swap the active i18n locale. The
+    //  i18n module's subscribers (settings panel re-render, topbar
+    //  refresh, special folder titles, etc.) re-paint the page
+    //  without a reload. `setLocale` is a no-op when the resolved
+    //  locale matches the current one, so this is cheap.
+    if (
+      newValue && oldValue &&
+      newValue.language !== oldValue.language
+    ) {
+      setLocale(resolveLocale(newValue.language));
     }
     // If `theme` OR `darkMode` changed, re-apply the theme
     // (which clears the inline color overrides and writes the

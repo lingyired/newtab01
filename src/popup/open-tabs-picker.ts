@@ -1,6 +1,7 @@
 // Open tabs picker tab for Popup
 import { getAllTabs } from '../lib/chrome/tabs';
 import type { TabInfo } from '../lib/chrome/tabs';
+import { t } from '../lib/i18n';
 
 export class OpenTabsPicker {
   private selected = new Map<number, string>(); // tabId -> url
@@ -38,11 +39,11 @@ export class OpenTabsPicker {
       }
     } catch {
       const err = document.createElement('div');
-      err.className = 'picker-empty';
-      err.textContent = 'Failed to load tabs';
-      this.container.appendChild(err);
-    }
+    err.className = 'picker-empty';
+    err.textContent = t('popup.openTabsPicker.error');
+    this.container.appendChild(err);
   }
+}
 
   private renderTab(tab: TabInfo): void {
     const item = document.createElement('label');

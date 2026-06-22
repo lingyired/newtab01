@@ -3,9 +3,11 @@
 
 import type { SearchItem } from './search-engine';
 import { createTab } from '../../lib/chrome/bookmarks';
+import { t } from '../../lib/i18n';
 
 let container: HTMLElement | null = null;
 let listEl: HTMLElement | null = null;
+let footerEl: HTMLElement | null = null;
 let selectedIndex = -1;
 let currentItems: SearchItem[] = [];
 let onSelectCallback: ((item: SearchItem) => void) | null = null;
@@ -44,7 +46,10 @@ export function attachResultsContainer(el: HTMLElement): void {
   currentItems = [];
 }
 
-/** Build the static footer with keyboard hints. */
+/** Build the static footer with keyboard hints. v0.2.118: hint
+ *  labels are read from t() at render time so that locale changes
+ *  can repaint the footer without rebuilding the rest of the
+ *  results panel. */
 function buildFooter(): HTMLElement {
   const footer = document.createElement('div');
   footer.className = 'search-results-footer';
@@ -60,9 +65,9 @@ function buildFooter(): HTMLElement {
     footer.appendChild(span);
   }
 
-  appendHint(['↑', '↓'], 'navigate');
-  appendHint(['↵'], 'open');
-  appendHint(['esc'], 'close');
+  appendHint(['↑', '↓'], t('searchResults.footer.navigate'));
+  appendHint(['↵'], t('searchResults.footer.open'));
+  appendHint(['esc'], t('searchResults.footer.close'));
 
   // Right-aligned fallback hint: pressing Enter without selecting a result
   // routes the input through the browser's default search engine.
@@ -72,11 +77,30 @@ function buildFooter(): HTMLElement {
   fallbackKbd.textContent = '↵';
   fallback.appendChild(fallbackKbd);
   fallback.appendChild(
-    document.createTextNode(' no selection \u2192 web search'),
+    document.createTextNode(` ${t('searchResults.footer.websearch')}`),
   );
   footer.appendChild(fallback);
 
+  // Cache the footer for `updateSearchStrings()` to rebuild in-place on
+  // locale change.
+  footerEl = footer;
   return footer;
+}
+
+/** v0.2.118: rebuild the search results footer in-place so that the
+ *  keyboard hint labels track the active locale. Called from
+ *  `applyLocaleToDom` (newtab/main.ts) on `setLocale()`. The list
+ *  above the footer is untouched — it already shows whatever results
+ *  the user previously searched for, and a stale list is preferable
+ *  to clearing the user's results on a language switch. */
+export function updateSearchStrings(): void {
+  if (!container || !footerEl || !footerEl.parentElement) return;
+  // `buildFooter()` reads from t() at render time and writes to a
+  // fresh element. Replace the old footer in the same position so
+  // layout doesn't shift.
+  const newFooter = buildFooter();
+  footerEl.replaceWith(newFooter);
+  footerEl = newFooter;
 }
 
 function getFaviconUrl(url: string): string {
@@ -177,7 +201,7 @@ export function showResults(items: SearchItem[]): void {
     // Empty state — keep the panel visible with a small hint
     const empty = document.createElement('div');
     empty.className = 'search-results-empty';
-    empty.textContent = 'Type to search…';
+    empty.textContent = t('searchResults.empty');
     listEl.appendChild(empty);
   } else {
     for (let i = 0; i < items.length; i++) {

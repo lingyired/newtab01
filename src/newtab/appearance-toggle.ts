@@ -7,12 +7,13 @@
 
 import { getSetting, updateSetting } from '../lib/storage/settings';
 import { applyTheme } from '../features/themes/switcher';
+import { t } from '../lib/i18n';
 
 type DarkMode = 'system' | 'light' | 'dark';
 
 interface Option {
   value: DarkMode;
-  title: string;
+  titleKey: 'appearanceToggle.light' | 'appearanceToggle.system' | 'appearanceToggle.dark';
   icon: string;
 }
 
@@ -26,9 +27,9 @@ const ICONS = {
 } as const;
 
 const OPTIONS: ReadonlyArray<Option> = [
-  { value: 'light', title: '亮', icon: ICONS.sun },
-  { value: 'system', title: '跟随系统', icon: ICONS.zap },
-  { value: 'dark', title: '暗', icon: ICONS.moon },
+  { value: 'light', titleKey: 'appearanceToggle.light', icon: ICONS.sun },
+  { value: 'system', titleKey: 'appearanceToggle.system', icon: ICONS.zap },
+  { value: 'dark', titleKey: 'appearanceToggle.dark', icon: ICONS.moon },
 ];
 
 // chrome.storage.sync key for the settings blob — see settings.ts.
@@ -47,6 +48,28 @@ function updateSelection(): void {
   for (const btn of buttonEls) {
     const isSelected = btn.dataset.value === current;
     btn.setAttribute('aria-checked', String(isSelected));
+  }
+}
+
+/** v0.2.118: refresh the toggle's tooltip strings (`title` +
+ *  `aria-label` on each button + the radiogroup's `aria-label`)
+ *  for the active locale. Called from `applyLocaleToDom`
+ *  (newtab/main.ts) on `setLocale()`. The CSS-only `::after`
+ *  tooltips elsewhere pick up the active theme's --muted color
+ *  automatically, so re-painting the title attribute is enough —
+ *  no DOM rebuild. */
+export function updateAppearanceToggleStrings(): void {
+  if (toggleEl) {
+    toggleEl.setAttribute('aria-label', t('appearanceToggle.groupAriaLabel'));
+  }
+  for (const btn of buttonEls) {
+    const value = btn.dataset.value as DarkMode | undefined;
+    if (!value) continue;
+    const opt = OPTIONS.find((o) => o.value === value);
+    if (!opt) continue;
+    const label = t(opt.titleKey);
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
   }
 }
 
@@ -89,7 +112,7 @@ export function createAppearanceToggle(): HTMLDivElement {
   toggleEl = document.createElement('div');
   toggleEl.classList.add('sp-appearance-toggle');
   toggleEl.setAttribute('role', 'radiogroup');
-  toggleEl.setAttribute('aria-label', '切换外观');
+  toggleEl.setAttribute('aria-label', t('appearanceToggle.groupAriaLabel'));
 
   for (const opt of OPTIONS) {
     const btn = document.createElement('button');
@@ -98,8 +121,9 @@ export function createAppearanceToggle(): HTMLDivElement {
     btn.dataset.value = opt.value;
     btn.setAttribute('role', 'radio');
     btn.setAttribute('aria-checked', 'false');
-    btn.title = opt.title;
-    btn.setAttribute('aria-label', opt.title);
+    const label = t(opt.titleKey);
+    btn.title = label;
+    btn.setAttribute('aria-label', label);
     btn.innerHTML = opt.icon;
     btn.addEventListener('click', () => handleClick(opt.value));
     toggleEl.appendChild(btn);

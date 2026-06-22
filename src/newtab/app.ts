@@ -13,6 +13,7 @@ import { applySettingsToDOM, installSettingsChangeListener } from '../features/s
 import { applyTheme } from '../features/themes/switcher';
 import { applyCustomThemes } from '../features/themes/custom-themes';
 import { parseSplitParams, renderSplitView } from '../features/split/split-view';
+import { t } from '../lib/i18n';
 
 /** Initialize the new tab page */
 export async function initApp(): Promise<void> {
@@ -23,7 +24,7 @@ export async function initApp(): Promise<void> {
   root.textContent = '';
   const loading = document.createElement('div');
   loading.classList.add('loading');
-  loading.textContent = 'Loading...';
+  loading.textContent = t('newtab.loading');
   root.appendChild(loading);
 
   try {
@@ -166,7 +167,7 @@ export async function initApp(): Promise<void> {
     root.textContent = '';
     const errorEl = document.createElement('div');
     errorEl.classList.add('error');
-    errorEl.textContent = 'Failed to load bookmarks. Please refresh the page.';
+    errorEl.textContent = t('newtab.error.loadFailed');
     root.appendChild(errorEl);
     console.error('[newtab01] init error:', err);
   }

@@ -132,3 +132,35 @@ html, body {
 #root {
   width: 100%;
 }
+
+/* v0.2.119: RTL support. The i18n module sets <html dir="rtl"> on
+ * RTL locales (currently 'ar'; see RTL_LOCALES in src/lib/i18n/types.ts).
+ *
+ * Project CSS uses flex + gap exclusively (CLAUDE.md §2.2 / §3.3),
+ * so column order, topbar, and most layout naturally mirror in RTL.
+ * The handful of explicit URL/hostname displays below would otherwise
+ * break — Arabic/Devanagari characters in the middle of an LTR host
+ * name would jump lines awkwardly. Force LTR + bidi-isolation for
+ * those nodes. */
+[dir="rtl"] .search-result-url,
+[dir="rtl"] .split-picker-url,
+[dir="rtl"] .picker-url,
+[dir="rtl"] .bookmark-url,
+[dir="rtl"] .search-result-host,
+[dir="rtl"] .sp-pill-url {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* Search input: typing direction follows the UI language (RTL for
+ * Arabic), so the cursor + text alignment don't feel backwards. */
+[dir="rtl"] .search-input {
+  direction: rtl;
+  text-align: right;
+}
+
+/* Settings panel: in RTL the body of the panel (nav + content) is
+ * laid out as `display: flex` with `flex-direction: row` (the original
+ * CSS uses `flex-direction: row` rather than `row-reverse`, so the
+ * visual order naturally flips when the document is RTL). The
+ * <html dir="rtl"> switch handles the rest. */

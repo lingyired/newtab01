@@ -3,6 +3,7 @@
 
 import type { BookmarkNode, Settings } from './types';
 import { getSetting } from '../../lib/storage/settings';
+import { t } from '../../lib/i18n';
 import {
   getTopSites,
   getRecentBookmarks,
@@ -58,7 +59,7 @@ export async function getChildren(node: BookmarkNode): Promise<BookmarkNode[]> {
 export function getSubTreeStub(id: string): BookmarkNode {
   switch (id) {
     case 'top':
-      return { id: 'top', title: 'Most visited', type: 'top', children: [] };
+      return { id: 'top', title: t('specialFolder.top'), type: 'top', children: [] };
     case 'apps':
       // v0.2.116: Apps is a single-link entry pointing to the
       //  browser's native apps overview page — NOT a bookmark
@@ -77,7 +78,7 @@ export function getSubTreeStub(id: string): BookmarkNode {
       //  (Chrome UA contains `Chrome/...` but NOT `Edg/`).
       return {
         id: 'apps',
-        title: 'Apps',
+        title: t('specialFolder.apps'),
         type: 'apps',
         url: typeof navigator !== 'undefined' &&
              navigator.userAgent?.includes('Edg/')
@@ -85,11 +86,11 @@ export function getSubTreeStub(id: string): BookmarkNode {
           : 'chrome://apps',
       };
     case 'recent':
-      return { id: 'recent', title: 'Recent bookmarks', type: 'recent', children: [] };
+      return { id: 'recent', title: t('specialFolder.recent'), type: 'recent', children: [] };
     case 'closed':
-      return { id: 'closed', title: 'Recently closed', type: 'closed', children: [] };
+      return { id: 'closed', title: t('specialFolder.closed'), type: 'closed', children: [] };
     case 'devices':
-      return { id: 'devices', title: 'Other devices', type: 'devices', children: [] };
+      return { id: 'devices', title: t('specialFolder.devices'), type: 'devices', children: [] };
     default:
       return { id, title: '', children: [] };
   }

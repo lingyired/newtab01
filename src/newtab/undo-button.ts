@@ -8,11 +8,13 @@ import { setColumns, saveLayout } from '../features/drag-drop/layout-ops';
 import { setMovedOutCache } from '../features/bookmarks/moved-out';
 import { setLocal } from '../lib/storage';
 import * as debug from '../lib/debug';
+import { t } from '../lib/i18n';
 
 const MOVED_OUT_KEY = 'movedOut';
 
 /** Undo button element, lazily created by renderUndoButton. */
 let undoBtn: HTMLButtonElement | null = null;
+let undoLabel: HTMLSpanElement | null = null;
 
 /**
  * Create the undo button and append it to the given topbar container.
@@ -26,8 +28,8 @@ export function renderUndoButton(topbar: HTMLElement): void {
   undoBtn = document.createElement('button');
   undoBtn.id = 'undo_button';
   undoBtn.type = 'button';
-  undoBtn.setAttribute('aria-label', '回退操作');
-  undoBtn.title = '回退操作';
+  undoBtn.setAttribute('aria-label', t('undo.title'));
+  undoBtn.title = t('undo.title');
 
   // Layout: text label + inline count badge. The badge ALWAYS renders
   // a number (1, 2, …) when the history stack is non-empty — no empty
@@ -37,7 +39,8 @@ export function renderUndoButton(topbar: HTMLElement): void {
   const label = document.createElement('span');
   label.id = 'undo_button_label';
   label.classList.add('undo-label');
-  label.textContent = '回退操作';
+  label.textContent = t('undo.label');
+  undoLabel = label;
   undoBtn.appendChild(label);
 
   const badge = document.createElement('span');
@@ -91,10 +94,25 @@ function updateVisibility(): void {
   } else {
     undoBtn.style.display = '';
     undoBtn.title = count === 1
-      ? '回退操作'
-      : `回退操作（${count} 步）`;
+      ? t('undo.title')
+      : t('undo.titleWithCount', { count });
     if (badge) {
       badge.textContent = String(count);
     }
   }
+}
+
+/** v0.2.118: refresh the undo button's static strings (text label
+ *  + title + aria-label) for the active locale. Called from
+ *  `applyLocaleToDom` (newtab/main.ts) on `setLocale()`. Re-uses
+ *  `updateVisibility()` so the title (which includes the live
+ *  history count) re-computes against the new locale. */
+export function updateUndoStrings(): void {
+  if (undoBtn) {
+    undoBtn.setAttribute('aria-label', t('undo.title'));
+  }
+  if (undoLabel) {
+    undoLabel.textContent = t('undo.label');
+  }
+  updateVisibility();
 }

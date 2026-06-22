@@ -1,6 +1,7 @@
 // Bookmark picker tab for Popup
 import { getBookmarkTree, chromeBookmarkToNode } from '../lib/chrome/bookmarks';
 import type { BookmarkNode } from '../features/bookmarks/types';
+import { t } from '../lib/i18n';
 
 export class BookmarkPicker {
   private selected = new Map<string, string>(); // id -> url
@@ -35,9 +36,9 @@ export class BookmarkPicker {
       }
     } catch {
       const err = document.createElement('div');
-      err.className = 'picker-empty';
-      err.textContent = 'Failed to load bookmarks';
-      this.container.appendChild(err);
+    err.className = 'picker-empty';
+    err.textContent = t('popup.bookmarkPicker.error');
+    this.container.appendChild(err);
     }
   }
 

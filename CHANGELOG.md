@@ -5,6 +5,61 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.120] - 2026-06-26
+
+### Changed
+- **i18n Phase D 收尾 — background service worker 10 语言补齐**。`src/background.ts` 的 `SETTINGS_MENU_TITLES` 查表从 v0.2.118 的 `{ en, zh }` 扩到 10 项（`en / zh / es / ar / hi / fr / pt / de / ja / ru`），每项对应 `src/lib/i18n/catalog/<code>.ts` 里 `actionMenu.openSettings` 的翻译。类型从 `Partial<Record<string, string>>` 收紧为 `Record<string, string>` — 任何新建 catalog 漏更新 SW 表时，tsc 不会报错（因为 key 是 string 任意），但 `pickOpenSettingsTitle()` 仍会 fallback 到 'en'。建议人工 review 表格与 catalog 的同步。
+
+### Notes
+- i18n v0.2.117 → v0.2.120 完整周期完成：从脚手架（types/index/catalog）→ settings 面板迁移 → 全模块迁移（topbar/搜索/folder actions/popup/background/newtab）→ 8 种新 locale + RTL → SW 10 语言补齐。feat/i18n 分支准备 merge 到 main。
+- AI 生成的翻译（特别是 hi / ar / ru）可能不自然，未来用户可手动校对单个 key；tsc 的 `as const satisfies LocaleMessages` 模式保证任何 catalog 缺 key 都会被编译期拒绝。
+
+## [0.2.119] - 2026-06-25
+
+### Added
+- **i18n 8 个新 locale 完整上线**：西班牙语 (es)、阿拉伯语 (ar)、印地语 (hi)、法语 (fr)、葡萄牙语 (pt)、德语 (de)、日语 (ja)、俄语 (ru)。每个文件结构对齐 en.ts，使用 `as const satisfies LocaleMessages` 模式，编译期强制 keys 完整。`src/lib/i18n/index.ts` 的 `CATALOG` 类型从 `Partial<Record<LocaleCode, LocaleBundle>>` 收紧为 `Record<LocaleCode, LocaleBundle>`（10 项全部到位），新增语言时 tsc 会强制要求 import + 提供完整 keys。
+- **Arabic RTL 支持**。`i18n/index.ts` 的 `setLocale()` / `initLocale()` 自动写 `<html dir="rtl">` for `ar` (see `RTL_LOCALES` in [types.ts](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/lib/i18n/types.ts))。[styles/globals.css](file:///Users/lingsmbp/Documents/aiwork/newtab01/styles/globals.css) 末尾追加 `[dir="rtl"]` 规则：
+  - URL / hostname 显示节点（search result url、split picker、popup picker、bookmark url、sp-pill-url）强制 `direction: ltr; unicode-bidi: isolate` — 防止 host 名中间出现 Arabic 字符时断行错乱
+  - search input 在 RTL 下 `direction: rtl; text-align: right` — 跟随 UI 语言方向
+  - column 排布、topbar、settings panel 等不需显式镜像（项目 CSS 全部用 flex + gap，`<html dir="rtl">` 自动生效）
+
+## [0.2.118] - 2026-06-24
+
+### Changed
+- **i18n Phase B 收尾**。v0.2.117 完成的 settings 面板迁移继续扩展到所有剩余模块：
+  - 搜索结果 footer 4 个 hint label（`↑↓ navigate` / `↵ open` / `esc close` / `↵ web search`）+ 整段 `updateSearchStrings()` 重新挂入，locale 切换时 in-place 替换 footer 不清空已搜索结果
+  - 分屏选择器（split-picker）5 个字符串全部 `t()` 化：title（`{max}` 占位符）、counter（`{count} / {max}`）、cancel / open first N / open selected 3 个按钮
+  - Popup 入口：顶部 `await initSettings()`（v0.2.118 新引入 — popup 之前不依赖 settings，现在为支持 locale 切换必须 init）；4 个 `textContent` 改 `t()`（2 个 tab + Layout + Open Split）
+  - Popup 3 个 picker：`BookmarkPicker` 错误 + fallback folder title 复用 `popup.tab.bookmarks`；`OpenTabsPicker` 空态 + 错误；`LayoutPicker` 4 个 layout 改 `labelKey: MessageKey` 模式（与 folder-actions / appearance-toggle 的 `titleKey` 对齐）
+  - 5 个特殊目录 title 之外的「空文件夹占位」`< Empty >` 改成 `t('folder.empty')`（顺带删除尖括号）
+  - newtab 主页的 `Loading...` / `Invalid split view URL` / `Failed to load bookmarks` 3 个英文字符串
+  - background SW 的 right-click「打开设置」menu 改用查表 + `chrome.storage.onChanged` 监听 `settings.language` 变化时重新注册，SW 维护独立的 `SETTINGS_MENU_TITLES: Partial<Record<string, string>>` 表（v0.2.118 仅 en + zh；v0.2.120 扩到 10 项）
+- **newtab/main.ts 新增 `applyLocaleToDom()` + `installLocaleListener()`**。订阅 i18n 模块的 `setLocale()` 通知；locale 切换时一次性刷新 topbar / 外观 toggle / undo / search footer / 整列 columns（特殊目录 title 重新走 `t()`），并重开打开中的 settings 面板。`subscribe()` 内部去重，重复切到同一 locale 不触发重画。
+
+### Added
+- `initLocale()` / `setLocale()` / `subscribe()` 配合 chrome.storage.onChanged 链路：用户在设置面板改 language → storage 写入 → apply.ts 监听 → setLocale() → 所有订阅方刷新（不刷新页面）
+
+## [0.2.117] - 2026-06-23
+
+### Added
+- **i18n 多语言支持 — Phase A 脚手架**。新增 `src/lib/i18n/` 模块（types / index / catalog/en / catalog/zh），轻量、零依赖、纯 TypeScript 实现的翻译函数 `t(key, params?)`、`setLocale()` / `initLocale()` / `getLocale()` / `resolveLocale()` / `subscribe()`、`RTL_LOCALES` 集合。`Settings.language: 'auto' | LocaleCode` 字段新增，跨设备同步（`chrome.storage.sync`）。**Phase A 包含**：
+  - 全套 ~210 个 `MessageKey` 联合类型（`tsc` 在编译期强制每个 catalog 文件 keys 齐全）
+  - 完整英文 (en) + 完整中文 (zh) catalog：所有设置面板的 tabs / form labels / descriptions / theme labels / 5 个特殊目录 title / 暗色模式选项 / 链接打开方式 / 批量确认阈值 / 自定义主题 import error / 高级 export + import
+  - 布局 tab 末尾加「界面语言」`<select>` 行：「跟随浏览器」+ 当前已支持的全部 locale（v0.2.117 = en + zh 2 项；v0.2.119 扩到 10 项）
+  - 用户切换语言后即时生效：`<html lang>` + `<html dir>` 同步更新，settings 面板 + 主题下拉 + 5 个特殊目录 title + tab 标签 + 按钮文字 全部实时刷新，无需刷新页面
+  - `chrome.storage.onChanged` 监听在 `apply.ts` 里接入：当 `language` 字段在另一 tab 改动时自动 `setLocale()` 触发所有 subscriber
+- **类型安全**：`LocaleMessages = Record<MessageKey, string>` —— 任何 catalog 少一个 key，TypeScript 立刻报错，不会让 UI 出现「`settings.field.spacing`」裸 key 暴露给用户
+
+### Implementation Notes
+- **零运行时依赖**：`i18n` 模块不引入 `i18next` 等库，与项目 vanilla JS 风格一致。bundle 增量：newtab 26.56KB gzipped（v0.2.116 → v0.2.117 +0.5KB），未越 80KB 预算
+- **不使用 `chrome.i18n.getMessage()`**：项目不依赖 Chrome 标准的 `_locales/<lang>/messages.json` 机制，因为 (1) `chrome.i18n` 是 OS 级只读，无法在设置里切换；(2) `popup` 拿不到 SW 的 `chrome.i18n` 调用；(3) 与项目「Settings 跨设备同步」设计哲学冲突
+- **下拉用 selfName (englishName) 格式**：locale 用自己语言写自己的名字 + 英文名作为副标签，方便跨语言用户识别
+- **`theme.${id}` 联合约束 fallback**：用户安装的自定义主题（id 不在 8 个内置 theme key 里）调 `t('theme.user-foo')` 返回原 key，`themeLabel()` 检测到这个 fallback 行为后改用 theme id 本身显示，custom theme 名字保留用户起的名字
+- **不刷新页面**：locale 切换走 `subscribe` + `applyLocaleToDom()` 流程，settings 面板 rerender、topbar 静态元素 (`updateTopbarStrings()`，v0.2.118 引入) 在订阅通道上重绘
+- **Phase B 预告**（v0.2.118）：迁移剩余模块 — topbar (search placeholder + settings button title)、appearance-toggle (3 个 tooltip)、undo-button、search-results (footer hints)、folder-actions、folder-actions-handler、context-menu、split-picker、popup、background SW
+- **Phase C 预告**（v0.2.119）：加 es / ar / hi / fr / pt / de / ja / ru 8 种新语言，ar 自动切 `dir="rtl"`，`globals.css` 加 RTL 排版适配
+- **Phase D 预告**（v0.2.120）：background SW context menu 标题补全 8 种语言 + CHANGELOG 收尾
+
 ## [0.2.116] - 2026-06-22
 
 ### Changed

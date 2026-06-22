@@ -6,6 +6,32 @@ import { setInputElement } from '../features/search/search-main';
 import { openSettingsPanel } from './settings-panel';
 import { renderUndoButton } from './undo-button';
 import { createAppearanceToggle } from './appearance-toggle';
+import { t } from '../lib/i18n';
+
+// v0.2.118: cached references to the topbar's static elements so
+//  applyLocaleToDom (in newtab/main.ts) can refresh their text on
+//  locale change without rebuilding the DOM.
+let searchInputEl: HTMLInputElement | null = null;
+let searchResultsEl: HTMLDivElement | null = null;
+let settingsBtnEl: HTMLButtonElement | null = null;
+
+/** Re-paint all topbar static strings (search placeholder + aria,
+ *  settings button title + aria, search results aria) for the
+ *  active locale. Called from `applyLocaleToDom` (newtab/main.ts)
+ *  when the i18n module's `setLocale()` fires. */
+export function updateTopbarStrings(): void {
+  if (searchInputEl) {
+    searchInputEl.placeholder = t('topbar.search.placeholder');
+    searchInputEl.setAttribute('aria-label', t('topbar.search.ariaLabel'));
+  }
+  if (searchResultsEl) {
+    searchResultsEl.setAttribute('aria-label', t('topbar.searchResults.ariaLabel'));
+  }
+  if (settingsBtnEl) {
+    settingsBtnEl.title = t('topbar.settings.ariaLabel');
+    settingsBtnEl.setAttribute('aria-label', t('topbar.settings.ariaLabel'));
+  }
+}
 
 /** Create and render the topbar (and its associated search DOM).
  *  v0.2.93: the search bar is always rendered (previously gated by
@@ -21,17 +47,19 @@ export function createTopbar(container: HTMLElement): void {
   const searchInput = document.createElement('input');
   searchInput.type = 'text';
   searchInput.id = 'search-input';
-  searchInput.placeholder = 'Search bookmarks... (⌘K)';
+  searchInput.placeholder = t('topbar.search.placeholder');
   searchInput.classList.add('search-input');
-  searchInput.setAttribute('aria-label', 'Search bookmarks');
+  searchInput.setAttribute('aria-label', t('topbar.search.ariaLabel'));
   searchInput.setAttribute('autocomplete', 'off');
   searchInput.setAttribute('spellcheck', 'false');
+  searchInputEl = searchInput;
 
   // Static results panel — positioned absolute below the input
   const resultsEl = document.createElement('div');
   resultsEl.id = 'search-results';
   resultsEl.setAttribute('role', 'listbox');
-  resultsEl.setAttribute('aria-label', 'Search results');
+  resultsEl.setAttribute('aria-label', t('topbar.searchResults.ariaLabel'));
+  searchResultsEl = resultsEl;
 
   searchWrap.appendChild(searchInput);
   searchWrap.appendChild(resultsEl);
@@ -61,10 +89,8 @@ export function createTopbar(container: HTMLElement): void {
   // Settings button (top-right)
   const settingsBtn = document.createElement('button');
   settingsBtn.id = 'options_button';
-  // v0.2.87: title in Chinese (was 'Settings') to match the rest of
-  // the topbar/UI vocabulary.
-  settingsBtn.title = '设置';
-  settingsBtn.setAttribute('aria-label', '设置');
+  settingsBtn.title = t('topbar.settings.ariaLabel');
+  settingsBtn.setAttribute('aria-label', t('topbar.settings.ariaLabel'));
   // v0.2.85: replaced the Feather "settings" path (a complex
   // multi-curve shape whose lower-right segment rendered with
   // visible mis-alignment at small sizes — the bug the user
@@ -76,6 +102,7 @@ export function createTopbar(container: HTMLElement): void {
   settingsBtn.addEventListener('click', () => {
     openSettingsPanel();
   });
+  settingsBtnEl = settingsBtn;
 
   topbar.appendChild(settingsBtn);
   container.appendChild(topbar);
