@@ -5,6 +5,20 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.115] - 2026-06-22
+
+### Changed
+- **Apps 文件夹 UX 决策：维持 v0.2.111 folder 行为**。v0.2.114 临时诊断后确认 Edge 的 `chrome.management.getAll()` 返回的 13 个条目**全部**是普通 Chrome 扩展（`type: "extension"` + Edge 特有的 `isApp: false` 字段），**无任何 PWA**（无 `type: "hosted_app"` / `"packaged_app"` 条目，**无 `appLaunchUrl` 字段**）。用户装的"豆包，浏览器 AI 助手"等**是 Chrome 扩展**不是 PWA（`homepageUrl` 指向 Edge Add-ons / Chrome Web Store），按 Chrome/Edge 的设计**本来就该不显示**在 Apps 列表。
+- **Edge PWA API 限制**：Edge PWA（从网站 "Install" 安装的 PWA）注册到 OS 级别（Windows 开始菜单 / macOS 启动台），**不通过 `chrome.management` API 暴露**给扩展——这是 Edge 的固有限制，newtab01 没法在 newtab 上列出 Edge PWA。这同样适用于 `edge://apps` 页面管理的 PWA：它们在 `chrome.management.getAll()` 里**根本不存在**。
+- **v0.2.115 不改 UX**，保留 v0.2.111 的 folder 视觉 + v0.2.113 的 `appLaunchUrl` filter。Chrome 用户装了 hosted_app / packaged_app 时 Apps 文件夹正常显示真 app；Edge 用户 / 没装真 app 的用户看到空 folder（**这是正确行为**，普通 Chrome 扩展本来就不属于 Apps 列表范围）。
+
+### Removed
+- **删除 v0.2.114 临时诊断 console.warn 输出**。`getInstalledApps` 恢复为纯 filter 实现，无副作用 console 输出。诊断目的已完成，devtools console 不应再有 `[newtab01 debug v0.2.114]` 警告刷屏。
+
+### Implementation Notes
+- 之前讨论过的两个备选 UX（v0.2.109 link 行为跳 chrome://apps / edge://apps 整页 / 双策略 fallback）已记录在此条目但**不实施**——用户决定维持 v0.2.111。如未来 Edge 暴露 PWA API 或用户重新选 UX，再回来加。
+- `isApp: boolean` 字段是 Edge 特有的 chrome.management 扩展（Chrome 的 `chrome.management.ExtensionInfo` 类型没这个字段）。v0.2.115 不读这个字段——Edge PWA 不在 getAll() 返回里，读了也没用。
+
 ## [0.2.114] - 2026-06-22
 
 ### Added
