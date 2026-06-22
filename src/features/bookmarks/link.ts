@@ -43,15 +43,39 @@ export function renderLink(node: BookmarkNode, target: HTMLElement): HTMLLIEleme
     });
   } else if (url) {
     const newtab = getSetting('newtab');
-    // chrome:// and file:/// URLs must be opened via the chrome.tabs API
-    // (the `<a target="_blank">` shortcut in the newtab override is
-    // unreliable for these schemes), so we route them through a single
-    // dedicated click handler below. Skip the generic newtab branch
-    // here — running both would attach two click listeners and open
-    // the URL twice (e.g. newtab=2 + apps' default `chrome://apps` URL
-    // would open two background tabs on every click).
-    const urlStart = url.substring(0, 6);
-    const isChromeOrFile = urlStart === 'chrome' || urlStart === 'file:/';
+    // chrome:// / chrome-extension:// / file:/// URLs must be
+    // opened via the chrome.tabs API (the `<a target="_blank">`
+    // shortcut in the newtab override is unreliable for these
+    // schemes — chrome-extension://<id>/_generated_background_page.html
+    // launches in a generated iframe background, not the user's
+    // newtab, and chrome:// URLs are blocked from being targeted
+    // in some Chrome versions), so we route them through a
+    // single dedicated click handler below. Skip the generic
+    // newtab branch here — running both would attach two click
+    // listeners and open the URL twice (e.g. newtab=2 + apps'
+    // default `chrome://apps` URL would open two background tabs
+    // on every click).
+    //
+    // v0.2.111: `chrome-extension://` added — Apps special folder
+    //  now lists installed apps and each app's `appLaunchUrl` is
+    //  typically a `chrome-extension://<id>/_generated_background_page.html`
+    //  URL that must be launched via the chrome.tabs API. We use
+    //  `startsWith` on the full URL rather than the
+    //  `urlStart` substring check below because the substring
+    //  approach only compares the first 6 chars and would
+    //  conflate `chrome://` (URL starts with `'chrome:'`, first
+    //  6 chars `'chrome:'` ≠ `'chrome'`) — wait, `urlStart` is
+    //  `url.substring(0, 6)` and `'chrome:'` is 7 chars, so
+    //  `urlStart` for `chrome://foo` is `'chrome:'` which DOES
+    //  equal `'chrome'`. For `chrome-extension://foo`,
+    //  `urlStart` is `'chrome-'`, which is why the previous
+    //  code missed it. Using `startsWith` here is the correct
+    //  fix: any of these three prefixes triggers the
+    //  chrome.tabs API path.
+    const isChromeOrFile =
+      url.startsWith('chrome:') ||
+      url.startsWith('chrome-extension:') ||
+      url.startsWith('file:');
     if (!isChromeOrFile) {
       if (newtab === 1) {
         // New foreground tab

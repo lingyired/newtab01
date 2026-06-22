@@ -71,36 +71,22 @@ export function renderAllNodes(
 
 /** Render a single bookmark node (folder or link)
  *
- *  v0.2.110: reverted v0.2.108 special routing for Apps.
+ *  v0.2.111: Apps special folder now routed through `renderFolder`
+ *  (not `renderLink`) again. `getSubTreeStub('apps')` returns
+ *  `children: []` so the `if (node.children)` check sends Apps
+ *  to `renderFolder`, which calls `enableDragFolder` (Apps can
+ *  be individually dragged) and renders a folder with expand/
+ *  collapse behaviour. The actual app list is populated lazily
+ *  by `getChildren` (case 'apps' → `getAppsNodes` →
+ *  `chrome.management.getAll`) when the user expands the
+ *  folder.
  *
- *  Background: v0.2.108 added `|| node.type === 'apps'` to send
- *  Apps through `renderFolder` (in order to call `enableDragFolder`
- *  so dragging the Apps header wouldn't fall through to the
- *  column's drag handler). v0.2.109 then overrode Apps' click
- *  behaviour in `renderFolder` to navigate to `chrome://apps`,
- *  preserving the folder visual. The result was a visual
- *  regression: Apps header looked like a folder and rendered an
- *  empty `< Empty >` placeholder when expanded, even though
- *  clicking it correctly navigated to `chrome://apps`.
- *
- *  The pre-v0.2.95 Apps UI was a regular bookmark link (an
- *  `<a href="chrome://apps">`), rendered by `renderLink`. That
- *  link element is natively `draggable = true` (HTML5 default for
- *  `<a href>`), and dragging a link does NOT bubble up to the
- *  parent column's dragstart — the link itself becomes the drag
- *  subject. So Apps-as-link works correctly: drag the header →
- *  it drags as a single link (which is what the user expects
- *  for a "navigate to chrome://apps" entry); click the header →
- *  navigates to chrome://apps in the configured tab mode.
- *
- *  v0.2.110 reverts the `|| node.type === 'apps'` clause. The
- *  v0.2.109 Apps short-circuit in `folder.ts` is kept as dead
- *  code for defence-in-depth — it only fires if some future
- *  change in this file routes Apps through `renderFolder`
- *  again, in which case clicking the header still navigates
- *  to chrome://apps instead of expanding into an empty
- *  folder. The `openLink` export in `link.ts` is kept for
- *  the same reason.
+ *  Pre-v0.2.95 behaviour was a link to chrome://apps; the
+ *  v0.2.108-v0.2.110 round-trip through various renderLink/
+ *  renderFolder hybrids was a stopgap while we waited to land
+ *  the `management` permission. The 4 other special folders
+ *  (top/recent/closed/devices) have always been folders with
+ *  `children: []`; Apps now joins them.
  */
 function renderNode(
   node: BookmarkNode,

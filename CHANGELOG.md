@@ -5,6 +5,21 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.111] - 2026-06-22
+
+### Added
+- **Apps 特殊 folder 现在填入真实应用列表**。v0.2.95 之前 Apps 是一个 `<a href="chrome://apps">` link；v0.2.108-v0.2.110 几次尝试改 folder 视觉 / 单独拖都不到位。v0.2.111 终于落地：Apps header 视觉 = folder（可单独拖、可拖到任意列），展开后展示用户安装的所有 `hosted_app` / `legacy_packaged_app` Chrome 应用（来自 `chrome.management.getAll()`）。每个 app 是一条 link 节点（`id: app.<extensionId>`, `url: appLaunchUrl`），点击走 `link.ts` 的 chrome.tabs API 路径。permission：`manifest.json` 加 `"management"`（首次安装/升级时 Chrome 弹权限 dialog）。
+
+### Fixed
+- **`chrome-extension://` URL 不走 chrome.tabs API path**。`link.ts:74` 旧判断用 `url.substring(0, 6) === 'chrome'`，但 `chrome-extension://<id>/...` 的前 6 字符是 `'chrome-'` ≠ `'chrome'`，**所以 Apps 列表里的 app 链接全部 fall through 到 `<a target="_blank">` 分支**，导致 `_generated_background_page.html` 行为怪（launches in generated iframe 背景页而非 newtab）。修：用 `startsWith('chrome:')` / `startsWith('chrome-extension:')` / `startsWith('file:')` 三个 prefix 统一走 chrome.tabs API。
+
+### Implementation Notes
+- `getInstalledApps` (`lib/chrome/bookmarks.ts:71-75`) 之前是 dead code——manifest 缺 `management` 权限所以 `chrome.management?.getAll?.()` 永远不命中。v0.2.111 加了 permission 后真的能跑了。
+- `getSubTreeStub('apps')` (`special-folders.ts:153-160`) 改回 `children: []` —— `column.ts:renderNode` 的 `if (node.children)` 现在把 Apps 路由进 `renderFolder`，与 top/recent/closed/devices 4 个 special folder 一致。
+- `getChildren` (`special-folders.ts:42-58`) 加 `case 'apps'` 走 `getAppsNodes()`。注意 Apps 的实际 children 是 lazy load——`renderFolder` 内部调 `getChildren` 是 async，**未展开**时不取数据。
+- `chrome.management.onInstalled` / `onUninstalled` 监听 (`newtab/app.ts:155-178`)：用户装/卸应用时自动 re-render board。`onInstalled` 过滤 `hosted_app` / `legacy_packaged_app`；`onUninstalled` 拿不到 type，每个卸载都 re-render（render 是 no-op for users with no Apps folder open，便宜）。
+- v0.2.109 / v0.2.110 那些 `folder.ts:72-99` 的「Apps 跳 chrome://apps」短路分支已删——`renderNode` 把 Apps 路由回 renderFolder 之后这些是 dead code，留着误导。
+
 ## [0.2.110] - 2026-06-22
 
 ### Fixed

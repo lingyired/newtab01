@@ -43,6 +43,20 @@ export async function getChildren(node: BookmarkNode): Promise<BookmarkNode[]> {
   switch (node.type ?? node.id) {
     case 'top':
       return getTopSitesNodes();
+    case 'apps':
+      // v0.2.111: Apps special folder now lists installed apps
+      //  via chrome.management.getAll() (filtered to hosted_app +
+      //  legacy_packaged_app). Requires the `management` permission
+      //  declared in manifest.json. Each app becomes a regular
+      //  link node (id `app.<extensionId>`, url = appLaunchUrl)
+      //  that the existing `renderLink` path renders; the link
+      //  click path's `chrome-extension://` short-circuit (link.ts
+      //  chrome:// branch which also covers `chrome-extension`)
+      //  routes the launch through `chrome.tabs.update`, since
+      //  opening a `chrome-extension://<id>/_generated_background_page.html`
+      //  in a foreground tab via `<a target="_blank">` is
+      //  unreliable.
+      return getAppsNodes();
     case 'recent':
       return getRecentNodes();
     case 'closed':
@@ -61,7 +75,12 @@ export function getSubTreeStub(id: string): BookmarkNode {
     case 'top':
       return { id: 'top', title: 'Most visited', type: 'top', children: [] };
     case 'apps':
-      return { id: 'apps', title: 'Apps', type: 'apps', url: 'chrome://apps' };
+      // v0.2.111: Apps has `children: []` so `column.ts:renderNode`
+      //  routes it through `renderFolder` (folder visual + can be
+      //  individually dragged by `enableDragFolder`). The actual
+      //  children are populated lazily by `getChildren` (case 'apps'
+      //  → getAppsNodes) when the user expands the Apps folder.
+      return { id: 'apps', title: 'Apps', type: 'apps', children: [] };
     case 'recent':
       return { id: 'recent', title: 'Recent bookmarks', type: 'recent', children: [] };
     case 'closed':
