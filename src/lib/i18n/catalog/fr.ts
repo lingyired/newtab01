@@ -146,7 +146,7 @@ const messages = {
   'specialFolder.recent': 'Récemment visités',
   'specialFolder.closed': 'Récemment fermés',
   'specialFolder.devices': 'Autres appareils',
-  'topbar.search.placeholder': 'Rechercher des favoris... (⌘K)',
+  'topbar.search.placeholder': 'Rechercher des favoris...',
   'topbar.search.ariaLabel': 'Rechercher des favoris',
   'topbar.searchResults.ariaLabel': 'Résultats de recherche',
   'topbar.settings.ariaLabel': 'Paramètres',

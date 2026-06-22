@@ -146,7 +146,7 @@ const messages = {
   'specialFolder.recent': '最近閲覧した',
   'specialFolder.closed': '最近閉じたタブ',
   'specialFolder.devices': '他のデバイス',
-  'topbar.search.placeholder': 'ブックマークを検索... (⌘K)',
+  'topbar.search.placeholder': 'ブックマークを検索...',
   'topbar.search.ariaLabel': 'ブックマークを検索',
   'topbar.searchResults.ariaLabel': '検索結果',
   'topbar.settings.ariaLabel': '設定',

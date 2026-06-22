@@ -146,7 +146,7 @@ const messages = {
   'specialFolder.recent': 'Zuletzt besucht',
   'specialFolder.closed': 'Zuletzt geschlossen',
   'specialFolder.devices': 'Andere Geräte',
-  'topbar.search.placeholder': 'Lesezeichen suchen... (⌘K)',
+  'topbar.search.placeholder': 'Lesezeichen suchen...',
   'topbar.search.ariaLabel': 'Lesezeichen suchen',
   'topbar.searchResults.ariaLabel': 'Suchergebnisse',
   'topbar.settings.ariaLabel': 'Einstellungen',

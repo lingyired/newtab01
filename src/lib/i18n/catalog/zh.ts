@@ -161,7 +161,7 @@ const messages = {
   'specialFolder.closed': '最近关闭',
   'specialFolder.devices': '其他设备',
   // Topbar
-  'topbar.search.placeholder': '搜索书签... (⌘K)',
+  'topbar.search.placeholder': '搜索书签...',
   'topbar.search.ariaLabel': '搜索书签',
   'topbar.searchResults.ariaLabel': '搜索结果',
   'topbar.settings.ariaLabel': '设置',

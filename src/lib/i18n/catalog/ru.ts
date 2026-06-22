@@ -146,7 +146,7 @@ const messages = {
   'specialFolder.recent': 'Недавно посещённые',
   'specialFolder.closed': 'Недавно закрытые',
   'specialFolder.devices': 'Другие устройства',
-  'topbar.search.placeholder': 'Поиск закладок... (⌘K)',
+  'topbar.search.placeholder': 'Поиск закладок...',
   'topbar.search.ariaLabel': 'Поиск закладок',
   'topbar.searchResults.ariaLabel': 'Результаты поиска',
   'topbar.settings.ariaLabel': 'Настройки',

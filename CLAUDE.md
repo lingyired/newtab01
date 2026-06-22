@@ -362,7 +362,8 @@ splitManager.register(new IframeSplitEngine());
 - **AI 翻译质量**：v0.2.117 周期内 9 种非英文 catalog 由 AI 一次性生成（hi / ar / ru 可能不自然）。`docs/i18n.md` 留校对入口；用户后续手动微调单个 key 即可，无需跑整个翻译流程
 - **静态配置对象用 `key` 字段**而不是裸字符串（参考 `folder-actions.ts` / `appearance-toggle.ts` / `layout-picker.ts` 的 `titleKey` / `labelKey` 模式）。在静态数组 / 对象里直接放 `'亮'` 之类的中文字符串会导致 tsc 报错且破坏切语言支持
 - **placeholder 插值**：t(key, params) 支持 `{name}` 占位符，例如 `t('folderAction.confirmOpenAll', { count })` → 「打开全部 8 个链接」。**禁止**用字符串模板拼接（`"打开" + count + "个链接"`），那会绕过 catalog
-- **不翻译的内容**：用户提供的 URL、文件名、bookmark title、theme id、内部错误堆栈、debug log —— 这些**不**进 catalog
+- **不翻译的内容**：用户提供的 URL、文件名、bookmark title、theme id、内部错误堆栈、debug log — 这些**不**进 catalog
+- **OS 特定的快捷键**（`⌘K` vs `Ctrl+K` 等）也**不**进 catalog。快捷键是平台属性不是语言属性，按平台代码拼接：`topbar.ts` 里的 `SEARCH_SHORTCUT_HINT = isMacPlatform() ? '⌘K' : 'Ctrl+K'` + 模板字符串。详见 [`lib/platform.ts`](src/lib/platform.ts)
 - **`.sp-label` / 长字符串**：v0.2.121 之后 `.sp-label` 走 `white-space: normal; word-break: break-word`，新加的 label 如果仍然太短会被截断就错了 —— 重新检查 label 内容。**禁止**加回 `nowrap` / `ellipsis`（会破坏非英文 locale）
 - **测试**：切到每种 locale 跑一遍主要 UI（settings panel 5 tab、popup、split-picker、search footer、context menu、文件夹右键、tab group 标题）确认字符串完整
 

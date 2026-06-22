@@ -7,6 +7,7 @@ import { openSettingsPanel } from './settings-panel';
 import { renderUndoButton } from './undo-button';
 import { createAppearanceToggle } from './appearance-toggle';
 import { t } from '../lib/i18n';
+import { isMacPlatform } from '../lib/platform';
 
 // v0.2.118: cached references to the topbar's static elements so
 //  applyLocaleToDom (in newtab/main.ts) can refresh their text on
@@ -15,13 +16,29 @@ let searchInputEl: HTMLInputElement | null = null;
 let searchResultsEl: HTMLDivElement | null = null;
 let settingsBtnEl: HTMLButtonElement | null = null;
 
+// v0.2.126: keyboard shortcut hint for the search box. Mac uses
+//  ⌘K, Windows / Linux / others use Ctrl+K. The key token lives
+//  outside the i18n catalog because it's not language-specific
+//  (translators shouldn't have to decide which OS the user is on).
+//  Cached at module load so the placeholder rebuild on locale
+//  change doesn't pay the platform-detect cost on every refresh.
+const SEARCH_SHORTCUT_HINT = isMacPlatform() ? '⌘K' : 'Ctrl+K';
+
+/** Build the search input placeholder: `t('topbar.search.placeholder')`
+ *  plus a single trailing space + parenthesized shortcut hint. The
+ *  hint is a platform-specific key (⌘K or Ctrl+K) appended in code
+ *  so the i18n catalog stays OS-agnostic. */
+function buildSearchPlaceholder(): string {
+  return `${t('topbar.search.placeholder')} (${SEARCH_SHORTCUT_HINT})`;
+}
+
 /** Re-paint all topbar static strings (search placeholder + aria,
  *  settings button title + aria, search results aria) for the
  *  active locale. Called from `applyLocaleToDom` (newtab/main.ts)
  *  when the i18n module's `setLocale()` fires. */
 export function updateTopbarStrings(): void {
   if (searchInputEl) {
-    searchInputEl.placeholder = t('topbar.search.placeholder');
+    searchInputEl.placeholder = buildSearchPlaceholder();
     searchInputEl.setAttribute('aria-label', t('topbar.search.ariaLabel'));
   }
   if (searchResultsEl) {

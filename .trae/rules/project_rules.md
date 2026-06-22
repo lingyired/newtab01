@@ -160,6 +160,7 @@
 - Debug 日志（`console.log`）
 - CSS class 名、HTML 属性名（`id` / `name`）
 - `data-*` 属性（虽然出现在 DOM 里，但不展示给用户）
+- **OS 特定的快捷键提示**（`⌘K` / `Ctrl+K` 等）：平台属性不是语言属性。在 `lib/platform.ts` 加 `isMacPlatform()` 之类的 helper，调用方用 `t('...') + ' (' + hint + ')'` 拼接。**禁止**把 `⌘K` 写进 catalog 字符串里 —— 那样 Windows 用户会看到 Mac 风格的快捷键
 
 ### 6.6 RTL 适配
 - 项目 CSS 走 `flex + gap`（§3.3），`flex-direction: row` 在 `<html dir="rtl">` 下自动镜像

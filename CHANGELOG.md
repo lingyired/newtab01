@@ -5,6 +5,15 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.126] - 2026-07-02
+
+### Fixed
+- **「搜索书签... (⌘K)」的快捷键应随平台变化**。之前 10 个 catalog 的 `topbar.search.placeholder` 都硬编码 `⌘K` —— Mac 用户看到 `⌘K` 正确，但 Windows / Linux 用户也看到 Mac 风格快捷键（应该显示 `Ctrl+K`）。`⌘K` 是平台属性不是语言属性，**不应该**走 i18n 翻译。
+  - 新增 [`src/lib/platform.ts`](src/lib/platform.ts) 导出 `isMacPlatform()`，按 `navigator.userAgentData.platform` → `navigator.platform` → UA-string sniff 优先级检测
+  - [`src/newtab/topbar.ts`](src/newtab/topbar.ts) 模块级缓存 `SEARCH_SHORTCUT_HINT = isMacPlatform() ? '⌘K' : 'Ctrl+K'`，新增 `buildSearchPlaceholder()` 拼接 `t('topbar.search.placeholder') + ' (' + hint + ')'`
+  - 10 个 catalog 去掉 ` (⌘K)` 后缀，只保留 `Search bookmarks...` / `搜索书签...` 等纯翻译文本
+- **i18n 文档更新**：CLAUDE.md §9.9 + `.trae/rules/project_rules.md` §6.5 + docs/i18n.md §8.4 都加一条「OS 特定的快捷键不进 catalog」，防止未来 AI 再次把 `⌘K` 写进 catalog
+
 ## [0.2.125] - 2026-07-01
 
 ### Fixed

@@ -156,7 +156,7 @@ const messages = {
   'specialFolder.closed': 'Cerrados recientemente',
   'specialFolder.devices': 'Otros dispositivos',
   // Topbar
-  'topbar.search.placeholder': 'Buscar marcadores... (⌘K)',
+  'topbar.search.placeholder': 'Buscar marcadores...',
   'topbar.search.ariaLabel': 'Buscar marcadores',
   'topbar.searchResults.ariaLabel': 'Resultados de búsqueda',
   'topbar.settings.ariaLabel': 'Ajustes',

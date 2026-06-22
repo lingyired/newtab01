@@ -149,7 +149,7 @@ const messages = {
   'specialFolder.recent': 'المزارة مؤخرًا',
   'specialFolder.closed': 'المغلقة مؤخرًا',
   'specialFolder.devices': 'الأجهزة الأخرى',
-  'topbar.search.placeholder': 'البحث في الإشارات... (⌘K)',
+  'topbar.search.placeholder': 'البحث في الإشارات...',
   'topbar.search.ariaLabel': 'البحث في الإشارات',
   'topbar.searchResults.ariaLabel': 'نتائج البحث',
   'topbar.settings.ariaLabel': 'الإعدادات',

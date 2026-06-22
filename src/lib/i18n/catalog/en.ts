@@ -160,7 +160,7 @@ const messages = {
   'specialFolder.closed': 'Recently closed',
   'specialFolder.devices': 'Other devices',
   // Topbar
-  'topbar.search.placeholder': 'Search bookmarks... (⌘K)',
+  'topbar.search.placeholder': 'Search bookmarks...',
   'topbar.search.ariaLabel': 'Search bookmarks',
   'topbar.searchResults.ariaLabel': 'Search results',
   'topbar.settings.ariaLabel': 'Settings',

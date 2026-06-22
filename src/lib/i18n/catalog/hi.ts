@@ -146,7 +146,7 @@ const messages = {
   'specialFolder.recent': 'हाल ही में देखे गए',
   'specialFolder.closed': 'हाल ही में बंद किए गए',
   'specialFolder.devices': 'अन्य उपकरण',
-  'topbar.search.placeholder': 'बुकमार्क खोजें... (⌘K)',
+  'topbar.search.placeholder': 'बुकमार्क खोजें...',
   'topbar.search.ariaLabel': 'बुकमार्क खोजें',
   'topbar.searchResults.ariaLabel': 'खोज परिणाम',
   'topbar.settings.ariaLabel': 'सेटिंग्स',
