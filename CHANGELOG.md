@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.105] - 2026-06-22
+
+### Fixed
+- **导入 settings 后 `darkMode` 变化不生效，必须刷新才能看到新 dark mode**。根因在 `src/features/settings/apply.ts:483` 的 `chrome.storage.onChanged` 监听器：原本只检查 `newValue.theme !== oldValue.theme` 决定是否调 `applyTheme(newValue.theme)`，没考虑 `darkMode` 变化。但 `<html data-theme>` 属性的实际值由 `applyTheme → resolveTheme(baseTheme, darkMode)` 计算（`dark` 时变 `<base>-dark`，`light` / `system→light` 时变 `<base>`），所以 `darkMode` 变化时也必须重跑 `applyTheme` 才能刷新这个属性。`applySettingsToDOM` 只重写 5 颜色和 dynamic styles，不碰 `data-theme`，所以监听器跳 `applyTheme` 时整个 DOM 卡的旧值必须等刷新。修：把判断条件扩成 `theme` 或 `darkMode` 变化都触发 `applyTheme`，并新增注释说明 darkMode 这条路径的来由。手改 `darkMode`（`appearance-toggle.ts:60`）走的不是这条监听器所以原本正常；v0.2.104 起的 import 路径只走 `updateSetting` + onChanged 链，所以浮出来了。
+
 ## [0.2.104] - 2026-06-22
 
 ### Changed
