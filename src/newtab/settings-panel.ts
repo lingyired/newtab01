@@ -472,6 +472,32 @@ function refreshInputsFromSettings(): void {
     const nextStr = String(next);
     if (input.value !== nextStr) input.value = nextStr;
   }
+
+  // v0.2.102: per-theme per-mode custom CSS textarea. The 10 fields
+  //  above are refreshed via the `PER_THEME_KEYS` loop because they
+  //  mirror `keyof Settings` and have a `readPerThemeValue` helper
+  //  with a global fallback. `customCss` is the one field in
+  //  `themeOverrides` that does NOT mirror a `Settings` key (the
+  //  global `Settings.css` field was removed in v0.2.102) so it
+  //  needs a dedicated refresh that reads
+  //  `themeOverrides[currentBaseTheme()][currentMode()].customCss`
+  //  with no global fallback (empty string is the effective "no
+  //  override" state).
+  //
+  //  Without this block, switching the theme or darkMode select
+  //  would leave the textarea showing the *previous* (theme, mode)
+  //  bucket's CSS even after `refreshInputsFromSettings` updated
+  //  every other per-theme field — the user's first edit on the
+  //  new (theme, mode) would then write to the *correct* bucket
+  //  (the read is fresh on `change`), but visually the textarea
+  //  didn't reflect the resolved value, which made the field
+  //  look "stuck". One line of `if (input.value !== next) input.value = next`
+  //  is enough — the change handler still owns the write path.
+  const customCssEl = document.getElementById('sp-perTheme-customCss') as HTMLTextAreaElement | null;
+  if (customCssEl) {
+    const next = readPerThemeCustomCss();
+    if (customCssEl.value !== next) customCssEl.value = next;
+  }
 }
 
 // Named (not inline) so we can pass the same reference to both

@@ -5,6 +5,19 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.103] - 2026-06-22
+
+### Fixed
+- **外观 tab 切换主题/暗色模式时 per-theme per-mode "自定义 CSS" textarea 不刷新**（v0.2.102 引入的回归）。`refreshInputsFromSettings` 里的 `PER_THEME_KEYS` 循环会刷新 10 个镜像 `keyof Settings` 的 per-theme 字段（font / fontSize / ... / highlightRound），但 `customCss` 不是 `keyof Settings`（全局 `Settings.css` 已在 v0.2.102 删除），所以漏在循环外。切到 (theme B, light) 后 textarea 仍显示 (theme A, light) 的 CSS，看起来「卡住」。现在循环后追加一段：
+  ```ts
+  const customCssEl = document.getElementById('sp-perTheme-customCss') as HTMLTextAreaElement | null;
+  if (customCssEl) {
+    const next = readPerThemeCustomCss();
+    if (customCssEl.value !== next) customCssEl.value = next;
+  }
+  ```
+  change 事件仍走 `writePerThemeCustomCss`，读写路径一致。
+
 ## [0.2.102] - 2026-06-22
 
 ### Added
