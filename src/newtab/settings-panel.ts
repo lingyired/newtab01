@@ -608,6 +608,20 @@ function setActiveTab(tab: SettingsTab): void {
   if (content) renderContent(content);
 }
 
+/** v0.2.121: in-place refresh of the open settings panel for a locale
+ *  change. Re-runs renderNav + renderContent for the active tab; the
+ *  panel itself is NOT torn down (no close + reopen), so the user sees
+ *  a smooth repaint of the labels/tab names/placeholders while the
+ *  panel position, scroll, and focus state are preserved. No-op if
+ *  the panel is closed (panelEl absent). */
+export function refreshSettingsPanelLocale(): void {
+  if (!panelEl) return;
+  const nav = panelEl.querySelector('.sp-nav') as HTMLElement | null;
+  if (nav) renderNav(nav);
+  const content = document.getElementById('sp-content');
+  if (content) renderContent(content);
+}
+
 function renderContent(container: HTMLElement): void {
   container.textContent = '';
 

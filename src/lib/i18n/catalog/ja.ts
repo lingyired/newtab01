@@ -126,7 +126,7 @@ const messages = {
   'settings.advanced.includeLayoutDesc': '列の順序と非表示のネストされたフォルダもエクスポートします。再インポート時にレイアウトが復元されます。',
   'settings.advanced.importSettings': '設定をインポート',
   'settings.advanced.importSettingsDesc': 'JSON ファイルから設定を復元します。タブ間同期とデバイスごとのインポートがサポートされています。',
-  'settings.advanced.importButton': 'インポート…',
+  'settings.advanced.importButton': '設定をインポート…',
   'settings.advanced.importError': '設定をインポートできませんでした。ファイルが無効であるか、新しいバージョンからのものである可能性があります。',
   'settings.advanced.importSuccess': '設定が正常にインポートされました。',
   'settings.advanced.undo': 'インポートを元に戻す',

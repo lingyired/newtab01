@@ -126,7 +126,7 @@ const messages = {
   'settings.advanced.includeLayoutDesc': 'Também exporta a ordem das colunas e pastas aninhadas ocultas. Reimportar restaurará o layout.',
   'settings.advanced.importSettings': 'Importar configurações',
   'settings.advanced.importSettingsDesc': 'Restaura as configurações de um arquivo JSON. A sincronização entre abas e importações por dispositivo são suportadas.',
-  'settings.advanced.importButton': 'Importar…',
+  'settings.advanced.importButton': 'Importar configurações…',
   'settings.advanced.importError': 'Falha ao importar as configurações. O arquivo pode ser inválido ou de uma versão mais recente.',
   'settings.advanced.importSuccess': 'Configurações importadas com sucesso.',
   'settings.advanced.undo': 'Desfazer importação',

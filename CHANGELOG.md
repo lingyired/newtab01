@@ -5,6 +5,13 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.121] - 2026-06-27
+
+### Fixed
+- **「导入…」按钮改为「导入设置…」**（10 种语言全部同步）。原字符串只显示动作省略号，缺少动作对象（导入的是什么？），容易让用户犹豫。改为「导入设置…」/ "Import settings…" / "Einstellungen importieren…" / "設定をインポート…" 等完整动词短语。10 个 catalog 中 `settings.advanced.importButton` 同步更新。
+- **设置面板 label 换行**。`styles/newtab.css` 的 `.sp-label` 之前用 `white-space: nowrap` + `overflow: hidden` + `text-overflow: ellipsis` 在 110px 固定宽度内截断；中长 label 在 zh / de / ru 等长单词语言下被切掉一部分。改为 `white-space: normal; line-height: 1.3; word-break: break-word; hyphens: auto`，长 label 折到第二行而 input 列保持对齐（`.sp-row` 是 `display: flex` + `align-items: center`，input 自动垂直居中）。
+- **切换语言时设置面板「闪动后消失」**。v0.2.118 的 `applyLocaleToDom()` 切语言时调 `closeSettingsPanel()` → `requestAnimationFrame(openSettingsPanel())`，导致 panel 先卸下再重建，视觉上「闪一下」后看似消失。v0.2.121 改为在原位重画：新增 `refreshSettingsPanelLocale()` 直接复用现有 panel + nav 节点跑 `renderNav()` + `renderContent()`，保留 panel 位置、滚动、focus 状态。
+
 ## [0.2.120] - 2026-06-26
 
 ### Changed

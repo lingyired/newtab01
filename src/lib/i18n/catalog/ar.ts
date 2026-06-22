@@ -129,7 +129,7 @@ const messages = {
   'settings.advanced.includeLayoutDesc': 'تصدير ترتيب الأعمدة والمجلدات المتداخلة المخفية أيضًا. ستعيد الاستعادة التخطيط.',
   'settings.advanced.importSettings': 'استيراد الإعدادات',
   'settings.advanced.importSettingsDesc': 'استعادة الإعدادات من ملف JSON. تدعم المزامنة بين علامات التبويب والاستيراد لكل جهاز.',
-  'settings.advanced.importButton': 'استيراد…',
+  'settings.advanced.importButton': 'استيراد الإعدادات…',
   'settings.advanced.importError': 'فشل استيراد الإعدادات. قد يكون الملف غير صالح أو من إصدار أحدث.',
   'settings.advanced.importSuccess': 'تم استيراد الإعدادات بنجاح.',
   'settings.advanced.undo': 'التراجع عن الاستيراد',

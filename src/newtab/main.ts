@@ -62,21 +62,18 @@ function applyLocaleToDom(): void {
   //    column list is brief and the per-folder title text dominates.
   void renderColumns();
 
-  // 6. If the settings panel is open, re-render its content + nav so
-  //    tab labels, form labels, and theme descriptions refresh.
-  const content = document.getElementById('sp-content');
-  const nav = document.querySelector<HTMLElement>('.sp-nav');
-  if (content) {
-    // The panel's `renderContent` is a module-private function, so we
-    // trigger a full close+open. The panel's storage listener is torn
-    // down on close and re-installed on open, so we don't leak.
+  // 6. If the settings panel is open, re-render its content + nav in
+  //    place so tab labels, form labels, and theme descriptions
+  //    refresh. v0.2.121: this used to do a close + reopen, which
+  //    caused a visible "flash" of the panel disappearing and
+  //    reappearing. The new helper re-runs renderNav + renderContent
+  //    on the existing DOM nodes; the panel position, scroll, and
+  //    focus state are preserved.
+  if (document.getElementById('sp-content')) {
     import('./settings-panel').then((mod) => {
-      mod.closeSettingsPanel();
-      // Reopen on the next frame to let the close animation play.
-      requestAnimationFrame(() => mod.openSettingsPanel());
+      mod.refreshSettingsPanelLocale();
     });
   }
-  void nav; // nav will be re-rendered inside openSettingsPanel
 }
 
 /** Subscribe to i18n module changes. The `subscribe` callback is called

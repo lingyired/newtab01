@@ -960,9 +960,16 @@
   font-size: 1.3rem;
   color: var(--foreground);
   flex-shrink: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  /* v0.2.121: allow long labels to wrap onto a second line instead of
+   *  being truncated with ellipsis. The 110px fixed width is still
+   *  respected so the input column stays aligned; the row container
+   *  (.sp-row) is `display: flex` and the label just grows
+   *  vertically. align-items: center keeps the input vertically
+   *  centered against the (potentially multi-line) label. */
+  white-space: normal;
+  line-height: 1.3;
+  word-break: break-word;
+  hyphens: auto;
 }
 
 .sp-input {
