@@ -1,5 +1,7 @@
 // Shared types for the bookmark tree system
 
+import type { LanguagePref } from '../../lib/i18n/types';
+
 /** Represents a node in the bookmark tree (folder or link) */
 export interface BookmarkNode {
   id: string;
@@ -128,6 +130,14 @@ export interface Settings {
    * confirm (every action runs without prompting). Default 10.
    */
   folderActionConfirmThreshold: number;
+  /**
+   * v0.2.117: UI language preference. `'auto'` (default) follows
+   * the browser's `navigator.language` via `resolveLocale()` in
+   * `src/lib/i18n/`. A concrete `LocaleCode` overrides the browser
+   * detection. The setting is global (not per-theme) and
+   * cross-device synced via `chrome.storage.sync`.
+   */
+  language: LanguagePref;
   /**
    * Per-theme per-appearance-mode overrides. Outer key is base theme
    * id (the same value as the `theme` field, without the `-dark`

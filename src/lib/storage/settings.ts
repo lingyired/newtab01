@@ -3,6 +3,7 @@
 
 import type { Settings } from '../../features/bookmarks/types';
 import { getSync, setSync, removeSync } from '../storage';
+import { initLocale, resolveLocale } from '../i18n';
 import * as debug from '../debug';
 
 const SETTINGS_KEY = 'settings';
@@ -74,6 +75,13 @@ const defaults: Settings = {
   align: 'left',
   debug: 0,
   folderActionConfirmThreshold: 10,
+  // v0.2.117: language preference. Default 'auto' = follow the
+  // browser's navigator.language. The actual `setLocale` call
+  // happens in initSettings() (after storage load) and again in
+  // the chrome.storage.onChanged listener in apply.ts so cross-tab
+  // edits and the settings panel's "Language" dropdown both
+  // take effect live.
+  language: 'auto',
   // Note: `themeOverrides` (features/bookmarks/types.ts) is intentionally
   //  NOT in `defaults`. New users start with the field `undefined`; the
   //  per-theme per-mode resolver (features/settings/apply.ts →
@@ -324,6 +332,11 @@ export async function initSettings(): Promise<Settings> {
     currentSettings = cssMigrated.next;
   }
   initialized = true;
+  // v0.2.117: initialize the i18n module with the persisted
+  //  preference. Uses `initLocale` (not `setLocale`) so the document
+  //  attributes get applied even on first paint and subscribers
+  //  see a notification on the very first call.
+  initLocale(resolveLocale(currentSettings.language));
   debug.log('settings', 'initSettings', { fromStorage: !!stored, count: Object.keys(currentSettings).length });
   return currentSettings;
 }

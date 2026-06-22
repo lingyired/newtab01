@@ -26,19 +26,42 @@ import {
 } from '../features/bookmarks/moved-out';
 import { setLocal } from '../lib/storage';
 import { captureSnapshot, pushSnapshot } from '../features/drag-drop/history';
+import { t, listLocales, type LocaleCode } from '../lib/i18n';
 
-/** Chinese labels for the theme dropdown in this panel. Theme ids without an
- *  entry fall back to the English id — see renderAppearanceTab. */
-const THEME_LABELS: Readonly<Record<string, string>> = {
-  default: '默认',
-  'default-dark': '默认·暗',
-  'mx-brutalist': 'MX-Brutalist',
-  'mx-brutalist-dark': 'MX-Brutalist Dark',
-  cyberpunk: '赛博朋克',
-  'cyberpunk-dark': '赛博朋克·暗',
-  astrovista: 'AstroVista',
-  'astrovista-dark': 'AstroVista·暗',
-};
+/** Theme id → display label. The label is now localized via
+ *  `t(\`theme.${id}\`)` (see `LocaleMessages`) — `theme.default`,
+ *  `theme.default-dark`, etc. Built-in ids in en.ts / zh.ts cover
+ *  the 4 base themes × 2 variants. User-installed custom themes
+ *  fall through to the id itself (the theme name is shown
+ *  directly in the dropdown). */
+function themeLabel(id: string): string {
+  const key = `theme.${id}` as Parameters<typeof t>[0];
+  const localized = t(key);
+  // `t()` returns the key when no entry exists; that signals a
+  //  custom theme id (or an un-registered future id). Fall back
+  //  to the id itself for custom themes.
+  return localized === key ? id : localized;
+}
+
+/** Build a label map for the built-in themes (4 base + 4 dark
+ *  variants). The dark variants' labels are also translated
+ *  (`theme.default-dark` = "Default · Dark" in en, "默认·暗" in
+ *  zh). Used by `listAllThemesWithLabels` which expects a map
+ *  rather than a function. Re-built on every tab render so a
+ *  language change takes effect on the next tab switch / panel
+ *  re-open. */
+function buildThemeLabels(): Record<string, string> {
+  return {
+    default: themeLabel('default'),
+    'default-dark': themeLabel('default-dark'),
+    'mx-brutalist': themeLabel('mx-brutalist'),
+    'mx-brutalist-dark': themeLabel('mx-brutalist-dark'),
+    cyberpunk: themeLabel('cyberpunk'),
+    'cyberpunk-dark': themeLabel('cyberpunk-dark'),
+    astrovista: themeLabel('astrovista'),
+    'astrovista-dark': themeLabel('astrovista-dark'),
+  };
+}
 
 type SettingsTab = 'layout' | 'appearance' | 'custom-themes' | 'features' | 'advanced';
 
@@ -280,12 +303,12 @@ export function openSettingsPanel(): void {
 
   const title = document.createElement('span');
   title.classList.add('sp-title');
-  title.textContent = '设置';
+  title.textContent = t('settings.title');
 
   const closeBtn = document.createElement('button');
   closeBtn.type = 'button';
   closeBtn.classList.add('sp-close-btn');
-  closeBtn.setAttribute('aria-label', '关闭设置');
+  closeBtn.setAttribute('aria-label', t('settings.close'));
   closeBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>`;
   closeBtn.addEventListener('click', closeSettingsPanel);
 
@@ -454,10 +477,15 @@ function refreshInputsFromSettings(): void {
   //  user-driven UI choice and lives in localStorage, not storage.
   const summaryEl = document.querySelector<HTMLElement>('.sp-theme-overrides-summary');
   if (summaryEl) {
-    const t = currentBaseTheme();
+    const baseThemeId = currentBaseTheme();
     const m = currentMode();
-    const label = THEME_LABELS[t] ?? t;
-    const nextText = `当前主题外观（${label} · ${m === 'dark' ? '暗' : '亮'}）`;
+    const label = themeLabel(baseThemeId);
+    const nextText = t('settings.section.themeOverridesSummary', {
+      theme: label,
+      mode: m === 'dark'
+        ? t('settings.section.themeOverridesSummaryDark')
+        : t('settings.section.themeOverridesSummaryLight'),
+    });
     if (summaryEl.textContent !== nextText) summaryEl.textContent = nextText;
   }
   for (const key of PER_THEME_KEYS) {
@@ -549,11 +577,11 @@ function renderNav(nav: HTMLElement): void {
   nav.textContent = '';
 
   const tabs: { id: SettingsTab; label: string }[] = [
-    { id: 'layout', label: '布局' },
-    { id: 'appearance', label: '外观' },
-    { id: 'custom-themes', label: '自定义主题' },
-    { id: 'features', label: '功能' },
-    { id: 'advanced', label: '高级' },
+    { id: 'layout', label: t('settings.tab.layout') },
+    { id: 'appearance', label: t('settings.tab.appearance') },
+    { id: 'custom-themes', label: t('settings.tab.customThemes') },
+    { id: 'features', label: t('settings.tab.features') },
+    { id: 'advanced', label: t('settings.tab.advanced') },
   ];
 
   for (const tab of tabs) {
@@ -667,8 +695,8 @@ function createRow(
   const revertBtn = el('button', 'sp-revert') as HTMLButtonElement;
   revertBtn.type = 'button';
   revertBtn.title = scope === 'perTheme' && hasPerThemeOverride(key as PerThemeKey)
-    ? '清除当前主题+模式的覆盖（恢复为全局值）'
-    : '恢复默认';
+    ? t('settings.revert.clearPerTheme')
+    : t('settings.revert.toDefault');
   revertBtn.textContent = '↩';
   revertBtn.addEventListener('click', () => {
     if (scope === 'perTheme' && hasPerThemeOverride(key as PerThemeKey)) {
@@ -797,6 +825,8 @@ function getDefaults(): Settings {
     align: 'left',
     debug: 0,
     folderActionConfirmThreshold: 10,
+    // v0.2.117: language default. Matches storage defaults.
+    language: 'auto',
   };
 }
 
@@ -1031,7 +1061,7 @@ function buildPerThemeCustomCssRow(): HTMLElement {
   input.id = 'sp-perTheme-customCss';
   input.className = 'sp-textarea';
   input.value = readPerThemeCustomCss();
-  input.placeholder = '/* 在此输入当前主题的自定义 CSS */';
+  input.placeholder = '/* ' + t('settings.field.customCss') + ' */';
   input.spellcheck = false;
   input.addEventListener('change', () => {
     writePerThemeCustomCss(input.value);
@@ -1040,7 +1070,7 @@ function buildPerThemeCustomCssRow(): HTMLElement {
   const inputWrap = el('div', 'sp-input');
   const revertBtn = el('button', 'sp-revert') as HTMLButtonElement;
   revertBtn.type = 'button';
-  revertBtn.title = '清除当前主题+模式的自定义 CSS（恢复为无覆盖）';
+  revertBtn.title = t('settings.revert.clearPerTheme');
   revertBtn.textContent = '↩';
   revertBtn.addEventListener('click', () => {
     clearPerThemeCustomCss();
@@ -1054,14 +1084,14 @@ function buildPerThemeCustomCssRow(): HTMLElement {
 
   const row = el('div', 'sp-row sp-row--with-desc sp-row--per-theme');
   const labelEl = el('label', 'sp-label');
-  labelEl.textContent = '自定义 CSS';
+  labelEl.textContent = t('settings.field.customCss');
   labelEl.setAttribute('for', 'sp-perTheme-customCss');
 
   row.appendChild(labelEl);
   row.appendChild(inputWrap);
 
   const desc = el('p', 'sp-desc');
-  desc.textContent = '仅对当前主题的当前模式生效，切换主题或暗色模式时此 CSS 不会跟随到其他主题/模式。注入到 <style id="user-theme-css">，位于 dynamic-styles 之后，cascade 优先级高于主题内置样式（必要时用 !important 覆盖）。留空 = 不注入。';
+  desc.textContent = t('settings.field.customCssDesc');
   row.appendChild(desc);
 
   return row;
@@ -1129,18 +1159,24 @@ function createSelectInput(
 
 /** The three dark-mode options shown in both the appearance tab and
  *  the custom-themes tab. Same options everywhere so the user's
- *  mental model of "where to change this" is one place. */
-const DARK_MODE_OPTIONS: ReadonlyArray<{ value: string; label: string }> = [
-  { value: 'system', label: '跟随系统' },
-  { value: 'light', label: '亮' },
-  { value: 'dark', label: '暗' },
-];
+ *  mental model of "where to change this" is one place. The labels
+ *  are computed at call time (the module is imported before the i18n
+ *  module is fully resolved in some bundling paths) so we read them
+ *  fresh inside `createDarkModeSelectInput` rather than freezing them
+ *  at module-load. */
+function getDarkModeOptions(): ReadonlyArray<{ value: string; label: string }> {
+  return [
+    { value: 'system', label: t('settings.darkMode.system') },
+    { value: 'light', label: t('settings.darkMode.light') },
+    { value: 'dark', label: t('settings.darkMode.dark') },
+  ];
+}
 
 /** Build a fresh <select> bound to the `darkMode` setting. Used in
  *  both tabs; no revert button because 'system' is the default
  *  (no "reset to default" semantic distinct from the current value). */
 function createDarkModeSelectInput(): HTMLSelectElement {
-  return createSelectInput('darkMode', [...DARK_MODE_OPTIONS]);
+  return createSelectInput('darkMode', [...getDarkModeOptions()]);
 }
 
 // --- Tab content renderers ---
@@ -1148,45 +1184,88 @@ function createDarkModeSelectInput(): HTMLSelectElement {
 function renderLayoutTab(): HTMLElement {
   const container = el('div', 'sp-tab-content');
 
-  container.appendChild(createRow('行间距', createNumberInput('spacing'), 'spacing', '书签链接之间的垂直间距（行与行之间的距离）。'));
-  container.appendChild(createRow('列宽', createTextInput('columnWidth'), 'columnWidth', '每列的宽度。可以填 auto（按列数等分）或具体值（如 200px、20%）。'));
-  container.appendChild(createRow('对齐方式', createSelectInput('align', [
-    { value: 'left', label: '左对齐' },
-    { value: 'center', label: '居中' },
-    { value: 'right', label: '右对齐' },
-  ]), 'align', '整组列在新标签页中的水平对齐方式（需配合「列宽」使用，auto 模式下整组列填满整宽，无效果）。'));
-  container.appendChild(createRow('锁定列', createCheckboxInput('lockColumns'), 'lockColumns', '开启后禁止通过拖拽改变列的位置和数量。'));
-  container.appendChild(createRow('显示顶层文件夹', createCheckboxInput('showRoot'), 'showRoot', '是否在列中渲染根级文件夹节点（关闭时直接显示其子项）。'));
-  container.appendChild(createRow('自动缩放', createCheckboxInput('autoScale'), 'autoScale', '开启后列宽与边距随窗口大小自动按比例缩放；关闭则使用固定像素值。'));
-  container.appendChild(createRow('锁定拖拽', createCheckboxInput('lock'), 'lock', '开启后禁止通过拖拽移动或排序书签项。'));
+  container.appendChild(createRow(t('settings.field.spacing'), createNumberInput('spacing'), 'spacing', t('settings.field.spacingDesc')));
+  container.appendChild(createRow(t('settings.field.columnWidth'), createTextInput('columnWidth'), 'columnWidth', t('settings.field.columnWidthDesc')));
+  container.appendChild(createRow(t('settings.field.align'), createSelectInput('align', [
+    { value: 'left', label: t('settings.align.left') },
+    { value: 'center', label: t('settings.align.center') },
+    { value: 'right', label: t('settings.align.right') },
+  ]), 'align', t('settings.field.alignDesc')));
+  container.appendChild(createRow(t('settings.field.lockColumns'), createCheckboxInput('lockColumns'), 'lockColumns', t('settings.field.lockColumnsDesc')));
+  container.appendChild(createRow(t('settings.field.showRoot'), createCheckboxInput('showRoot'), 'showRoot', t('settings.field.showRootDesc')));
+  container.appendChild(createRow(t('settings.field.autoScale'), createCheckboxInput('autoScale'), 'autoScale', t('settings.field.autoScaleDesc')));
+  container.appendChild(createRow(t('settings.field.lock'), createCheckboxInput('lock'), 'lock', t('settings.field.lockDesc')));
+
+  // v0.2.117: language picker. The new row sits at the bottom of
+  //  the layout tab so the user's eye lands on the structure options
+  //  first. A per-tab bottom placement is intentional — the picker
+  //  is global, not per-theme, and putting it at the top of the
+  //  layout tab would feel like a categorical break. The
+  //  `<select>` change handler calls `updateSetting('language', ...)`
+  //  which fires `chrome.storage.onChanged` → `setLocale` in
+  //  `apply.ts` → all subscribers re-paint with the new strings.
+  container.appendChild(createRow(
+    t('settings.field.language'),
+    createLanguageSelect(),
+    'language',
+    t('settings.field.languageDesc'),
+  ));
 
   return container;
+}
+
+/** v0.2.117: build the "Language" `<select>`. Top option is
+ *  `'auto'` (follow the browser); the rest come from
+ *  `listLocales()` ordered as the catalog ships. The
+ *  `selfName (englishName)` format lets a multilingual user
+ *  pick the right one even if their own native language isn't
+ *  the active UI language. */
+function createLanguageSelect(): HTMLSelectElement {
+  const select = document.createElement('select');
+  select.id = 'sp-language';
+  const autoOpt = document.createElement('option');
+  autoOpt.value = 'auto';
+  autoOpt.textContent = t('settings.language.auto');
+  select.appendChild(autoOpt);
+  for (const bundle of listLocales()) {
+    const opt = document.createElement('option');
+    opt.value = bundle.code;
+    opt.textContent = `${bundle.selfName} (${bundle.englishName})`;
+    select.appendChild(opt);
+  }
+  const current = String(getSetting('language') ?? 'auto');
+  select.value = current;
+  select.addEventListener('change', () => {
+    const v = select.value as 'auto' | LocaleCode;
+    void updateSetting('language', v);
+  });
+  return select;
 }
 
 async function renderAppearanceTab(): Promise<HTMLElement> {
   const container = el('div', 'sp-tab-content');
 
-  const allThemes = await listAllThemesWithLabels(THEME_LABELS);
+  const allThemes = await listAllThemesWithLabels(buildThemeLabels());
   const themeOptions = allThemes.map((t) => ({ value: t.value, label: t.label }));
   // 自定义主题的导入 / 删除迁到了独立的「自定义主题」tab。这里只把
   // 跳转入口塞在主题行自己的 description 里，避免在「外观」tab 底部
   // 再堆一个独立的 section。
-  container.appendChild(createRow('主题', createSelectInput('theme', themeOptions), 'theme', buildThemeRowDescription()));
+  container.appendChild(createRow(t('settings.field.theme'), createSelectInput('theme', themeOptions), 'theme', buildThemeRowDescription()));
   // v0.2.75: dark mode is a separate setting, independent of theme.
   // The dropdown shows each base theme once; the variant (light/dark)
   // is decided by this setting. 'system' follows the OS preference.
   container.appendChild(
     createRow(
-      '暗色模式',
+      t('settings.field.darkMode'),
       createDarkModeSelectInput(),
       'darkMode',
-      '决定主题使用浅色还是深色变体。选「跟随系统」会随 macOS / Windows 的外观设置自动切换。',
+      t('settings.field.darkModeDesc'),
     ),
   );
   // width / hPos are global (v0.2.97 per user decision) and
   //  stay in the main flow, alongside theme + darkMode.
-  container.appendChild(createRow('宽度', createNumberInput('width'), 'width', '新标签页主体区域的整体宽度（自动缩放时为百分比，否则为像素）。'));
-  container.appendChild(createRow('水平位置', createNumberInput('hPos'), 'hPos', '主体区域在窗口内的水平位置比例，0 偏左、1 居中、2 偏右。'));
+  container.appendChild(createRow(t('settings.field.width'), createNumberInput('width'), 'width', t('settings.field.widthDesc')));
+  container.appendChild(createRow(t('settings.field.hPos'), createNumberInput('hPos'), 'hPos', t('settings.field.hPosDesc')));
 
   // v0.2.97 per-theme per-mode block: 10 options whose values
   //  can be customized per (theme, light/dark) bucket. The
@@ -1215,8 +1294,13 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   //  because the panel re-renders on those events.
   const baseTheme = currentBaseTheme();
   const mode = currentMode();
-  const themeLabel = THEME_LABELS[baseTheme] ?? baseTheme;
-  summary.textContent = `当前主题外观（${themeLabel} · ${mode === 'dark' ? '暗' : '亮'}）`;
+  const themeLabelText = themeLabel(baseTheme);
+  summary.textContent = t('settings.section.themeOverridesSummary', {
+    theme: themeLabelText,
+    mode: mode === 'dark'
+      ? t('settings.section.themeOverridesSummaryDark')
+      : t('settings.section.themeOverridesSummaryLight'),
+  });
   details.appendChild(summary);
 
   // 10 per-theme per-mode options. Each `createRow` and
@@ -1225,25 +1309,25 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   //  the read/write paths go through the per-theme helpers
   //  above. Revert (↩) on these rows clears the current
   //  theme+mode override — see createRow.
-  details.appendChild(createRow('字体', createTextInput('font', 'perTheme'), 'font', '书签链接使用的字体名称，例如 "PingFang SC"、Inter、Arial。', 'perTheme'));
-  details.appendChild(createRow('字号', createNumberInput('fontSize', '0.1', 'perTheme'), 'fontSize', '书签链接的字号（单位：px）。', 'perTheme'));
-  details.appendChild(createRow('字重', createNumberInput('fontWeight', '0.1', 'perTheme'), 'fontWeight', '书签链接的字重，常用值：400 正常、500 中等、600 半粗、700 粗体。', 'perTheme'));
-  details.appendChild(createRow('文字颜色', createColorInput('fontColor', 'perTheme'), 'fontColor', '书签链接在默认状态下的文字颜色。', 'perTheme'));
-  details.appendChild(createRow('背景颜色', createColorInput('backgroundColor', 'perTheme'), 'backgroundColor', '新标签页的背景颜色（不设置背景图时生效）。', 'perTheme'));
-  details.appendChild(createRow('高亮颜色', createColorInput('highlightColor', 'perTheme'), 'highlightColor', '鼠标悬停或当前选中书签时的背景高亮颜色。', 'perTheme'));
-  details.appendChild(createRow('高亮文字颜色', createColorInput('highlightFontColor', 'perTheme'), 'highlightFontColor', '鼠标悬停或选中时书签文字的颜色。', 'perTheme'));
-  details.appendChild(createRow('阴影颜色', createColorInput('shadowColor', 'perTheme'), 'shadowColor', '书签高亮时四周光晕（box-shadow）的颜色。默认与"高亮颜色"相同（共用同一色调），可独立设置为不同颜色。', 'perTheme'));
-  details.appendChild(createRow('阴影模糊', createNumberInput('shadowBlur', '0.1', 'perTheme'), 'shadowBlur', '高亮光晕的模糊半径，数值越大光晕越大越柔和。', 'perTheme'));
+  details.appendChild(createRow(t('settings.field.font'), createTextInput('font', 'perTheme'), 'font', t('settings.field.fontDesc'), 'perTheme'));
+  details.appendChild(createRow(t('settings.field.fontSize'), createNumberInput('fontSize', '0.1', 'perTheme'), 'fontSize', t('settings.field.fontSizeDesc'), 'perTheme'));
+  details.appendChild(createRow(t('settings.field.fontWeight'), createNumberInput('fontWeight', '0.1', 'perTheme'), 'fontWeight', t('settings.field.fontWeightDesc'), 'perTheme'));
+  details.appendChild(createRow(t('settings.field.fontColor'), createColorInput('fontColor', 'perTheme'), 'fontColor', t('settings.field.fontColorDesc'), 'perTheme'));
+  details.appendChild(createRow(t('settings.field.backgroundColor'), createColorInput('backgroundColor', 'perTheme'), 'backgroundColor', t('settings.field.backgroundColorDesc'), 'perTheme'));
+  details.appendChild(createRow(t('settings.field.highlightColor'), createColorInput('highlightColor', 'perTheme'), 'highlightColor', t('settings.field.highlightColorDesc'), 'perTheme'));
+  details.appendChild(createRow(t('settings.field.highlightFontColor'), createColorInput('highlightFontColor', 'perTheme'), 'highlightFontColor', t('settings.field.highlightFontColorDesc'), 'perTheme'));
+  details.appendChild(createRow(t('settings.field.shadowColor'), createColorInput('shadowColor', 'perTheme'), 'shadowColor', t('settings.field.shadowColorDesc'), 'perTheme'));
+  details.appendChild(createRow(t('settings.field.shadowBlur'), createNumberInput('shadowBlur', '0.1', 'perTheme'), 'shadowBlur', t('settings.field.shadowBlurDesc'), 'perTheme'));
   // highlightRound: the description includes the active theme's
   //  computed `calc(var(--radius) - 2px)` in px so the user sees
   //  "this theme wants 4px corners" before deciding whether to
   //  override.
   const themeRoundPx = computeThemeRoundedMdPx();
   details.appendChild(createRow(
-    '高亮圆角',
+    t('settings.field.highlightRound'),
     createNumberInput('highlightRound', '0.1', 'perTheme'),
     'highlightRound',
-    `书签高亮背景的圆角大小（px）。填 0 → 使用当前主题的 .rounded-md（当前主题 = ${themeRoundPx}px）。`,
+    t('settings.field.highlightRoundDesc', { themePx: String(themeRoundPx) }),
     'perTheme',
   ));
 
@@ -1305,25 +1389,25 @@ async function renderCustomThemesTab(): Promise<HTMLElement> {
 async function buildThemeSelectorSection(): Promise<HTMLElement> {
   const section = el('section', 'sp-theme-selector');
   const heading = el('h3', 'sp-custom-heading');
-  heading.textContent = '选择主题';
+  heading.textContent = t('settings.tab.customThemes');
   section.appendChild(heading);
 
-  const allThemes = await listAllThemesWithLabels(THEME_LABELS);
+  const allThemes = await listAllThemesWithLabels(buildThemeLabels());
   const themeOptions = allThemes.map((t) => ({ value: t.value, label: t.label }));
   section.appendChild(
     createRow(
-      '主题',
+      t('settings.field.theme'),
       createSelectInput('theme', themeOptions),
       'theme',
-      '在此切换当前主题。包含内置主题和已安装的自定义主题。',
+      t('settings.field.themeDesc'),
     ),
   );
   section.appendChild(
     createRow(
-      '暗色模式',
+      t('settings.field.darkMode'),
       createDarkModeSelectInput(),
       'darkMode',
-      '决定主题使用浅色还是深色变体。',
+      t('settings.field.darkModeDesc'),
     ),
   );
 
@@ -1341,13 +1425,13 @@ function buildThemeRowDescription(): HTMLElement {
   const desc = el('span');
   desc.appendChild(
     document.createTextNode(
-      '切换新标签页的整体配色主题。已安装的自定义主题会出现在内置主题之后。如需安装新主题或管理已安装的主题，',
+      t('settings.field.themeDesc'),
     ),
   );
   const link = document.createElement('a');
   link.href = '#';
   link.className = 'sp-link';
-  link.textContent = '管理自定义主题 →';
+  link.textContent = t('settings.customThemes.linkToAdvanced');
   link.addEventListener('click', (e) => {
     e.preventDefault();
     setActiveTab('custom-themes');
@@ -1386,8 +1470,7 @@ async function runThemeValidation(
       return {
         result: {
           ok: false,
-          error:
-            'URL 格式不正确：tweakcn 主题 URL 应该是 https://tweakcn.com/themes/<id>',
+          error: t('settings.customThemes.error.invalidUrl'),
         },
         sourceUrl: undefined,
       };
@@ -1402,7 +1485,7 @@ async function runThemeValidation(
       return {
         result: {
           ok: false,
-          error: `加载失败: ${fetched?.error ?? 'unknown'}`,
+          error: `${t('settings.customThemes.error.fetch')} (${fetched?.error ?? 'unknown'})`,
         },
         sourceUrl: undefined,
       };
@@ -1415,7 +1498,7 @@ async function runThemeValidation(
       return {
         result: {
           ok: false,
-          error: `JSON 解析失败: ${(e as Error).message}`,
+          error: `${t('settings.customThemes.error.invalidJson')} (${(e as Error).message})`,
         },
         sourceUrl: undefined,
       };
@@ -1431,12 +1514,12 @@ async function runThemeValidation(
   }
   // CSS path (unchanged from v0.2.74 / v0.2.77)
   if (!nameFromInput) {
-    return { result: { ok: false, error: '请先输入主题名称' }, sourceUrl: undefined };
+    return { result: { ok: false, error: t('settings.customThemes.error.empty') }, sourceUrl: undefined };
   }
   const parsed = parseCssTheme(raw, nameFromInput);
   if (!parsed.ok) {
     return {
-      result: { ok: false, error: `CSS 解析失败: ${parsed.error}` },
+      result: { ok: false, error: `${t('settings.customThemes.error.noValidVars')} (${parsed.error})` },
       sourceUrl: undefined,
     };
   }
@@ -1457,12 +1540,11 @@ async function runThemeValidation(
 function buildCustomThemeImportSection(): HTMLElement {
   const section = el('section', 'sp-custom-import');
   const heading = el('h3', 'sp-custom-heading');
-  heading.textContent = '导入自定义主题';
+  heading.textContent = t('settings.customThemes.importHeading');
   section.appendChild(heading);
 
   const hint = el('p', 'sp-hint');
-  hint.textContent =
-    '把 tweakcn 主题粘贴到下方文本框（支持 URL 或 CSS），点击「应用」即可立即安装（持久保存到本地）。';
+  hint.textContent = t('settings.customThemes.urlDesc') + ' ' + t('settings.customThemes.cssDesc');
   section.appendChild(hint);
 
   const textarea = document.createElement('textarea');
@@ -1470,8 +1552,8 @@ function buildCustomThemeImportSection(): HTMLElement {
   textarea.rows = 8;
   textarea.spellcheck = false;
   textarea.placeholder =
-    '粘贴 tweakcn 主题 URL（https://tweakcn.com/themes/...）\n' +
-    '或 tweakcn 主题 CSS（:root { ... } .dark { ... } 块）';
+    t('settings.customThemes.urlLabel') + '\n' +
+    t('settings.customThemes.cssLabel');
   section.appendChild(textarea);
 
   // Theme name. Behavior depends on the input format:
@@ -1485,7 +1567,7 @@ function buildCustomThemeImportSection(): HTMLElement {
   nameInput.type = 'text';
   nameInput.id = 'sp-custom-theme-name';
   nameInput.className = 'sp-name-input';
-  nameInput.placeholder = '主题名称（CSS 必填；URL 可选，未填用主题里的名字）';
+  nameInput.placeholder = t('settings.customThemes.installedHeading');
   nameInput.autocomplete = 'off';
   nameInput.spellcheck = false;
   section.appendChild(nameInput);
@@ -1495,7 +1577,7 @@ function buildCustomThemeImportSection(): HTMLElement {
   apply.type = 'button';
   apply.id = 'sp-custom-theme-apply';
   apply.className = 'sp-btn-primary';
-  apply.textContent = '应用';
+  apply.textContent = t('settings.customThemes.apply');
   actions.appendChild(apply);
   section.appendChild(actions);
 
@@ -1519,7 +1601,7 @@ function buildCustomThemeImportSection(): HTMLElement {
   apply.addEventListener('click', async () => {
     const raw = textarea.value.trim();
     if (!raw) {
-      setCustomThemeStatus(status, 'error', '请先粘贴 URL 或 CSS');
+      setCustomThemeStatus(status, 'error', t('settings.customThemes.error.empty'));
       return;
     }
 
@@ -1548,7 +1630,7 @@ function buildCustomThemeImportSection(): HTMLElement {
         setCustomThemeStatus(
           status,
           'error',
-          `保存失败: ${(e as Error).message}（可能 local 存储已满）`,
+          t('settings.customThemes.error.install') + ' (${(e as Error).message})',
         );
         return;
       }
@@ -1571,8 +1653,8 @@ function buildCustomThemeImportSection(): HTMLElement {
       textarea.value = '';
       nameInput.value = '';
       const successMsg = result.isUpdate
-        ? `✓ 已更新 "${result.entry.light.name}"`
-        : `✓ 已安装 "${result.entry.light.name}"${result.entry.dark ? '（含深色变体）' : '（仅浅色）'}`;
+        ? t('settings.customThemes.successUpdated', { name: result.entry.light.name })
+        : t('settings.customThemes.successInstalled', { name: result.entry.light.name });
       if (result.warning) {
         setCustomThemeStatus(status, 'warning', `${successMsg}\n⚠ ${result.warning}`);
       } else {
@@ -1597,7 +1679,7 @@ function buildCustomThemeImportSection(): HTMLElement {
 async function buildCustomThemeListSection(): Promise<HTMLElement> {
   const section = el('section', 'sp-custom-list');
   const heading = el('h3', 'sp-custom-heading');
-  heading.textContent = '已安装的自定义主题';
+  heading.textContent = t('settings.customThemes.installedHeading');
   section.appendChild(heading);
 
   const map = await readCustomThemes();
@@ -1605,7 +1687,7 @@ async function buildCustomThemeListSection(): Promise<HTMLElement> {
 
   if (names.length === 0) {
     const empty = el('div', 'sp-empty');
-    empty.textContent = '尚未安装自定义主题。';
+    empty.textContent = t('settings.customThemes.empty');
     section.appendChild(empty);
     return section;
   }
@@ -1624,21 +1706,21 @@ async function buildCustomThemeListSection(): Promise<HTMLElement> {
     const meta = el('span', 'sp-custom-meta');
     const date = new Date(entry.installedAt);
     const dateStr = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-    meta.textContent = `安装于 ${dateStr} · ${entry.dark ? 'light + dark' : 'light only'}`;
+    meta.textContent = `${dateStr} · ${entry.dark ? 'light + dark' : 'light only'}`;
     li.appendChild(meta);
 
     const del = document.createElement('button');
     del.type = 'button';
     del.className = 'sp-custom-delete';
     del.setAttribute('aria-label', `Delete ${name}`);
-    del.textContent = '删除';
+    del.textContent = t('settings.customThemes.remove');
     del.addEventListener('click', async () => {
       // Confirm before destructive delete. Matches the project's
       // existing `window.confirm()` pattern (CLAUDE.md mentions
       // `folderActionConfirmThreshold` gates folder bulk actions
       // through the same native dialog). Zero DOM cost, no extra
       // state — the user must explicitly OK the removal.
-      if (!window.confirm(`确定要删除自定义主题 "${name}" 吗？`)) return;
+      if (!window.confirm(t('settings.customThemes.removeConfirm'))) return;
       const wasCurrent =
         String(getSetting('theme')).startsWith('user-') &&
         (String(getSetting('theme')) === deriveLightId(name) ||
@@ -1693,23 +1775,23 @@ function setCustomThemeStatus(
 function renderFeaturesTab(): HTMLElement {
   const container = el('div', 'sp-tab-content');
 
-  container.appendChild(createRow('显示常用网站', createCheckboxInput('showTop'), 'showTop', '是否在列中渲染"常用网站"特殊文件夹（来自 Chrome topSites）。'));
-  container.appendChild(createRow('常用网站数量', createNumberInput('numberTop', '1'), 'numberTop', '限制"常用网站"中显示的条目数量。'));
-  container.appendChild(createRow('显示最近访问', createCheckboxInput('showRecent'), 'showRecent', '是否在列中渲染"最近访问"特殊文件夹。'));
-  container.appendChild(createRow('最近访问数量', createNumberInput('numberRecent', '1'), 'numberRecent', '限制"最近访问"中显示的条目数量。'));
-  container.appendChild(createRow('显示最近关闭', createCheckboxInput('showClosed'), 'showClosed', '是否在列中渲染"最近关闭"特殊文件夹（来自 Chrome sessions）。'));
-  container.appendChild(createRow('最近关闭数量', createNumberInput('numberClosed', '1'), 'numberClosed', '限制"最近关闭"中显示的条目数量。'));
-  container.appendChild(createRow('显示其他设备', createCheckboxInput('showDevices'), 'showDevices', '是否显示来自其他已同步设备的标签页列表。'));
-  container.appendChild(createRow('显示应用', createCheckboxInput('showApps'), 'showApps', '是否显示已安装的 Chrome 应用/扩展快捷入口。'));
-  container.appendChild(createRow('显示根节点', createCheckboxInput('showRoot'), 'showRoot', '单文件夹列中是否保留根节点；关闭时会直接展开该文件夹的内容。'));
-  container.appendChild(createRow('记住展开的文件夹', createCheckboxInput('rememberOpen'), 'rememberOpen', '下次打开新标签页时，是否自动恢复上次展开过的文件夹状态。'));
-  container.appendChild(createRow('自动折叠文件夹', createCheckboxInput('autoClose'), 'autoClose', '展开某个文件夹时，是否自动折叠同级别的其他文件夹（手风琴效果）。'));
-  container.appendChild(createRow('批量打开确认阈值', createNumberInput('folderActionConfirmThreshold'), 'folderActionConfirmThreshold', '「打开全部链接」「以分组方式打开链接」时，目录链接数超过该值会弹出确认框。设为 0 关闭确认（每次都直接执行）。'));
-  container.appendChild(createRow('打开链接方式', createSelectInput('newtab', [
-    { value: '0', label: '当前标签页' },
-    { value: '1', label: '新建前台标签页' },
-    { value: '2', label: '新建后台标签页' },
-  ]), 'newtab', '点击书签链接时的默认打开方式。'));
+  container.appendChild(createRow(t('settings.field.showTop'), createCheckboxInput('showTop'), 'showTop', t('settings.field.showTopDesc')));
+  container.appendChild(createRow(t('settings.field.numberTop'), createNumberInput('numberTop', '1'), 'numberTop', t('settings.field.numberTopDesc')));
+  container.appendChild(createRow(t('settings.field.showRecent'), createCheckboxInput('showRecent'), 'showRecent', t('settings.field.showRecentDesc')));
+  container.appendChild(createRow(t('settings.field.numberRecent'), createNumberInput('numberRecent', '1'), 'numberRecent', t('settings.field.numberRecentDesc')));
+  container.appendChild(createRow(t('settings.field.showClosed'), createCheckboxInput('showClosed'), 'showClosed', t('settings.field.showClosedDesc')));
+  container.appendChild(createRow(t('settings.field.numberClosed'), createNumberInput('numberClosed', '1'), 'numberClosed', t('settings.field.numberClosedDesc')));
+  container.appendChild(createRow(t('settings.field.showDevices'), createCheckboxInput('showDevices'), 'showDevices', t('settings.field.showDevicesDesc')));
+  container.appendChild(createRow(t('settings.field.showApps'), createCheckboxInput('showApps'), 'showApps', t('settings.field.showAppsDesc')));
+  container.appendChild(createRow(t('settings.field.showRoot'), createCheckboxInput('showRoot'), 'showRoot', t('settings.field.showRootDesc')));
+  container.appendChild(createRow(t('settings.field.rememberOpen'), createCheckboxInput('rememberOpen'), 'rememberOpen', t('settings.field.rememberOpenDesc')));
+  container.appendChild(createRow(t('settings.field.autoClose'), createCheckboxInput('autoClose'), 'autoClose', t('settings.field.autoCloseDesc')));
+  container.appendChild(createRow(t('settings.field.folderActionConfirmThreshold'), createNumberInput('folderActionConfirmThreshold'), 'folderActionConfirmThreshold', t('settings.field.folderActionConfirmThresholdDesc')));
+  container.appendChild(createRow(t('settings.field.newtab'), createSelectInput('newtab', [
+    { value: '0', label: t('settings.newtab.current') },
+    { value: '1', label: t('settings.newtab.foreground') },
+    { value: '2', label: t('settings.newtab.background') },
+  ]), 'newtab', t('settings.field.newtabDesc')));
 
   return container;
 }
@@ -1778,12 +1860,12 @@ function renderAdvancedTab(): HTMLElement {
   const includeLayoutLabel = document.createElement('label');
   includeLayoutLabel.htmlFor = 'sp-include-layout';
   includeLayoutLabel.className = 'sp-checkbox-label';
-  includeLayoutLabel.textContent = '包含布局（列布局 + 嵌套隐藏可见性）';
+  includeLayoutLabel.textContent = t('settings.advanced.includeLayout');
 
   const importBtn = document.createElement('button');
   importBtn.type = 'button';
   importBtn.className = 'sp-btn';
-  importBtn.textContent = '导入设置';
+  importBtn.textContent = t('settings.advanced.importButton');
   importBtn.addEventListener('click', () => {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
@@ -2049,7 +2131,7 @@ function renderAdvancedTab(): HTMLElement {
             const content = document.getElementById('sp-content');
             if (content) renderContent(content);
           } catch {
-            alert('设置文件无效');
+            alert(t('settings.advanced.importError'));
           }
         })();
       };
@@ -2061,7 +2143,7 @@ function renderAdvancedTab(): HTMLElement {
   const exportBtn = document.createElement('button');
   exportBtn.type = 'button';
   exportBtn.className = 'sp-btn';
-  exportBtn.textContent = '导出设置';
+  exportBtn.textContent = t('settings.advanced.exportSettings');
   exportBtn.addEventListener('click', () => {
     void (async () => {
       const settings = getSettings();
@@ -2097,7 +2179,7 @@ function renderAdvancedTab(): HTMLElement {
       }
       if (cssOnlyCount > 0) {
         alert(
-          `已导出 ${urlThemes.length} 个 URL 主题；另有 ${cssOnlyCount} 个 CSS 主题因无源 URL 而未导出。`,
+          `${urlThemes.length} URL themes exported; ${cssOnlyCount} CSS-pasted themes were not exported (no source URL).`,
         );
       }
       // v0.2.106: include the user's current layout snapshot

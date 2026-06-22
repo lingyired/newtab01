@@ -5,6 +5,27 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.117] - 2026-06-23
+
+### Added
+- **i18n 多语言支持 — Phase A 脚手架**。新增 `src/lib/i18n/` 模块（types / index / catalog/en / catalog/zh），轻量、零依赖、纯 TypeScript 实现的翻译函数 `t(key, params?)`、`setLocale()` / `initLocale()` / `getLocale()` / `resolveLocale()` / `subscribe()`、`RTL_LOCALES` 集合。`Settings.language: 'auto' | LocaleCode` 字段新增，跨设备同步（`chrome.storage.sync`）。**Phase A 包含**：
+  - 全套 ~210 个 `MessageKey` 联合类型（`tsc` 在编译期强制每个 catalog 文件 keys 齐全）
+  - 完整英文 (en) + 完整中文 (zh) catalog：所有设置面板的 tabs / form labels / descriptions / theme labels / 5 个特殊目录 title / 暗色模式选项 / 链接打开方式 / 批量确认阈值 / 自定义主题 import error / 高级 export + import
+  - 布局 tab 末尾加「界面语言」`<select>` 行：「跟随浏览器」+ 当前已支持的全部 locale（v0.2.117 = en + zh 2 项；v0.2.119 扩到 10 项）
+  - 用户切换语言后即时生效：`<html lang>` + `<html dir>` 同步更新，settings 面板 + 主题下拉 + 5 个特殊目录 title + tab 标签 + 按钮文字 全部实时刷新，无需刷新页面
+  - `chrome.storage.onChanged` 监听在 `apply.ts` 里接入：当 `language` 字段在另一 tab 改动时自动 `setLocale()` 触发所有 subscriber
+- **类型安全**：`LocaleMessages = Record<MessageKey, string>` —— 任何 catalog 少一个 key，TypeScript 立刻报错，不会让 UI 出现「`settings.field.spacing`」裸 key 暴露给用户
+
+### Implementation Notes
+- **零运行时依赖**：`i18n` 模块不引入 `i18next` 等库，与项目 vanilla JS 风格一致。bundle 增量：newtab 26.56KB gzipped（v0.2.116 → v0.2.117 +0.5KB），未越 80KB 预算
+- **不使用 `chrome.i18n.getMessage()`**：项目不依赖 Chrome 标准的 `_locales/<lang>/messages.json` 机制，因为 (1) `chrome.i18n` 是 OS 级只读，无法在设置里切换；(2) `popup` 拿不到 SW 的 `chrome.i18n` 调用；(3) 与项目「Settings 跨设备同步」设计哲学冲突
+- **下拉用 selfName (englishName) 格式**：locale 用自己语言写自己的名字 + 英文名作为副标签，方便跨语言用户识别
+- **`theme.${id}` 联合约束 fallback**：用户安装的自定义主题（id 不在 8 个内置 theme key 里）调 `t('theme.user-foo')` 返回原 key，`themeLabel()` 检测到这个 fallback 行为后改用 theme id 本身显示，custom theme 名字保留用户起的名字
+- **不刷新页面**：locale 切换走 `subscribe` + `applyLocaleToDom()` 流程，settings 面板 rerender、topbar 静态元素 (`updateTopbarStrings()`，v0.2.118 引入) 在订阅通道上重绘
+- **Phase B 预告**（v0.2.118）：迁移剩余模块 — topbar (search placeholder + settings button title)、appearance-toggle (3 个 tooltip)、undo-button、search-results (footer hints)、folder-actions、folder-actions-handler、context-menu、split-picker、popup、background SW
+- **Phase C 预告**（v0.2.119）：加 es / ar / hi / fr / pt / de / ja / ru 8 种新语言，ar 自动切 `dir="rtl"`，`globals.css` 加 RTL 排版适配
+- **Phase D 预告**（v0.2.120）：background SW context menu 标题补全 8 种语言 + CHANGELOG 收尾
+
 ## [0.2.116] - 2026-06-22
 
 ### Changed
