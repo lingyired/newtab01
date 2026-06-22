@@ -126,7 +126,7 @@ const messages = {
   'settings.advanced.includeLayoutDesc': 'कॉलम क्रम और छिपे हुए नेस्टेड फ़ोल्डर भी निर्यात करता है। पुनः आयात करने पर लेआउट पुनर्स्थापित हो जाएगा।',
   'settings.advanced.importSettings': 'सेटिंग्स आयात करें',
   'settings.advanced.importSettingsDesc': 'JSON फ़ाइल से सेटिंग्स पुनर्स्थापित करें। क्रॉस-टैब सिंक और प्रति-उपकरण आयात समर्थित हैं।',
-  'settings.advanced.importButton': 'सेटिंग्स आयात करें…',
+  'settings.advanced.importButton': 'सेटिंग्स आयात करें',
   'settings.advanced.importError': 'सेटिंग्स आयात करने में विफल। फ़ाइल अमान्य हो सकती है या नए संस्करण से हो सकती है।',
   'settings.advanced.importSuccess': 'सेटिंग्स सफलतापूर्वक आयात की गईं।',
   'settings.advanced.undo': 'आयात पूर्ववत करें',

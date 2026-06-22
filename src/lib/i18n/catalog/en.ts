@@ -137,7 +137,7 @@ const messages = {
   'settings.advanced.includeLayoutDesc': 'Also export the column order and hidden nested folders. Re-importing will restore the layout.',
   'settings.advanced.importSettings': 'Import settings',
   'settings.advanced.importSettingsDesc': 'Restore settings from a JSON file. Cross-tab sync and per-device imports are supported.',
-  'settings.advanced.importButton': 'Import settings…',
+  'settings.advanced.importButton': 'Import settings',
   'settings.advanced.importError': 'Failed to import settings. The file may be invalid or from a newer version.',
   'settings.advanced.importSuccess': 'Settings imported successfully.',
   'settings.advanced.undo': 'Undo import',

@@ -126,7 +126,7 @@ const messages = {
   'settings.advanced.includeLayoutDesc': 'Exporte aussi l\'ordre des colonnes et les dossiers imbriqués masqués. La réimportation restaurera la mise en page.',
   'settings.advanced.importSettings': 'Importer les paramètres',
   'settings.advanced.importSettingsDesc': 'Restaure les paramètres depuis un fichier JSON. La synchronisation entre onglets et les importations par appareil sont prises en charge.',
-  'settings.advanced.importButton': 'Importer les paramètres…',
+  'settings.advanced.importButton': 'Importer les paramètres',
   'settings.advanced.importError': 'Échec de l\'importation des paramètres. Le fichier est peut-être invalide ou issu d\'une version plus récente.',
   'settings.advanced.importSuccess': 'Paramètres importés avec succès.',
   'settings.advanced.undo': 'Annuler l\'importation',

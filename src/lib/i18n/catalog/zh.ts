@@ -138,7 +138,7 @@ const messages = {
   'settings.advanced.includeLayoutDesc': '同时导出列顺序与隐藏的嵌套文件夹。重新导入后会恢复该布局。',
   'settings.advanced.importSettings': '导入设置',
   'settings.advanced.importSettingsDesc': '从 JSON 文件恢复设置。支持跨标签页同步和按设备导入。',
-  'settings.advanced.importButton': '导入设置…',
+  'settings.advanced.importButton': '导入设置',
   'settings.advanced.importError': '导入设置失败。文件可能无效或来自更新的版本。',
   'settings.advanced.importSuccess': '设置导入成功。',
   'settings.advanced.undo': '撤销导入',

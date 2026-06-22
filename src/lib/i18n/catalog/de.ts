@@ -126,7 +126,7 @@ const messages = {
   'settings.advanced.includeLayoutDesc': 'Exportiert auch die Spaltenreihenfolge und versteckte verschachtelte Ordner. Ein erneuter Import stellt das Layout wieder her.',
   'settings.advanced.importSettings': 'Einstellungen importieren',
   'settings.advanced.importSettingsDesc': 'Stellt Einstellungen aus einer JSON-Datei wieder her. Tab-übergreifende Synchronisierung und geräteweise Importe werden unterstützt.',
-  'settings.advanced.importButton': 'Einstellungen importieren…',
+  'settings.advanced.importButton': 'Einstellungen importieren',
   'settings.advanced.importError': 'Einstellungen konnten nicht importiert werden. Die Datei ist möglicherweise ungültig oder aus einer neueren Version.',
   'settings.advanced.importSuccess': 'Einstellungen erfolgreich importiert.',
   'settings.advanced.undo': 'Import rückgängig machen',

@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.122] - 2026-06-28
+
+### Fixed
+- **「导入设置…」按钮去掉末尾省略号**。v0.2.121 把按钮文字从「导入…」扩到「导入设置…」但保留了「…」后缀，缺少「动作未完成」或「需要进一步输入」语义时省略号反而成为视觉噪音。改为「导入设置」/ "Import settings" / "Einstellungen importieren" / "設定をインポート" / "Импортировать настройки" 等 10 个 catalog 全部去掉末尾 `…`。
+
 ## [0.2.121] - 2026-06-27
 
 ### Fixed

@@ -133,7 +133,7 @@ const messages = {
   'settings.advanced.includeLayoutDesc': 'También exporta el orden de las columnas y las carpetas anidadas ocultas. Al reimportar se restaurará el diseño.',
   'settings.advanced.importSettings': 'Importar ajustes',
   'settings.advanced.importSettingsDesc': 'Restaura los ajustes desde un archivo JSON. Se admiten la sincronización entre pestañas y las importaciones por dispositivo.',
-  'settings.advanced.importButton': 'Importar ajustes…',
+  'settings.advanced.importButton': 'Importar ajustes',
   'settings.advanced.importError': 'Error al importar los ajustes. El archivo puede ser inválido o de una versión más reciente.',
   'settings.advanced.importSuccess': 'Ajustes importados correctamente.',
   'settings.advanced.undo': 'Deshacer importación',

@@ -126,7 +126,7 @@ const messages = {
   'settings.advanced.includeLayoutDesc': 'Также экспортирует порядок столбцов и скрытые вложенные папки. Повторный импорт восстановит макет.',
   'settings.advanced.importSettings': 'Импорт настроек',
   'settings.advanced.importSettingsDesc': 'Восстановить настройки из JSON-файла. Поддерживается межвкладочная синхронизация и по-устройственный импорт.',
-  'settings.advanced.importButton': 'Импортировать настройки…',
+  'settings.advanced.importButton': 'Импортировать настройки',
   'settings.advanced.importError': 'Не удалось импортировать настройки. Возможно, файл недопустим или относится к более новой версии.',
   'settings.advanced.importSuccess': 'Настройки успешно импортированы.',
   'settings.advanced.undo': 'Отменить импорт',
