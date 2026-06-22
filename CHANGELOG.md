@@ -5,6 +5,18 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.113] - 2026-06-22
+
+### Fixed
+- **Apps 文件夹展开后空**（v0.2.111 修 Apps 显示真实应用列表后用户报"apps 依然是空，但是实际上我是有应用的"）。根因在 `getInstalledApps` filter（`lib/chrome/bookmarks.ts:71`）：v0.2.111 用 `ext.type === 'hosted_app' || ext.type === 'legacy_packaged_app'` 字面量匹配，**漏了** Chrome 实际支持的其他 app type——`packaged_app`（已弃用但有遗留用户）、`platform_app`（ChromeOS 平台 app）、`shared_module`（ChromeOS 内部）。**而且** `@types/chrome` 的 `ExtensionType` enum 本身有 typo：`PACKAGE_APP = "package_app"`（少一个 `d`）≠ Chrome 运行时实际字符串 `packaged_app`——即使加上 `packaged_app` 字面量也命中不到。
+- **修法**：放弃 `type` 字段字面量匹配，改用 `appLaunchUrl` 字段存在性判断。Chrome 文档明说 `appLaunchUrl` 是 "The launch url (**only present for apps**)"，所以 `typeof appLaunchUrl === 'string' && appLaunchUrl.length > 0` 就是"是 app"的充要条件——兼容所有 `type` 值（`hosted_app` / `legacy_packaged_app` / `packaged_app` / `platform_app` / `shared_module`）且**不依赖**被 typo 污染的 TS enum。同时加 `ext.enabled` 过滤，禁用的 app 不出现在 Apps 列表里。
+- 同步改 `src/newtab/app.ts:152-178` 的 `onInstalled` listener `isApp` 闭包——`onInstalled` 拿到的 `info` 跟 `getAll` 返回的 `ExtensionInfo` shape 一致，filter 必须跟 `getInstalledApps` 对齐否则装新 app 不会触发 re-render。
+- `getAppsNodes` (`special-folders.ts:180-200`) 的 `appLaunchUrl ?? 'chrome://apps'` fallback 现在是死代码（filter 后 `appLaunchUrl` 一定存在）——保留一个**防御性** fallback（如果未来 schema 漂移）但加注释标明这是 belt-and-suspenders，不是正常运行路径。
+
+### Implementation Notes
+- **为什么不直接加 `packaged_app` 字面量**：TS enum 有 typo（`"package_app"` ≠ `"packaged_app"`），加 `ext.type === 'packaged_app'` 编译过但运行时不匹配。改用 `appLaunchUrl` 存在性是 type 字段无关的更稳判断。
+- **为什么不包含 `extension` type**：用户装的"应用"如果是普通 Chrome 扩展（type=`extension`），按 Chrome `chrome://apps` 页面的语义**不会**显示在 Apps 列表——Apps 列表只列有 launch URL 的真 app。这与原 HNTP 行为一致，扩展应该在 chrome://extensions 页面管理。
+
 ## [0.2.112] - 2026-06-22
 
 ### Fixed

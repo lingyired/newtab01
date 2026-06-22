@@ -149,15 +149,24 @@ export async function initApp(): Promise<void> {
     //  reference; the browser auto-cleans the listener on
     //  page unload, no manual teardown needed.
     //
-    //  Listener is filtered to app-type extensions only
-    //  (hosted_app / legacy_packaged_app) to match the
-    //  `getInstalledApps` filter — extensions / themes would
-    //  never appear in the Apps folder anyway, so skipping
-    //  them avoids needless re-renders when the user installs
-    //  a regular extension.
+    //  Listener is filtered to app-type extensions only to
+    //  match the `getInstalledApps` filter — extensions /
+    //  themes would never appear in the Apps folder anyway, so
+    //  skipping them avoids needless re-renders when the user
+    //  installs a regular extension.
+    //
+    //  v0.2.113: switched from `type` literal check to
+    //  `appLaunchUrl` presence check to match the broader
+    //  `getInstalledApps` filter (which now also accepts
+    //  `packaged_app` / `platform_app` / `shared_module` —
+    //  see `lib/chrome/bookmarks.ts:70-91`). Same rationale as
+    //  in `getInstalledApps`: `appLaunchUrl` is the most
+    //  reliable "is app" signal Chrome exposes.
     if (typeof chrome !== 'undefined' && chrome.management?.onInstalled) {
       const isApp = (info: chrome.management.ExtensionInfo) =>
-        info.type === 'hosted_app' || info.type === 'legacy_packaged_app';
+        typeof info.appLaunchUrl === 'string' &&
+        info.appLaunchUrl.length > 0 &&
+        info.enabled;
       chrome.management.onInstalled.addListener((info) => {
         if (isApp(info)) void renderColumns();
       });

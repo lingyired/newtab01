@@ -178,11 +178,23 @@ async function getDevicesNodes(): Promise<BookmarkNode[]> {
 
 /** Apps */
 export async function getAppsNodes(): Promise<BookmarkNode[]> {
+  // v0.2.113: `getInstalledApps` now filters by `appLaunchUrl`
+  //  presence (and `enabled`) rather than the `type` literal,
+  //  so every item returned has a non-empty launch URL by
+  //  construction — the `?? 'chrome://apps'` fallback from
+  //  v0.2.111 is dead code and is removed.
   const apps = await getInstalledApps();
   return apps.map((app): BookmarkNode => {
     const icons = app.icons?.map((i) => ({ url: i.url, size: i.size }));
+    // `appLaunchUrl` is guaranteed non-empty by the getInstalledApps
+    //  filter, but keep a defensive fallback for future schema
+    //  drift — the chrome://apps page is the user-visible home
+    //  for any item that lost its launch URL.
+    const url = app.appLaunchUrl && app.appLaunchUrl.length > 0
+      ? app.appLaunchUrl
+      : 'chrome://apps';
     return makeNode(
-      `app.${app.id}`, app.name, app.appLaunchUrl ?? `chrome://apps`,
+      `app.${app.id}`, app.name, url,
       icons && icons.length > 0 ? { icons } : {},
     );
   });
