@@ -296,11 +296,57 @@
   border-radius: 3px;
   opacity: 0.6;
   transition: opacity 0.15s, background-color 0.15s;
+  /* Anchor for the ::after tooltip. Same CSS-only tooltip pattern
+   * used by .sp-appearance-toggle-btn and #options_button (v0.2.88);
+   * the bubble paints instantly on hover (no browser-native ~500ms
+   * delay) and follows the active theme via --muted. */
+  position: relative;
 }
 
 .folder-action-btn:hover {
   opacity: 1;
-  background-color: var(--newtab-highlight);
+  /* v0.2.101: switch from --newtab-highlight to --muted. The former
+   * is the user-tweakable highlight color (per-theme, used by link
+   * hover / drag-ring / drop-indicator) and looked off in some
+   * themes' appearance modes when the user had a custom highlight
+   * color set. --muted is the shadcn-conventional "subdued surface"
+   * token and reads as a consistent neutral hover in every theme. */
+  background-color: var(--muted);
+}
+
+/* v0.2.101: CSS-only tooltip. Mirrors the v0.2.88 pattern on
+ * .sp-appearance-toggle-btn and #options_button, but the parent
+ * `.folder-actions` has `opacity: 0.5` (and bumps to 1 on the
+ * parent `<a>`'s hover), so the tooltip explicitly resets
+ * `opacity: 1` to stay fully opaque at all times.
+ *
+ * `pointer-events: none` so the pseudo-element never blocks the
+ * underlying button's click. `z-index: 1000` lifts above the
+ * topbar (z 100), the sp-overlay (z 110), the sp-panel (z 120),
+ * and the split-picker (z 130). The bubble sits below the button
+ * (`top: calc(100% + 6px)`); folder headers sit in the middle of
+ * the viewport so there's no viewport-edge clip. */
+.folder-action-btn:hover::after {
+  content: attr(title);
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 1;
+  font-weight: 400;
+  /* 1px ring of the surrounding --background color so the bubble
+   * reads as a "lifted" tooltip against any theme's link background
+   * (which uses --card, a different surface than --muted). */
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--muted-foreground) 25%, transparent);
 }
 
 /* ─── Columns ─── */

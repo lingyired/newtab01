@@ -27,6 +27,7 @@
 | `feat/settings-gear-reposition` | 🗄 冻结 | 设置齿轮重定位 + 缩放 + Lucide 图标（v0.2.84 + v0.2.85）| `813e51d` (v0.2.85) |
 | `fix/settings-options-bugs` | 🗄 冻结 | 设置面板 16 个选项 bug 修复（v0.2.93 → v0.2.96）| `c0bf492` (v0.2.93) |
 | `feat/appearance-theme-overrides` | 🗄 冻结 | 外观 tab 10 选项 per-theme per-mode 化 + 高亮圆角改 px + 字号改 px 直接存（v0.2.97）+ 字号默认值 18→16（v0.2.98）+ 颜色 picker 空值回退到主题色（v0.2.99）+ 阴影颜色与高亮颜色 CSS 变量解耦（v0.2.100）| 见 git log |
+| `feat/folder-actions-tooltip-and-newtab-mode` | 🗄 冻结 | folder 三个小图标 tooltip 改 CSS-only + hover 背景 `--newtab-highlight` → `--muted` + 三个 handler 接收 `MouseEvent` 按 `Settings.newtab` 模式打开 + 中键强制 background（v0.2.101）| 见 git log |
 
 **为什么 v0.2.57 是 `main` 的基线（而不是 v0.2.36 / v0.2.59）**
 

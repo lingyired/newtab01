@@ -15,7 +15,7 @@ const ICONS = {
 interface ActionButton {
   icon: string;
   title: string;
-  action: (node: BookmarkNode) => void;
+  action: (node: BookmarkNode, event: MouseEvent) => void;
 }
 
 const ACTIONS: ActionButton[] = [
@@ -36,12 +36,27 @@ export function createFolderActions(node: BookmarkNode, bookmarkCount: number): 
   for (const actionDef of ACTIONS) {
     const btn = document.createElement('button');
     btn.classList.add('folder-action-btn');
+    // Keep `title` for screen readers + the CSS-only ::after tooltip
+    // (see styles/newtab.css .folder-action-btn:hover::after). The
+    // browser's native tooltip delay (~500ms) is irrelevant — the
+    // CSS bubble paints instantly on hover.
     btn.title = actionDef.title;
+    btn.setAttribute('aria-label', actionDef.title);
     btn.innerHTML = actionDef.icon;
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       e.preventDefault();
-      actionDef.action(node);
+      actionDef.action(node, e);
+    });
+    // Middle-click → always open in background (newtab=2), regardless
+    // of the user's link newtab setting. Matches the behaviour of
+    // ordinary bookmark links (see link.ts:renderLink).
+    btn.addEventListener('auxclick', (e) => {
+      if (e.button === 1) {
+        e.stopPropagation();
+        e.preventDefault();
+        actionDef.action(node, e);
+      }
     });
     // Prevent drag when clicking action buttons
     btn.addEventListener('mousedown', (e) => {

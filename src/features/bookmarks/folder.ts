@@ -111,7 +111,7 @@ export function renderFolder(
     e.preventDefault();
     e.stopPropagation();
     debug.log('folder', 'auxclick:middle', { folder: node.title, id: node.id });
-    void openAllLinks(node);
+    void openAllLinks(node, e);
   });
 
   // Enable drag on folder header (li wraps the whole subtree, header
