@@ -16,15 +16,24 @@ const OPEN_SETTINGS_MENU_ID = 'newtab01-open-settings';
 // menu. The service worker is a separate build chunk and does not
 // import the newtab page's i18n module (which would pull in chrome
 // bookmarks API shims via dynamic import), so we keep a minimal copy
-// of just the strings we need. In v0.2.120 this table is expanded to
-// all 10 supported locales; the fallback chain `user-pref → browser
+// of just the strings we need. v0.2.120 expanded the table to all
+// 10 supported locales; the fallback chain `user-pref → browser
 // → en` is implemented in `pickOpenSettingsTitle`.
 //
-// v0.2.118 only ships en + zh to match the newtab page's first
-// release. Missing locales resolve to the English title.
-const SETTINGS_MENU_TITLES: Partial<Record<string, string>> = {
+// Each value is the localized translation of `actionMenu.openSettings`
+// from src/lib/i18n/catalog/<code>.ts. Keep in sync when adding a
+// new locale.
+const SETTINGS_MENU_TITLES: Record<string, string> = {
   en: 'Open Settings',
   zh: '打开设置',
+  es: 'Abrir ajustes',
+  ar: 'فتح الإعدادات',
+  hi: 'सेटिंग्स खोलें',
+  fr: 'Ouvrir les paramètres',
+  pt: 'Abrir configurações',
+  de: 'Einstellungen öffnen',
+  ja: '設定を開く',
+  ru: 'Открыть настройки',
 };
 
 function pickOpenSettingsTitle(): string {

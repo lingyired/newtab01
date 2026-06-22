@@ -5,6 +5,15 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.120] - 2026-06-26
+
+### Changed
+- **i18n Phase D 收尾 — background service worker 10 语言补齐**。`src/background.ts` 的 `SETTINGS_MENU_TITLES` 查表从 v0.2.118 的 `{ en, zh }` 扩到 10 项（`en / zh / es / ar / hi / fr / pt / de / ja / ru`），每项对应 `src/lib/i18n/catalog/<code>.ts` 里 `actionMenu.openSettings` 的翻译。类型从 `Partial<Record<string, string>>` 收紧为 `Record<string, string>` — 任何新建 catalog 漏更新 SW 表时，tsc 不会报错（因为 key 是 string 任意），但 `pickOpenSettingsTitle()` 仍会 fallback 到 'en'。建议人工 review 表格与 catalog 的同步。
+
+### Notes
+- i18n v0.2.117 → v0.2.120 完整周期完成：从脚手架（types/index/catalog）→ settings 面板迁移 → 全模块迁移（topbar/搜索/folder actions/popup/background/newtab）→ 8 种新 locale + RTL → SW 10 语言补齐。feat/i18n 分支准备 merge 到 main。
+- AI 生成的翻译（特别是 hi / ar / ru）可能不自然，未来用户可手动校对单个 key；tsc 的 `as const satisfies LocaleMessages` 模式保证任何 catalog 缺 key 都会被编译期拒绝。
+
 ## [0.2.119] - 2026-06-25
 
 ### Added
