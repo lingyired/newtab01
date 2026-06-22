@@ -5,6 +5,128 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.116] - 2026-06-22
+
+### Changed
+- **Apps 改回 link 视觉**（v0.2.95 原始设计）。v0.2.111-v0.2.115 的 folder 视觉 + `chrome.management.getAll()` 列真 app 方案在实践中不 work：Edge 的 PWA 不通过 `chrome.management` API 暴露（Edge PWA 注册到 OS 级，API 不可见），用户在 Chrome 上 Chrome Apps 也极少（Chrome Web Store 2020 起停止新 Chrome Apps）。v0.2.116 改回 link 视觉——`getSubTreeStub('apps')` **不**设 `children` 字段，让 `column.ts:renderNode` 走 `renderLink` 路径（普通 `<a href>` 链接样式），点击跳浏览器原生 apps 页。
+- **URL 浏览器检测**：用 `navigator.userAgent.includes('Edg/')` 区分 Edge vs Chrome——Chrome 走 `chrome://apps`，Edge 走 `edge://apps`。`'Edg/'` 是 Edge UA 独有 token（Chrome UA 包含 `'Chrome/...'` 但**不**含 `'Edg/'`）。
+- **`isChromeOrFile` 加 `edge://`**：`link.ts:75-85` 的 chrome.tabs API 短路条件新增 `url.startsWith('edge:')`——Edge 的 `edge://` URL（`edge://apps` / `edge://flags` 等）必须走 chrome.tabs API 而**不**是 `<a target>`，跟 `chrome://` 一致。Chrome 上 `edge://` scheme 不存在，是 no-op。
+
+### Added
+- **Apps link 单独拖**：`link.ts:renderLink` 检测 `node.id === 'apps'` 时调 `enableDragFolder(node, a, li)`——复用 folder 拖实现到 link 元素（`enableDragFolder` 接受 `HTMLElement` 已经 generic over header 类型，`<a>` 直接能用）。这样 Apps 拖到其他列是单独拖 Apps 节点（跟 top/recent/closed/devices 四个特殊 folder 的拖拽行为一致），**不**冒泡触发整列 column 拖。
+
+### Removed
+- **删 `chrome.management` 全部相关代码**：
+  - `lib/chrome/bookmarks.ts:70-109` 的 `getInstalledApps` 函数
+  - `features/bookmarks/special-folders.ts:182-204` 的 `getAppsNodes` 函数
+  - `features/bookmarks/special-folders.ts:42-70` `getChildren` 的 `case 'apps'` 分支
+  - `newtab/app.ts:144-180` 的 `chrome.management.onInstalled` / `onUninstalled` 监听器
+  - `manifest.json` 的 `management` permission
+- 这些代码 v0.2.111-v0.2.115 引入，v0.2.116 全部回滚。**`contextMenus` permission 保留**（v0.2.112 加的，SW `background.ts:25, 32` 调 `chrome.contextMenus` 需要，**与本任务无关**）。
+
+### Implementation Notes
+- **openLink export 保留**：v0.2.109 commit 描述说"Exported so that the Apps special-folder header in folder.ts can use"——这条理由 v0.2.116 不再成立（folder.ts 不再调 openLink），但 `openLink` 仍 export，**没有**外部 caller（v0.2.116 之前的搜索结果显示无人 import）。**仅**改注释不在本任务 scope（§2.3 精确编辑），**只** 删 v0.2.111-v0.2.115 引入的死代码，不动 v0.2.109 的 helper。
+- **UA 检测限制**：`navigator.userAgent` 在 Chromium 89+ 已有 `navigator.userAgentData.brands` 替代 API（Edge 暴露了 `{brand: 'Microsoft Edge', version: ...}`）。`includes('Edg/')` 是更老的 API 但 Chromium UA 永远包含这个 token（Edge 不会伪装成 Chrome），稳定可靠。
+- **v0.2.108-v0.2.115 Apps 处理历史**：v0.2.108 改 renderFolder 修"拖 Apps link 触发整列拖"bug（根因诊断错），v0.2.110 改回 link 视觉（注释说"浏览器不 bubble"——**部分错**，实际 v0.2.108 之前的 bug 来自 v0.2.95 之后某次 column dragstart handler 改 addEventListener 触发的 bubble），v0.2.111 再改 folder 视觉 + management API 列真 app（用户期望的扩展功能），v0.2.116 折中——**link 视觉 + 用 `enableDragFolder` 显式 stopPropagation** 解决 bubble 问题（这才是 v0.2.108 应该用的修法）。
+
+## [0.2.115] - 2026-06-22
+
+### Changed
+- **Apps 文件夹 UX 决策：维持 v0.2.111 folder 行为**。v0.2.114 临时诊断后确认 Edge 的 `chrome.management.getAll()` 返回的 13 个条目**全部**是普通 Chrome 扩展（`type: "extension"` + Edge 特有的 `isApp: false` 字段），**无任何 PWA**（无 `type: "hosted_app"` / `"packaged_app"` 条目，**无 `appLaunchUrl` 字段**）。用户装的"豆包，浏览器 AI 助手"等**是 Chrome 扩展**不是 PWA（`homepageUrl` 指向 Edge Add-ons / Chrome Web Store），按 Chrome/Edge 的设计**本来就该不显示**在 Apps 列表。
+- **Edge PWA API 限制**：Edge PWA（从网站 "Install" 安装的 PWA）注册到 OS 级别（Windows 开始菜单 / macOS 启动台），**不通过 `chrome.management` API 暴露**给扩展——这是 Edge 的固有限制，newtab01 没法在 newtab 上列出 Edge PWA。这同样适用于 `edge://apps` 页面管理的 PWA：它们在 `chrome.management.getAll()` 里**根本不存在**。
+- **v0.2.115 不改 UX**，保留 v0.2.111 的 folder 视觉 + v0.2.113 的 `appLaunchUrl` filter。Chrome 用户装了 hosted_app / packaged_app 时 Apps 文件夹正常显示真 app；Edge 用户 / 没装真 app 的用户看到空 folder（**这是正确行为**，普通 Chrome 扩展本来就不属于 Apps 列表范围）。
+
+### Removed
+- **删除 v0.2.114 临时诊断 console.warn 输出**。`getInstalledApps` 恢复为纯 filter 实现，无副作用 console 输出。诊断目的已完成，devtools console 不应再有 `[newtab01 debug v0.2.114]` 警告刷屏。
+
+### Implementation Notes
+- 之前讨论过的两个备选 UX（v0.2.109 link 行为跳 chrome://apps / edge://apps 整页 / 双策略 fallback）已记录在此条目但**不实施**——用户决定维持 v0.2.111。如未来 Edge 暴露 PWA API 或用户重新选 UX，再回来加。
+- `isApp: boolean` 字段是 Edge 特有的 chrome.management 扩展（Chrome 的 `chrome.management.ExtensionInfo` 类型没这个字段）。v0.2.115 不读这个字段——Edge PWA 不在 getAll() 返回里，读了也没用。
+
+## [0.2.114] - 2026-06-22
+
+### Added
+- **临时诊断日志**：v0.2.113 改 filter 后用户测试仍报 Apps 文件夹空（在 Edge 浏览器，装的 PWA）。`getInstalledApps` 内部加 `console.warn` 输出 `chrome.management.getAll()` 返回的条目总数 + 前 5 个 item 的 `id` / `name` / `type` / `enabled` / `appLaunchUrl`（含 typeof），**不影响 filter 行为**——纯附加日志。Reload 扩展 + 展开 Apps 文件夹触发一次 `getAll` 调用，DevTools console 会输出诊断信息，**用户贴回 console 输出即可**。拿到真实数据后定 v0.2.115 精准 filter 并删掉这段 console.warn。
+
+## [0.2.113] - 2026-06-22
+
+### Fixed
+- **Apps 文件夹展开后空**（v0.2.111 修 Apps 显示真实应用列表后用户报"apps 依然是空，但是实际上我是有应用的"）。根因在 `getInstalledApps` filter（`lib/chrome/bookmarks.ts:71`）：v0.2.111 用 `ext.type === 'hosted_app' || ext.type === 'legacy_packaged_app'` 字面量匹配，**漏了** Chrome 实际支持的其他 app type——`packaged_app`（已弃用但有遗留用户）、`platform_app`（ChromeOS 平台 app）、`shared_module`（ChromeOS 内部）。**而且** `@types/chrome` 的 `ExtensionType` enum 本身有 typo：`PACKAGE_APP = "package_app"`（少一个 `d`）≠ Chrome 运行时实际字符串 `packaged_app`——即使加上 `packaged_app` 字面量也命中不到。
+- **修法**：放弃 `type` 字段字面量匹配，改用 `appLaunchUrl` 字段存在性判断。Chrome 文档明说 `appLaunchUrl` 是 "The launch url (**only present for apps**)"，所以 `typeof appLaunchUrl === 'string' && appLaunchUrl.length > 0` 就是"是 app"的充要条件——兼容所有 `type` 值（`hosted_app` / `legacy_packaged_app` / `packaged_app` / `platform_app` / `shared_module`）且**不依赖**被 typo 污染的 TS enum。同时加 `ext.enabled` 过滤，禁用的 app 不出现在 Apps 列表里。
+- 同步改 `src/newtab/app.ts:152-178` 的 `onInstalled` listener `isApp` 闭包——`onInstalled` 拿到的 `info` 跟 `getAll` 返回的 `ExtensionInfo` shape 一致，filter 必须跟 `getInstalledApps` 对齐否则装新 app 不会触发 re-render。
+- `getAppsNodes` (`special-folders.ts:180-200`) 的 `appLaunchUrl ?? 'chrome://apps'` fallback 现在是死代码（filter 后 `appLaunchUrl` 一定存在）——保留一个**防御性** fallback（如果未来 schema 漂移）但加注释标明这是 belt-and-suspenders，不是正常运行路径。
+
+### Implementation Notes
+- **为什么不直接加 `packaged_app` 字面量**：TS enum 有 typo（`"package_app"` ≠ `"packaged_app"`），加 `ext.type === 'packaged_app'` 编译过但运行时不匹配。改用 `appLaunchUrl` 存在性是 type 字段无关的更稳判断。
+- **为什么不包含 `extension` type**：用户装的"应用"如果是普通 Chrome 扩展（type=`extension`），按 Chrome `chrome://apps` 页面的语义**不会**显示在 Apps 列表——Apps 列表只列有 launch URL 的真 app。这与原 HNTP 行为一致，扩展应该在 chrome://extensions 页面管理。
+
+## [0.2.112] - 2026-06-22
+
+### Fixed
+- **`background` service worker 注册失败：Uncaught TypeError: Cannot read properties of undefined (reading 'onClicked')` + `Service worker registration failed. Status code: 15`**。根因：`manifest.json` permissions 列表**缺** `"contextMenus"`，但 `background.ts:25` 调 `chrome.contextMenus.onClicked.addListener(...)` + `background.ts:32` 调 `chrome.contextMenus.create({ contexts: ['action'] })`。`chrome.contextMenus` 在没声明 permission 的扩展里是 `undefined`，访问 `.onClicked` 报 TypeError → SW 启动失败 → Chrome 返回 status code 15。这是项目**长期 latent bug**（v0.2.111 之前 manifest 也缺 contextMenus），但旧 SW 一直没重启所以报错没冒头；v0.2.111 升级添加 `management` permission 触发 SW 重启 + 严格权限校验，latent bug 浮现。修：`manifest.json` permissions 加 `"contextMenus"`。CLAUDE.md §5.1 权限清单也补上这一条以避免后续回归。
+
+## [0.2.111] - 2026-06-22
+
+### Added
+- **Apps 特殊 folder 现在填入真实应用列表**。v0.2.95 之前 Apps 是一个 `<a href="chrome://apps">` link；v0.2.108-v0.2.110 几次尝试改 folder 视觉 / 单独拖都不到位。v0.2.111 终于落地：Apps header 视觉 = folder（可单独拖、可拖到任意列），展开后展示用户安装的所有 `hosted_app` / `legacy_packaged_app` Chrome 应用（来自 `chrome.management.getAll()`）。每个 app 是一条 link 节点（`id: app.<extensionId>`, `url: appLaunchUrl`），点击走 `link.ts` 的 chrome.tabs API 路径。permission：`manifest.json` 加 `"management"`（首次安装/升级时 Chrome 弹权限 dialog）。
+
+### Fixed
+- **`chrome-extension://` URL 不走 chrome.tabs API path**。`link.ts:74` 旧判断用 `url.substring(0, 6) === 'chrome'`，但 `chrome-extension://<id>/...` 的前 6 字符是 `'chrome-'` ≠ `'chrome'`，**所以 Apps 列表里的 app 链接全部 fall through 到 `<a target="_blank">` 分支**，导致 `_generated_background_page.html` 行为怪（launches in generated iframe 背景页而非 newtab）。修：用 `startsWith('chrome:')` / `startsWith('chrome-extension:')` / `startsWith('file:')` 三个 prefix 统一走 chrome.tabs API。
+
+### Implementation Notes
+- `getInstalledApps` (`lib/chrome/bookmarks.ts:71-75`) 之前是 dead code——manifest 缺 `management` 权限所以 `chrome.management?.getAll?.()` 永远不命中。v0.2.111 加了 permission 后真的能跑了。
+- `getSubTreeStub('apps')` (`special-folders.ts:153-160`) 改回 `children: []` —— `column.ts:renderNode` 的 `if (node.children)` 现在把 Apps 路由进 `renderFolder`，与 top/recent/closed/devices 4 个 special folder 一致。
+- `getChildren` (`special-folders.ts:42-58`) 加 `case 'apps'` 走 `getAppsNodes()`。注意 Apps 的实际 children 是 lazy load——`renderFolder` 内部调 `getChildren` 是 async，**未展开**时不取数据。
+- `chrome.management.onInstalled` / `onUninstalled` 监听 (`newtab/app.ts:155-178`)：用户装/卸应用时自动 re-render board。`onInstalled` 过滤 `hosted_app` / `legacy_packaged_app`；`onUninstalled` 拿不到 type，每个卸载都 re-render（render 是 no-op for users with no Apps folder open，便宜）。
+- v0.2.109 / v0.2.110 那些 `folder.ts:72-99` 的「Apps 跳 chrome://apps」短路分支已删——`renderNode` 把 Apps 路由回 renderFolder 之后这些是 dead code，留着误导。
+
+## [0.2.110] - 2026-06-22
+
+### Fixed
+- **Apps header 显示 v0.2.108 视觉回归：folder 外观 + 展开后 `< Empty >` 占位**。v0.2.108 把 Apps 路由进 `renderFolder` 修「拖 Apps header 触发整列 column 拖拽」bug，但 v0.2.109 改了点击行为后 Apps header 仍是 folder 视觉，展开后看到空 folder 占位（`getSubTreeStub('apps')` 无 `children` 字段）。修：**回滚 v0.2.108 的 `renderNode` 改动**——Apps 重新走 `renderLink` 路径，恢复 v0.2.95 之前的 link 视觉（一个 `<a href="chrome://apps">` 的链接样式）。**根因纠正**：v0.2.108 诊断错了——「拖 link header 触发整列拖」不是因为 link 没 draggable，而是 v0.2.108 之前的某个改动让 Apps 走了非 draggable 的 header 元素。实际上 `<a href>` HTML5 默认 `draggable=true`，拖 link 时浏览器不向上 bubble 到 column 的 dragstart，link 自身成为 drag subject，无需任何特殊路由。`v0.2.109` 的 `folder.ts` 顶部 `node.type === 'apps'` 特殊分支保留作为 dead-code 防御性 short-circuit（万一未来再误路由到 renderFolder，click 仍跳 `chrome://apps`）；`link.ts:91` 的 `openLink` export 同样保留无害。
+
+## [0.2.109] - 2026-06-22
+
+### Changed
+- **Apps 特殊 folder 点击行为回到 v0.2.95 之前：点击 header 直接跳 `chrome://apps` 整页**。v0.2.108 修拖拽时把 Apps 路由进 `renderFolder`（`column.ts:104`），header 看起来是 folder 但 `getSubTreeStub('apps')` 没有 `children` 字段 → 展开后是空 folder（`< Empty >` 占位）。v0.2.109 修正：保留 folder 视觉（folder icon + 可单独拖拽 + 参与列布局），但点击和 Enter 走 `link.ts` 的 `openLink('chrome://apps', newtab)`，跟 `chrome://` bookmark 链接完全一致——尊重用户「打开链接方式」设置（当前标签 / 新标签 / 后台标签），Ctrl+click 强制后台。`enableDragFolder` / `auxclick`（中键 no-op）/ context menu（右键菜单）行为不变。`link.ts:91` 的 `openLink` 改 export 给 `folder.ts` 共用。
+- 不走「用 `chrome.management.getAll()` 填入真实应用列表」路线：需要新增 `management` 权限（Chrome 弹权限 dialog）、`getSubTreeStub` 同步转异步会级联到 `column.ts:50-89` `renderColumn` 整条调用链、`appLaunchUrl` 经常是 `chrome-extension://<id>/_generated_background_page.html` 这种不适合直接当 link 打开、新增/删除应用时需要 refresh。综合复杂度高，且用户实测不需要——点击 header 跳 `chrome://apps` 是 HNTP 原始行为且足够直观。
+
+## [0.2.108] - 2026-06-22
+
+### Fixed
+- **Apps 特殊 folder 不支持单独拖拽：拖它的 header 触发整列 column 拖拽**。根因在 `src/features/bookmarks/column.ts:73` 的 `renderNode`：判定 folder vs link 走 `if (node.children)`。`getSubTreeStub('apps')` 返回的 stub（`special-folders.ts:64`）结构是 `{ id: 'apps', title: 'Apps', type: 'apps', url: 'chrome://apps' }`——**没有 `children` 字段**（Apps 是 `chrome://apps` 页面，不是书签容器），所以走 `renderLink` 分支→不调 `enableDragFolder`→Apps header 不可拖；拖 Apps header 落进 column 的 draggable region（`drag-column.ts:14` `columnDiv.draggable = true`）→ 整列拖。其他 4 个 special folder（top/recent/closed/devices）的 stub 都有 `children: []`，走 renderFolder → enableDragFolder → 单独拖；只有 Apps 例外。修：`renderNode` 加 `node.type === 'apps'` 显式路由到 `renderFolder`。Apps 走 `renderFolder` 后 header 调 `enableDragFolder`，成为可单独拖的 folder。action 图标走 `folder.ts:63` 的 `node.children?.length ?? 0 = 0` 分支，无 children 时不显示 action（符合 Apps 不是书签容器的语义）。
+
+## [0.2.107] - 2026-06-22
+
+### Changed
+- **layout 导出/导入现在包含特殊文件夹 ID（`apps` / `top` / `recent` / `closed` / `devices`）**。v0.2.106 走的是「全部剥掉、verifyColumns 按当前 show* 补回」路径，问题是用户精心把 `top` / `apps` 拖到特定列、特定位置的布局会丢失。v0.2.107 反转策略：**保留**这些 ID，import 走 `saveLayout → verifyColumns`（`layout-ops.ts:80-127`）按当前 `showTop / showApps / ...` 开关过滤**可见性**（不显示的折叠进背景），但 `coords` map 仍写入 `coords['top'] = ...`，所以用户日后开 `showTop=1` 立即回到原位置，**不会**被 verifyColumns 弹到默认的特殊列。跨环境：B 拿 A 的 JSON，`showTop=0` 则 `top` 不显示；B 自己开 `showTop=1` 时按 A 导出的位置插入。
+- **「包含布局」checkbox 默认取消勾选**。v0.2.106 默认勾选（「重装/换设备/换 profile 时一键完整恢复是最常见用法」），v0.2.107 改回默认不勾——特殊文件夹位置已包含在导出里是用户用得上的功能，但 layout payload（每列 folder 顺序 + movedOut map）仍然不算「偏好设置」，对单纯想备份设置的用户是大量冗余数据。默认不勾让「导出设置」按钮保持「导设置」的语义；需要完整恢复的用手动勾选。
+
+### Fixed
+- **「包含布局」checkbox 文字与勾勾垂直方向不对齐**。v0.2.106 把 `<input>` + `<label>` 直接放进了通用的 `.sp-actions` row，inline 元素走 text baseline，box 浮在顶部、label 落 baseline，差几像素。v0.2.107 单独建 `.sp-export-options` 容器，`display: flex; align-items: center; gap: 8px`，并加 `cursor: pointer; user-select: none` 到 label 上。位置锁定到 box 中心 + 文字 baseline（flex 默认 stretch 改 center 后两轴都光学居中）。
+
+## [0.2.106] - 2026-06-22
+
+### Added
+- **高级 tab 导出 settings JSON 时可包含布局（列布局 + 嵌套隐藏可见性）**。导入侧自动检测 `layout` 字段恢复，**完全可撤销**。解决用户「想快速恢复之前组织的书签位置」的需求。
+  - **UI**：导入/导出按钮下方新增独立一行 checkbox「包含布局（列布局 + 嵌套隐藏可见性）」，**默认勾选**（用户验证：重装/换设备/换 profile 时一键完整恢复是最常见用法）。
+  - **导出**：checkbox 勾上时，payload 顶层多一个 `layout: { columns, movedOut }` 字段：
+    - `columns` = 当前 `getColumns()`（`chrome.storage.local` 里的 `Columns: string[][]`）
+    - `movedOut` = `getMovedOut()`（`MovedOutMap: Record<parentId, childId[]>`，嵌套子文件夹从父级隐藏出去的可见性记录）
+    - **特殊文件夹 ID**（`apps` / `top` / `recent` / `closed` / `devices`）从 `columns` 和 `movedOut` **两侧**都剥掉——导出文件对 `showTop / showApps / ...` 开关是环境无关的，导入后这些特殊列由 `verifyColumns` 按**当前**的开关状态自动补出来。
+  - **导入**：检测到 `imported.layout` 字段就触发 layout 恢复（**不读 UI checkbox**——是 JSON 内容决定，不是 UI 状态；pre-v0.2.106 文件无 `layout` 字段被正确识别为 settings-only）：
+    1. 同样剥掉 `MOVED_OUT_SPECIAL_IDS`（防止异环境 force-enable 特殊文件夹）
+    2. `captureSnapshot()` 取当前 (columns + movedOut) → `pushSnapshot()` 压进撤销栈——用户可点撤销按钮回到 import 前的 layout（沿用 `history.ts:28 HistorySnapshot` 形状，`undo-button.ts:78` 已经按这个形状走）
+    3. `setColumns(next)` + `setMovedOutCache(next)` 写模块级 cache
+    4. `Promise.all([saveLayout(), setLocal('movedOut', next)])` 持久化到 `chrome.storage.local`
+    5. `renderColumns()` 强制全板重渲染，让已展开的 folder 立即按新 movedOut 重新 filter
+  - **安全边界（关键）**：layout 导入**只动 newtab 显示**——`saveLayout` → `verifyColumns` 只走 `setLocal` + `renderColumns` + `isSpecialVisible`，**绝不调 `chrome.bookmarks.*` API**。`columns` 里已经删除的书签 ID 在 verifyColumns 里按当前 `chrome.bookmarks.getTree()` 快照自动剔除。`movedOut` 里的失效 ID 无害（`filterChildren` 看不到的 parent 当作没记录），无需清理。用户 Chrome 书签树本身**永不**被 export/import 流程修改。
+
+### Notes
+- `payload.layout` 只在勾上 checkbox 时出现；不勾则 settings JSON 形状与 v0.2.105 完全相同（forward-compat）。
+- 导入 layout 部分 try/catch 包裹：失败（columns 解析错 / 数组不规整）走 `console.warn` 跳过，**不让一个损坏的 layout 阻塞 settings 主体导入**。
+- `special-folder stripping` 走单一来源——`moved-out.ts:12` 导出的 `SPECIAL_IDS` 常量，导入/导出两侧共用，避免重复定义。
+
 ## [0.2.105] - 2026-06-22
 
 ### Fixed

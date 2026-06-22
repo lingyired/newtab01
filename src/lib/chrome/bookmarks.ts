@@ -67,19 +67,6 @@ export function getDevices(maxResults: number): Promise<chrome.sessions.Device[]
   });
 }
 
-/** Get all installed apps */
-export function getInstalledApps(): Promise<chrome.management.ExtensionInfo[]> {
-  return new Promise((resolve) => {
-    if (chrome.management) {
-      chrome.management.getAll((extensions) => {
-        resolve(extensions.filter((ext) => ext.type === 'hosted_app' || ext.type === 'legacy_packaged_app'));
-      });
-    } else {
-      resolve([]);
-    }
-  });
-}
-
 /** Get current tab info */
 export function getCurrentTab(): Promise<chrome.tabs.Tab | undefined> {
   return new Promise((resolve) => {

@@ -4,6 +4,7 @@ import type { BookmarkNode } from './types';
 import { createFavicon } from './favicon';
 import { getCurrentTab, createTab, updateTab } from '../../lib/chrome/bookmarks';
 import { getSetting } from '../../lib/storage/settings';
+import { enableDragFolder } from '../drag-drop/drag-folder';
 
 /** Render a single bookmark link as li > a */
 export function renderLink(node: BookmarkNode, target: HTMLElement): HTMLLIElement {
@@ -43,15 +44,45 @@ export function renderLink(node: BookmarkNode, target: HTMLElement): HTMLLIEleme
     });
   } else if (url) {
     const newtab = getSetting('newtab');
-    // chrome:// and file:/// URLs must be opened via the chrome.tabs API
-    // (the `<a target="_blank">` shortcut in the newtab override is
-    // unreliable for these schemes), so we route them through a single
-    // dedicated click handler below. Skip the generic newtab branch
-    // here — running both would attach two click listeners and open
-    // the URL twice (e.g. newtab=2 + apps' default `chrome://apps` URL
-    // would open two background tabs on every click).
-    const urlStart = url.substring(0, 6);
-    const isChromeOrFile = urlStart === 'chrome' || urlStart === 'file:/';
+    // chrome:// / chrome-extension:// / file:/// URLs must be
+    // opened via the chrome.tabs API (the `<a target="_blank">`
+    // shortcut in the newtab override is unreliable for these
+    // schemes — chrome-extension://<id>/_generated_background_page.html
+    // launches in a generated iframe background, not the user's
+    // newtab, and chrome:// URLs are blocked from being targeted
+    // in some Chrome versions), so we route them through a
+    // single dedicated click handler below. Skip the generic
+    // newtab branch here — running both would attach two click
+    // listeners and open the URL twice (e.g. newtab=2 + apps'
+    // default `chrome://apps` URL would open two background tabs
+    // on every click).
+    //
+    // v0.2.111: `chrome-extension://` added — Apps special folder
+    //  now lists installed apps and each app's `appLaunchUrl` is
+    //  typically a `chrome-extension://<id>/_generated_background_page.html`
+    //  URL that must be launched via the chrome.tabs API. We use
+    //  `startsWith` on the full URL rather than the
+    //  `urlStart` substring check below because the substring
+    //  approach only compares the first 6 chars and would
+    //  conflate `chrome://` (URL starts with `'chrome:'`, first
+    //  6 chars `'chrome:'` ≠ `'chrome'`) — wait, `urlStart` is
+    //  `url.substring(0, 6)` and `'chrome:'` is 7 chars, so
+    //  `urlStart` for `chrome://foo` is `'chrome:'` which DOES
+    //  equal `'chrome'`. For `chrome-extension://foo`,
+    //  `urlStart` is `'chrome-'`, which is why the previous
+    //  code missed it. Using `startsWith` here is the correct
+    //  fix: any of these three prefixes triggers the
+    //  chrome.tabs API path.
+    const isChromeOrFile =
+      url.startsWith('chrome:') ||
+      url.startsWith('chrome-extension:') ||
+      url.startsWith('file:') ||
+      // v0.2.116: Edge's internal URL scheme (edge://apps, edge://flags,
+      //  etc) must also go through the chrome.tabs API — Edge blocks
+      //  `<a target="_blank">` for edge:// URLs the same way Chrome
+      //  blocks it for chrome:// URLs (depending on context). This
+      //  branch is a no-op in Chrome (no `edge://` scheme exists).
+      url.startsWith('edge:');
     if (!isChromeOrFile) {
       if (newtab === 1) {
         // New foreground tab
@@ -83,12 +114,36 @@ export function renderLink(node: BookmarkNode, target: HTMLElement): HTMLLIEleme
   }
 
   li.appendChild(a);
+
+  // v0.2.116: Apps is a regular link (`<a href="chrome://apps">` /
+  //  `edge://apps`), not a folder — see `getSubTreeStub('apps')`.
+  //  Apps still needs to be individually draggable to other
+  //  columns (matching the four other special folders' drag
+  //  behaviour), so we reuse `enableDragFolder` on the link
+  //  element. `enableDragFolder` is already generic over the
+  //  header element type (accepts any `HTMLElement`), so wiring
+  //  it to an `<a>` works without a separate `enableDragLink`.
+  //  Without this, dragging the Apps link would bubble to the
+  //  parent column's dragstart and trigger whole-column drag.
+  if (node.id === 'apps') {
+    enableDragFolder(node, a, li);
+  }
+
   target.appendChild(li);
   return li;
 }
 
-/** Open a link in the appropriate tab mode */
-async function openLink(url: string, newtab: number): Promise<void> {
+/** Open a link in the appropriate tab mode.
+ *
+ *  Exported (v0.2.109) so that the Apps special-folder header
+ *  in `folder.ts` can use the same chrome:// URL navigation
+ *  path as actual `chrome://` bookmark links. Apps' header
+ *  looks like a folder (so it can be individually dragged)
+ *  but clicking it should open `chrome://apps` in the tab
+ *  the user has configured under "打开链接方式" — exactly
+ *  the same dispatch the link chrome:// branch does.
+ */
+export async function openLink(url: string, newtab: number): Promise<void> {
   const tab = await getCurrentTab();
   if (!tab?.id) return;
 

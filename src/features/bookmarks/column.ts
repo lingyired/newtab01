@@ -69,7 +69,42 @@ export function renderAllNodes(
   return ul;
 }
 
-/** Render a single bookmark node (folder or link) */
+/** Render a single bookmark node (folder or link)
+ *
+ *  v0.2.116: Apps is a regular link, NOT a folder.
+ *
+ *  Background: Apps points to the browser's native apps overview
+ *  page (`chrome://apps` in Chrome, `edge://apps` in Edge) — it
+ *  is not a bookmark container, so it has no children. The Apps
+ *  stub in `getSubTreeStub('apps')` omits the `children` field,
+ *  which sends it through `renderLink` (a regular `<a href>`
+ *  link with the link visual, not the folder visual). Apps
+ *  drag is wired up by `renderLink` itself, which calls
+ *  `enableDragFolder(node, a, li)` when `node.id === 'apps'` —
+ *  this reuses the folder drag implementation on the link
+ *  element so Apps is individually draggable to other columns
+ *  (matching the four other special folders' drag behaviour)
+ *  without us writing a separate `enableDragLink`.
+ *
+ *  v0.2.111-v0.2.115 tried several folder-visual variants
+ *  (folder visual + chrome.management.getAll() app list, etc.)
+ *  but those don't work in practice:
+ *  - chrome.management.getAll() does not return PWA in Edge
+ *    (Edge PWA are registered at the OS level and not exposed
+ *    to the extension API), so the Apps folder was always empty
+ *    for Edge users.
+ *  - chrome.management.getAll() returns Chrome extensions
+ *    (type=extension) for regular installed extensions, and
+ *    these should not appear in the Apps folder by Chrome's
+ *    own chrome://apps design.
+ *  - Click-then-jump-to-chrome://apps was confusing because
+ *    clicking the Apps header looked like it would expand.
+ *  Going back to the v0.2.95 visual: a single link that the
+ *  user can drag to other columns and click to jump to the
+ *  browser's native apps page. The 4 other special folders
+ *  (top/recent/closed/devices) are still folders with
+ *  `children: []` (their content is dynamic from chrome APIs).
+ */
 function renderNode(
   node: BookmarkNode,
   target: HTMLElement,

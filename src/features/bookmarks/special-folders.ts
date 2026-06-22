@@ -8,7 +8,6 @@ import {
   getRecentBookmarks,
   getRecentlyClosed,
   getDevices,
-  getInstalledApps,
   restoreSession,
 } from '../../lib/chrome/bookmarks';
 
@@ -61,7 +60,30 @@ export function getSubTreeStub(id: string): BookmarkNode {
     case 'top':
       return { id: 'top', title: 'Most visited', type: 'top', children: [] };
     case 'apps':
-      return { id: 'apps', title: 'Apps', type: 'apps', url: 'chrome://apps' };
+      // v0.2.116: Apps is a single-link entry pointing to the
+      //  browser's native apps overview page — NOT a bookmark
+      //  container. The stub has no `children` field so
+      //  `column.ts:renderNode` routes it through `renderLink`
+      //  (a regular `<a href>` link with the link visual, not
+      //  the folder visual). The drag handler is wired up by
+      //  `link.ts:renderLink` (when `node.id === 'apps'` it
+      //  reuses `enableDragFolder` so Apps is individually
+      //  draggable to other columns, matching the four other
+      //  special folders' drag behaviour).
+      //
+      //  URL: pick the right browser scheme. Chrome uses
+      //  `chrome://apps`; Edge uses `edge://apps`. Detect via
+      //  userAgent — the unique Edge token is `Edg/`
+      //  (Chrome UA contains `Chrome/...` but NOT `Edg/`).
+      return {
+        id: 'apps',
+        title: 'Apps',
+        type: 'apps',
+        url: typeof navigator !== 'undefined' &&
+             navigator.userAgent?.includes('Edg/')
+          ? 'edge://apps'
+          : 'chrome://apps',
+      };
     case 'recent':
       return { id: 'recent', title: 'Recent bookmarks', type: 'recent', children: [] };
     case 'closed':
@@ -155,16 +177,4 @@ async function getDevicesNodes(): Promise<BookmarkNode[]> {
   }
 
   return nodes;
-}
-
-/** Apps */
-export async function getAppsNodes(): Promise<BookmarkNode[]> {
-  const apps = await getInstalledApps();
-  return apps.map((app): BookmarkNode => {
-    const icons = app.icons?.map((i) => ({ url: i.url, size: i.size }));
-    return makeNode(
-      `app.${app.id}`, app.name, app.appLaunchUrl ?? `chrome://apps`,
-      icons && icons.length > 0 ? { icons } : {},
-    );
-  });
 }
