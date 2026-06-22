@@ -11,6 +11,7 @@ import { enableDragFolder } from '../drag-drop/drag-folder';
 import { getSetting } from '../../lib/storage/settings';
 import { getLocal, setLocal, removeLocal } from '../../lib/storage';
 import { getMovedOut, filterChildren } from './moved-out';
+import { t } from '../../lib/i18n';
 import * as debug from '../../lib/debug';
 
 /** Track open folder state in storage */
@@ -214,7 +215,7 @@ function renderChildrenInto(
 
   if (children.length === 0) {
     // Show empty state
-    const emptyNode: BookmarkNode = { id: 'empty', title: '< Empty >', type: 'empty' };
+    const emptyNode: BookmarkNode = { id: 'empty', title: t('folder.empty'), type: 'empty' };
     renderNodeInto(emptyNode, ul, depth, inBookmarkBarContext);
   } else {
     for (const child of children) {

@@ -5,6 +5,22 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.118] - 2026-06-24
+
+### Changed
+- **i18n Phase B 收尾**。v0.2.117 完成的 settings 面板迁移继续扩展到所有剩余模块：
+  - 搜索结果 footer 4 个 hint label（`↑↓ navigate` / `↵ open` / `esc close` / `↵ web search`）+ 整段 `updateSearchStrings()` 重新挂入，locale 切换时 in-place 替换 footer 不清空已搜索结果
+  - 分屏选择器（split-picker）5 个字符串全部 `t()` 化：title（`{max}` 占位符）、counter（`{count} / {max}`）、cancel / open first N / open selected 3 个按钮
+  - Popup 入口：顶部 `await initSettings()`（v0.2.118 新引入 — popup 之前不依赖 settings，现在为支持 locale 切换必须 init）；4 个 `textContent` 改 `t()`（2 个 tab + Layout + Open Split）
+  - Popup 3 个 picker：`BookmarkPicker` 错误 + fallback folder title 复用 `popup.tab.bookmarks`；`OpenTabsPicker` 空态 + 错误；`LayoutPicker` 4 个 layout 改 `labelKey: MessageKey` 模式（与 folder-actions / appearance-toggle 的 `titleKey` 对齐）
+  - 5 个特殊目录 title 之外的「空文件夹占位」`< Empty >` 改成 `t('folder.empty')`（顺带删除尖括号）
+  - newtab 主页的 `Loading...` / `Invalid split view URL` / `Failed to load bookmarks` 3 个英文字符串
+  - background SW 的 right-click「打开设置」menu 改用查表 + `chrome.storage.onChanged` 监听 `settings.language` 变化时重新注册，SW 维护独立的 `SETTINGS_MENU_TITLES: Partial<Record<string, string>>` 表（v0.2.118 仅 en + zh；v0.2.120 扩到 10 项）
+- **newtab/main.ts 新增 `applyLocaleToDom()` + `installLocaleListener()`**。订阅 i18n 模块的 `setLocale()` 通知；locale 切换时一次性刷新 topbar / 外观 toggle / undo / search footer / 整列 columns（特殊目录 title 重新走 `t()`），并重开打开中的 settings 面板。`subscribe()` 内部去重，重复切到同一 locale 不触发重画。
+
+### Added
+- `initLocale()` / `setLocale()` / `subscribe()` 配合 chrome.storage.onChanged 链路：用户在设置面板改 language → storage 写入 → apply.ts 监听 → setLocale() → 所有订阅方刷新（不刷新页面）
+
 ## [0.2.117] - 2026-06-23
 
 ### Added

@@ -4,6 +4,7 @@
 
 import type { BookmarkNode } from './types';
 import { openAllLinks, openAsGroup, openSplit } from './folder-actions-handler';
+import { t } from '../../lib/i18n';
 
 /** SVG icon definitions — inline SVGs, no icon library dependency */
 const ICONS = {
@@ -14,14 +15,14 @@ const ICONS = {
 
 interface ActionButton {
   icon: string;
-  title: string;
+  titleKey: 'folderAction.openAll' | 'folderAction.openAsGroup' | 'folderAction.openInSplit';
   action: (node: BookmarkNode, event: MouseEvent) => void;
 }
 
 const ACTIONS: ActionButton[] = [
-  { icon: ICONS.externalLink, title: 'Open all in tabs', action: openAllLinks },
-  { icon: ICONS.folderPlus, title: 'Open as tab group', action: openAsGroup },
-  { icon: ICONS.columns2, title: 'Open in split view', action: openSplit },
+  { icon: ICONS.externalLink, titleKey: 'folderAction.openAll', action: openAllLinks },
+  { icon: ICONS.folderPlus, titleKey: 'folderAction.openAsGroup', action: openAsGroup },
+  { icon: ICONS.columns2, titleKey: 'folderAction.openInSplit', action: openSplit },
 ];
 
 /** Tooltip show delay (ms). Shorter than the browser-native ~500ms title
@@ -109,8 +110,18 @@ export function createFolderActions(node: BookmarkNode, bookmarkCount: number): 
     // (see attachTooltip above) — a CSS `::after` pseudo-tooltip was
     // tried first but got clipped by the folder `<a class="folder">`'s
     // `overflow: hidden` (which ellipsises long titles).
-    btn.title = actionDef.title;
-    btn.setAttribute('aria-label', actionDef.title);
+    // v0.2.118: tooltip text is read from t() at render time, NOT
+    //  cached, so a future re-render (locale change) will get the
+    //  new locale. Folder actions are rebuilt only on full re-render
+    //  of the column tree (rare — only on bookmark mutation), not
+    //  on plain locale switch. The localized strings WILL appear
+    //  the next time the user adds / moves a folder, AND on page
+    //  reload after a locale change. For an immediate effect without
+    //  full re-render we'd need a per-folder "refresh strings"
+    //  pass; out of scope for v0.2.118.
+    const title = t(actionDef.titleKey);
+    btn.title = title;
+    btn.setAttribute('aria-label', title);
     btn.innerHTML = actionDef.icon;
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -131,7 +142,7 @@ export function createFolderActions(node: BookmarkNode, bookmarkCount: number): 
     btn.addEventListener('mousedown', (e) => {
       e.stopPropagation();
     });
-    attachTooltip(btn, actionDef.title);
+    attachTooltip(btn, title);
     container.appendChild(btn);
   }
 

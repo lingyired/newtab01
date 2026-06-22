@@ -1,4 +1,6 @@
 // Popup page application entry
+import { initSettings } from '../lib/storage/settings';
+import { t } from '../lib/i18n';
 import { BookmarkPicker } from './bookmark-picker';
 import { OpenTabsPicker } from './open-tabs-picker';
 import { LayoutPicker } from './layout-picker';
@@ -70,7 +72,7 @@ function render(root: HTMLElement): void {
   openTabsTab.type = 'button';
   openTabsTab.className = 'popup-tab';
   if (currentTab === 'open-tabs') openTabsTab.classList.add('popup-tab--active');
-  openTabsTab.textContent = 'Open Tabs';
+  openTabsTab.textContent = t('popup.tab.openTabs');
   openTabsTab.addEventListener('click', () => {
     currentTab = 'open-tabs';
     selectedCount = 0;
@@ -81,7 +83,7 @@ function render(root: HTMLElement): void {
   bookmarkTab.type = 'button';
   bookmarkTab.className = 'popup-tab';
   if (currentTab === 'bookmarks') bookmarkTab.classList.add('popup-tab--active');
-  bookmarkTab.textContent = 'Bookmarks';
+  bookmarkTab.textContent = t('popup.tab.bookmarks');
   bookmarkTab.addEventListener('click', () => {
     currentTab = 'bookmarks';
     selectedCount = 0;
@@ -105,7 +107,7 @@ function render(root: HTMLElement): void {
   layoutSection.className = 'popup-layout-section';
   const layoutTitle = document.createElement('div');
   layoutTitle.className = 'popup-section-title';
-  layoutTitle.textContent = 'Layout';
+  layoutTitle.textContent = t('popup.layout.title');
   layoutSection.appendChild(layoutTitle);
   layoutSection.appendChild(layoutPicker.render());
 
@@ -151,5 +153,11 @@ function render(root: HTMLElement): void {
 
 const root = document.getElementById('root');
 if (root) {
-  render(root);
+  // v0.2.118: popup now needs `initSettings` so that t() can read
+  // `settings.language` and resolve the active locale. The previous
+  // popup never loaded Settings (it didn't need any of them) and so
+  // it always rendered in the i18n module's initial locale, which is
+  // `en`. Loading Settings is the smallest change to make the popup
+  // locale-aware.
+  void initSettings().then(() => render(root));
 }

@@ -7,13 +7,14 @@
 //
 // Public API: `showSplitPicker(urls: BookmarkNode[]): Promise<string[] | null>`
 //   - resolves to the selected URLs on confirm (1-4 items)
-//   - resolves to null when the user cancels (overlay click, ESC, "取消" button)
+//   - resolves to null when the user cancels (overlay click, ESC, "Cancel" button)
 // Three action buttons at the bottom:
-//   取消            → resolve(null)
-//   打开选中        → resolve(current selection, defaulting to first 4)
-//   打开前 4 个      → resolve(first 4 unconditionally)
+//   Cancel              → resolve(null)
+//   Open first N        → resolve(first 4 unconditionally)
+//   Open selected       → resolve(current selection, defaulting to first 4)
 
 import type { BookmarkNode } from './types';
+import { t } from '../../lib/i18n';
 
 const SPLIT_MAX = 4;
 
@@ -61,12 +62,12 @@ export function showSplitPicker(entries: PickerEntry[]): Promise<string[] | null
 
     const title = document.createElement('span');
     title.classList.add('sp-title');
-    title.textContent = `选择最多 ${SPLIT_MAX} 个链接`;
+    title.textContent = t('splitPicker.title', { max: SPLIT_MAX });
     header.appendChild(title);
 
     const counter = document.createElement('span');
     counter.classList.add('split-picker-counter');
-    counter.textContent = `已选 ${selected.size} / ${SPLIT_MAX}`;
+    counter.textContent = t('splitPicker.counter', { count: selected.size, max: SPLIT_MAX });
     header.appendChild(counter);
 
     // List
@@ -83,7 +84,7 @@ export function showSplitPicker(entries: PickerEntry[]): Promise<string[] | null
     const cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
     cancelBtn.classList.add('sp-btn');
-    cancelBtn.textContent = '取消';
+    cancelBtn.textContent = t('splitPicker.cancel');
     cancelBtn.addEventListener('click', () => {
       cleanup();
       resolve(null);
@@ -92,7 +93,7 @@ export function showSplitPicker(entries: PickerEntry[]): Promise<string[] | null
     const openFirstBtn = document.createElement('button');
     openFirstBtn.type = 'button';
     openFirstBtn.classList.add('sp-btn');
-    openFirstBtn.textContent = '打开前 4 个';
+    openFirstBtn.textContent = t('splitPicker.openFirstN', { n: SPLIT_MAX });
     openFirstBtn.addEventListener('click', () => {
       const first4 = entries.slice(0, SPLIT_MAX).map((e) => e.url);
       cleanup();
@@ -102,7 +103,7 @@ export function showSplitPicker(entries: PickerEntry[]): Promise<string[] | null
     const openSelectedBtn = document.createElement('button');
     openSelectedBtn.type = 'button';
     openSelectedBtn.classList.add('sp-btn-primary');
-    openSelectedBtn.textContent = '打开选中';
+    openSelectedBtn.textContent = t('splitPicker.openSelected');
     openSelectedBtn.addEventListener('click', () => {
       const picked = entries
         .map((e) => e.url)
@@ -186,7 +187,7 @@ function buildRow(entry: PickerEntry, index: number, selected: Set<string>, coun
     for (const cb of rows) {
       cb.disabled = !cb.checked && selected.size >= SPLIT_MAX;
     }
-    counter.textContent = `已选 ${selected.size} / ${SPLIT_MAX}`;
+    counter.textContent = t('splitPicker.counter', { count: selected.size, max: SPLIT_MAX });
   });
 
   li.appendChild(checkbox);

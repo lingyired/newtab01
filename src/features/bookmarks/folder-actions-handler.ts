@@ -9,6 +9,7 @@ import { splitManager } from '../split/manager';
 import type { SplitLayout } from '../split/types';
 import { getSetting } from '../../lib/storage/settings';
 import { showSplitPickerFromNodes, SPLIT_VIEW_MAX } from './split-picker';
+import { t } from '../../lib/i18n';
 import * as debug from '../../lib/debug';
 
 /** `Settings.newtab` value type. 0 = current tab, 1 = new foreground, 2 = new background. */
@@ -71,7 +72,7 @@ export async function openAllLinks(node: BookmarkNode, event: MouseEvent): Promi
     middleClick: event.button === 1,
   });
   if (urlChildren.length === 0) return;
-  if (!confirmIfExceedsThreshold(node, urlChildren.length, '打开全部链接')) return;
+  if (!confirmIfExceedsThreshold(node, urlChildren.length, 'folderAction.openAll')) return;
 
   const urls = urlChildren.map((c) => c.url!);
   await openUrlsInNewtabMode(urls, mode);
@@ -103,7 +104,7 @@ export async function openAsGroup(node: BookmarkNode, event: MouseEvent): Promis
     middleClick: event.button === 1,
   });
   if (urlChildren.length === 0) return;
-  if (!confirmIfExceedsThreshold(node, urlChildren.length, '以分组方式打开链接')) return;
+  if (!confirmIfExceedsThreshold(node, urlChildren.length, 'folderAction.openAsGroup')) return;
 
   const tab = await getCurrentTab();
   const tabIds: number[] = [];
@@ -235,10 +236,15 @@ export async function openSplit(node: BookmarkNode, event: MouseEvent): Promise<
 function confirmIfExceedsThreshold(
   node: BookmarkNode,
   count: number,
-  verb: string,
+  verbKey: 'folderAction.openAll' | 'folderAction.openAsGroup',
 ): boolean {
   const threshold = Number(getSetting('folderActionConfirmThreshold') ?? 10);
   if (threshold <= 0 || count <= threshold) return true;
-  const title = node.title || '当前目录';
-  return window.confirm(`「${title}」包含 ${count} 个链接，确认${verb}？`);
+  const title = node.title || t('folderAction.currentFolder');
+  const verb = t(verbKey);
+  // Confirm message follows the pattern: «{title}» {verb} {count} links?
+  // The verb is read as the action the user is being asked to confirm
+  // ("Open all links" / "Open as tab group"). For RTL locales the
+  // browser handles the bidi run; we don't need to manually reverse.
+  return window.confirm(`「${title}」 — ${verb}（${count}）?`);
 }

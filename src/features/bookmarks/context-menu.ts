@@ -11,6 +11,7 @@ import { captureSnapshot, pushSnapshot } from '../drag-drop/history';
 import { openAllLinks } from './folder-actions-handler';
 import { createTab } from '../../lib/chrome/bookmarks';
 import { getSetting } from '../../lib/storage/settings';
+import { t } from '../../lib/i18n';
 
 /** Currently active menu element, if any */
 let activeMenu: HTMLUListElement | null = null;
@@ -135,7 +136,7 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
   const items: (MenuItem | null)[] = [];
 
   items.push({
-    label: 'Open all links in folder',
+    label: t('contextMenu.openAllInFolder'),
     // Synthesize a left-click MouseEvent (button = 0) so the handler
     // honours the user's `newtab` link setting rather than treating
     // the context-menu click as a middle-click. The event is only
@@ -147,7 +148,7 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
   // Special items
   if (node.id === 'closed') {
     items.push({
-      label: 'Clear browsing data',
+      label: t('contextMenu.clearBrowsingData'),
       action: () => {
         openInternalPage('settings/clearBrowserData');
       },
@@ -156,7 +157,7 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
 
   if (node.id === 'devices') {
     items.push({
-      label: 'History',
+      label: t('contextMenu.history'),
       action: () => {
         openInternalPage('history');
       },
@@ -166,7 +167,7 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
   // Numeric ID = real bookmark folder
   if (/^\d+$/.test(node.id)) {
     items.push({
-      label: 'Edit bookmarks',
+      label: t('contextMenu.editBookmarks'),
       action: () => {
         openInternalPage('bookmarks/?id=' + node.id);
       },
@@ -267,7 +268,7 @@ export function getColumnMenuItems(index: number): (MenuItem | null)[] {
 
     if (index > 0) {
       items.push({
-        label: 'Move column left',
+        label: t('contextMenu.moveColumnLeft'),
         action: () => withUndo(() => {
           void addColumn(ids, index - 1);
         }),
@@ -275,7 +276,7 @@ export function getColumnMenuItems(index: number): (MenuItem | null)[] {
     }
     if (index < columns.length - 1) {
       items.push({
-        label: 'Move column right',
+        label: t('contextMenu.moveColumnRight'),
         action: () => withUndo(() => {
           // addColumn removes the ids from their current column first,
           // so the target splice index is in the post-removal array.
@@ -287,7 +288,7 @@ export function getColumnMenuItems(index: number): (MenuItem | null)[] {
       });
     }
     items.push({
-      label: 'Remove column',
+      label: t('contextMenu.removeColumn'),
       action: () => withUndo(() => {
         void removeColumn(index);
       }),

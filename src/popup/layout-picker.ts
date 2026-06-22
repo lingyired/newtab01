@@ -1,11 +1,12 @@
 // Layout picker for Popup split screen
 import type { SplitMode } from '../features/split/types';
+import { t, type MessageKey } from '../lib/i18n';
 
-const LAYOUTS: { mode: SplitMode; label: string; grid: string; areas: string[] }[] = [
-  { mode: '2h', label: '2 Horizontal', grid: '"a b" / 1fr 1fr', areas: ['a', 'b'] },
-  { mode: '2v', label: '2 Vertical', grid: '"a" "b" / 1fr', areas: ['a', 'b'] },
-  { mode: '3H', label: '3 Horizontal', grid: '"a b c" / 1fr 1fr 1fr', areas: ['a', 'b', 'c'] },
-  { mode: '4grid', label: '4 Grid', grid: '"a b" "c d" / 1fr 1fr', areas: ['a', 'b', 'c', 'd'] },
+const LAYOUTS: { mode: SplitMode; labelKey: MessageKey; grid: string; areas: string[] }[] = [
+  { mode: '2h', labelKey: 'popup.layout.2h', grid: '"a b" / 1fr 1fr', areas: ['a', 'b'] },
+  { mode: '2v', labelKey: 'popup.layout.2v', grid: '"a" "b" / 1fr', areas: ['a', 'b'] },
+  { mode: '3H', labelKey: 'popup.layout.3H', grid: '"a b c" / 1fr 1fr 1fr', areas: ['a', 'b', 'c'] },
+  { mode: '4grid', labelKey: 'popup.layout.4grid', grid: '"a b" "c d" / 1fr 1fr', areas: ['a', 'b', 'c', 'd'] },
 ];
 
 export class LayoutPicker {
@@ -42,7 +43,7 @@ export class LayoutPicker {
 
       const label = document.createElement('span');
       label.className = 'layout-label';
-      label.textContent = layout.label;
+      label.textContent = t(layout.labelKey);
 
       option.appendChild(preview);
       option.appendChild(label);

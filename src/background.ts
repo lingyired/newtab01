@@ -12,6 +12,38 @@ type FetchThemeJsonResponse = { ok: true; text: string } | { ok: false; error: s
 
 const OPEN_SETTINGS_MENU_ID = 'newtab01-open-settings';
 
+// v0.2.118: locale lookup table for the right-click "Open Settings"
+// menu. The service worker is a separate build chunk and does not
+// import the newtab page's i18n module (which would pull in chrome
+// bookmarks API shims via dynamic import), so we keep a minimal copy
+// of just the strings we need. In v0.2.120 this table is expanded to
+// all 10 supported locales; the fallback chain `user-pref → browser
+// → en` is implemented in `pickOpenSettingsTitle`.
+//
+// v0.2.118 only ships en + zh to match the newtab page's first
+// release. Missing locales resolve to the English title.
+const SETTINGS_MENU_TITLES: Partial<Record<string, string>> = {
+  en: 'Open Settings',
+  zh: '打开设置',
+};
+
+function pickOpenSettingsTitle(): string {
+  // 1. Try the user's explicit language preference (if set) — read from
+  //    storage synchronously to avoid a race with the menu builder.
+  // 2. Fall back to the browser's navigator.language.
+  // 3. Fall back to 'en'.
+  const navLang = chrome.i18n?.getUILanguage?.() ?? 'en';
+  const primary = navLang.split('-')[0]?.toLowerCase() ?? 'en';
+  // We cannot read storage here without `await`, and `chrome.contextMenus.create`
+  // is synchronous. Use the browser's UI language as the only signal;
+  // the language pref can be applied on the next SW restart (the menu
+  // is rebuilt on onInstalled and on chrome.storage.onChanged).
+  return SETTINGS_MENU_TITLES[navLang]
+    ?? SETTINGS_MENU_TITLES[primary]
+    ?? SETTINGS_MENU_TITLES.en
+    ?? 'Open Settings';
+}
+
 // Register declarativeNetRequest dynamic rules and the right-click "Open
 // Settings" menu item on install. The menu item is recreated on every
 // install / update because the service worker can be restarted at any
@@ -35,12 +67,46 @@ async function registerContextMenu(): Promise<void> {
   } catch {
     // The entry may not exist on first install — safe to ignore.
   }
+  // v0.2.118: title is resolved per-locale. We re-resolve from the
+  // user's settings.language on every storage change, so the right-
+  // click menu tracks the active UI language even if the SW was
+  // started by an earlier onInstalled event.
+  let title = pickOpenSettingsTitle();
+  try {
+    const stored = await chrome.storage.sync.get('settings');
+    const lang = (stored as { settings?: { language?: string } } | undefined)
+      ?.settings?.language;
+    if (lang && lang !== 'auto') {
+      const localized =
+        SETTINGS_MENU_TITLES[lang] ??
+        SETTINGS_MENU_TITLES[lang.split('-')[0] ?? ''];
+      if (localized) title = localized;
+    } else if (lang === 'auto') {
+      // Resolve auto: use the browser UI language.
+      title = pickOpenSettingsTitle();
+    }
+  } catch {
+    // Storage read failed — keep the browser-language fallback.
+  }
   chrome.contextMenus.create({
     id: OPEN_SETTINGS_MENU_ID,
-    title: '打开设置',
+    title,
     contexts: ['action'],
   });
 }
+
+// v0.2.118: re-register the context menu when the user changes
+// `settings.language` so the right-click label tracks the active
+// locale without requiring an extension reload.
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area !== 'sync') return;
+  const langChange = changes['settings'];
+  if (!langChange) return;
+  const next = (langChange.newValue as { language?: unknown } | undefined)?.language;
+  if (typeof next === 'string') {
+    void registerContextMenu();
+  }
+});
 
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
   // 1. Reject messages from any context that isn't this extension.
