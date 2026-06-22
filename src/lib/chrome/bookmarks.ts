@@ -93,6 +93,28 @@ export function getInstalledApps(): Promise<chrome.management.ExtensionInfo[]> {
   return new Promise((resolve) => {
     if (chrome.management) {
       chrome.management.getAll((extensions) => {
+        // v0.2.114 — temporary diagnostic: user reports Apps folder
+        //  is still empty on Edge with PWA installed. v0.2.113
+        //  already widened the filter to `appLaunchUrl` presence
+        //  but we don't yet know what `type` / `appLaunchUrl`
+        //  values Edge actually returns for PWA. Log the first
+        //  5 entries so the user can paste them back and we can
+        //  build a precise filter. Safe to keep the production
+        //  filter as-is — this is a `console.warn` companion
+        //  log, the returned list itself is unchanged.
+        // eslint-disable-next-line no-console
+        console.warn(
+          '[newtab01 debug v0.2.114] getInstalledApps:',
+          `getAll returned ${extensions.length} entries; first 5:`,
+          extensions.slice(0, 5).map((ext) => ({
+            id: ext.id,
+            name: ext.name,
+            type: ext.type,
+            enabled: ext.enabled,
+            appLaunchUrl: ext.appLaunchUrl,
+            appLaunchUrlType: typeof ext.appLaunchUrl,
+          })),
+        );
         resolve(
           extensions.filter(
             (ext) =>

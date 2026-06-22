@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.114] - 2026-06-22
+
+### Added
+- **临时诊断日志**：v0.2.113 改 filter 后用户测试仍报 Apps 文件夹空（在 Edge 浏览器，装的 PWA）。`getInstalledApps` 内部加 `console.warn` 输出 `chrome.management.getAll()` 返回的条目总数 + 前 5 个 item 的 `id` / `name` / `type` / `enabled` / `appLaunchUrl`（含 typeof），**不影响 filter 行为**——纯附加日志。Reload 扩展 + 展开 Apps 文件夹触发一次 `getAll` 调用，DevTools console 会输出诊断信息，**用户贴回 console 输出即可**。拿到真实数据后定 v0.2.115 精准 filter 并删掉这段 console.warn。
+
 ## [0.2.113] - 2026-06-22
 
 ### Fixed
