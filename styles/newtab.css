@@ -296,11 +296,6 @@
   border-radius: 3px;
   opacity: 0.6;
   transition: opacity 0.15s, background-color 0.15s;
-  /* Anchor for the ::after tooltip. Same CSS-only tooltip pattern
-   * used by .sp-appearance-toggle-btn and #options_button (v0.2.88);
-   * the bubble paints instantly on hover (no browser-native ~500ms
-   * delay) and follows the active theme via --muted. */
-  position: relative;
 }
 
 .folder-action-btn:hover {
@@ -314,24 +309,21 @@
   background-color: var(--muted);
 }
 
-/* v0.2.101: CSS-only tooltip. Mirrors the v0.2.88 pattern on
- * .sp-appearance-toggle-btn and #options_button, but the parent
- * `.folder-actions` has `opacity: 0.5` (and bumps to 1 on the
- * parent `<a>`'s hover), so the tooltip explicitly resets
- * `opacity: 1` to stay fully opaque at all times.
+/* v0.2.101: hover-driven tooltip.
  *
- * `pointer-events: none` so the pseudo-element never blocks the
- * underlying button's click. `z-index: 1000` lifts above the
- * topbar (z 100), the sp-overlay (z 110), the sp-panel (z 120),
- * and the split-picker (z 130). The bubble sits below the button
- * (`top: calc(100% + 6px)`); folder headers sit in the middle of
- * the viewport so there's no viewport-edge clip. */
-.folder-action-btn:hover::after {
-  content: attr(title);
-  position: absolute;
-  top: calc(100% + 6px);
-  left: 50%;
-  transform: translateX(-50%);
+ * Lives in document.body (see folder-actions.ts:attachTooltip) so it
+ * escapes the folder `<a class="folder">`'s `overflow: hidden` (which
+ * is needed to ellipsis long titles). A CSS `::after` pseudo-tooltip
+ * was tried first but got clipped by that overflow — see git log for
+ * commit 21e4d9c → reverted here.
+ *
+ * z-index 1000 lifts above the topbar (z 100), the sp-overlay
+ * (z 110), the sp-panel (z 120), and the split-picker (z 130).
+ * `pointer-events: none` so the bubble never blocks the underlying
+ * button's click. `position: fixed` (set inline in JS) keeps it
+ * aligned to the button even when the user scrolls. */
+.folder-action-tooltip {
+  position: fixed;
   background: var(--muted);
   color: var(--muted-foreground);
   padding: 4px 8px;
@@ -341,7 +333,6 @@
   white-space: nowrap;
   pointer-events: none;
   z-index: 1000;
-  opacity: 1;
   font-weight: 400;
   /* 1px ring of the surrounding --background color so the bubble
    * reads as a "lifted" tooltip against any theme's link background

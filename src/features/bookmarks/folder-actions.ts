@@ -24,6 +24,74 @@ const ACTIONS: ActionButton[] = [
   { icon: ICONS.columns2, title: 'Open in split view', action: openSplit },
 ];
 
+/** Tooltip show delay (ms). Shorter than the browser-native ~500ms title
+ * delay; the JS-driven bubble is the primary affordance. */
+const TOOLTIP_DELAY_MS = 200;
+
+/** Attach a hover-driven tooltip to `target`. The tooltip is created as
+ * a `<span class="folder-action-tooltip">` appended to document.body so
+ * it escapes any ancestor `overflow: hidden` (the folder header is a
+ * `<a class="folder">` with `overflow: hidden` to ellipsis long titles,
+ * which would clip a `::after` pseudo-tooltip). Mouseenter schedules a
+ * show after `TOOLTIP_DELAY_MS`; mouseleave / click / scroll removes it
+ * immediately. */
+function attachTooltip(target: HTMLElement, text: string): void {
+  let showTimer: number | null = null;
+  let activeEl: HTMLSpanElement | null = null;
+
+  const position = (el: HTMLSpanElement): void => {
+    const rect = target.getBoundingClientRect();
+    // 6px gap below the button (same as the v0.2.88 ::after bubble on
+    // .sp-appearance-toggle-btn / #options_button). Tooltip sits below
+    // the button; the topbar sits high in the viewport, but folder
+    // headers sit mid-page so there's no top-edge clip.
+    el.style.left = `${rect.left + rect.width / 2}px`;
+    el.style.top = `${rect.bottom + 6}px`;
+  };
+
+  const show = (): void => {
+    if (activeEl) return;
+    const el = document.createElement('span');
+    el.className = 'folder-action-tooltip';
+    el.textContent = text;
+    // fixed so it ignores document scroll offset; we re-read the rect
+    // on every show in case the user scrolled between mousedown and
+    // the 200ms timer firing.
+    el.style.position = 'fixed';
+    el.style.transform = 'translateX(-50%)';
+    el.style.display = 'none';
+    document.body.appendChild(el);
+    position(el);
+    el.style.display = 'block';
+    activeEl = el;
+  };
+
+  const hide = (): void => {
+    if (showTimer !== null) {
+      window.clearTimeout(showTimer);
+      showTimer = null;
+    }
+    if (activeEl) {
+      activeEl.remove();
+      activeEl = null;
+    }
+  };
+
+  target.addEventListener('mouseenter', () => {
+    if (showTimer !== null) {
+      window.clearTimeout(showTimer);
+    }
+    showTimer = window.setTimeout(show, TOOLTIP_DELAY_MS);
+  });
+  target.addEventListener('mouseleave', hide);
+  target.addEventListener('click', hide);
+  // Wheel / scroll inside the page would leave the bubble stranded
+  // over the wrong row, and the user has moved their focus anyway.
+  target.addEventListener('wheel', hide, { passive: true });
+  // Auxclick (middle-click) is the newtab=2 path — also hide.
+  target.addEventListener('auxclick', hide);
+}
+
 /** Create the folder action buttons container. Returns an empty span when bookmarkCount is 0. */
 export function createFolderActions(node: BookmarkNode, bookmarkCount: number): HTMLSpanElement {
   const container = document.createElement('span');
@@ -36,10 +104,11 @@ export function createFolderActions(node: BookmarkNode, bookmarkCount: number): 
   for (const actionDef of ACTIONS) {
     const btn = document.createElement('button');
     btn.classList.add('folder-action-btn');
-    // Keep `title` for screen readers + the CSS-only ::after tooltip
-    // (see styles/newtab.css .folder-action-btn:hover::after). The
-    // browser's native tooltip delay (~500ms) is irrelevant — the
-    // CSS bubble paints instantly on hover.
+    // `title` is kept for screen readers + keyboard tooltip fallback.
+    // The visible bubble is the JS-driven `.folder-action-tooltip`
+    // (see attachTooltip above) — a CSS `::after` pseudo-tooltip was
+    // tried first but got clipped by the folder `<a class="folder">`'s
+    // `overflow: hidden` (which ellipsises long titles).
     btn.title = actionDef.title;
     btn.setAttribute('aria-label', actionDef.title);
     btn.innerHTML = actionDef.icon;
@@ -62,6 +131,7 @@ export function createFolderActions(node: BookmarkNode, bookmarkCount: number): 
     btn.addEventListener('mousedown', (e) => {
       e.stopPropagation();
     });
+    attachTooltip(btn, actionDef.title);
     container.appendChild(btn);
   }
 
