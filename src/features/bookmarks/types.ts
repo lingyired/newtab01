@@ -31,23 +31,41 @@ export interface CoordMap {
 /**
  * Per-theme per-appearance-mode overrides for the 10 appearance-tab
  * options (font / fontSize / fontWeight / 5 colors / shadowBlur /
- * highlightRound). Other settings (theme, darkMode, width, hPos,
- * align, spacing, columnWidth, ...) are intentionally NOT in this
- * set — they remain global.
+ * highlightRound) PLUS the per-theme per-mode `customCss` field
+ * introduced in v0.2.102. Other settings (theme, darkMode, width,
+ * hPos, align, spacing, columnWidth, ...) are intentionally NOT in
+ * this set — they remain global.
  *
  * Stored in `Settings.themeOverrides[themeId][light|dark]` (nested
  * map). Each entry is a `Partial<Settings>` so the user can override
  * a single key (e.g. just `fontSize`) without restating the other
  * 9. Missing keys fall back to the global `Settings[key]`.
  *
+ * `customCss` is the only field in this bucket that does NOT mirror
+ * a global `Settings` key — global CSS was removed in v0.2.102 in
+ * favour of the per-theme per-mode model. Empty string means
+ * "no override for this (theme, mode)" — the theme defaults render
+ * through.
+ *
  * Resolution order in `resolveEffectiveSettings` (features/settings/apply.ts):
  *   `themeOverrides[baseTheme][mode]?.[key] ?? Settings[key]`
+ * (`customCss` is not resolved by that function — it's injected
+ * separately by `rebuildUserThemeCss`.)
  */
 export type ThemeModeOverrides = Partial<Pick<Settings,
   'font' | 'fontSize' | 'fontWeight' |
   'fontColor' | 'backgroundColor' | 'highlightColor' | 'highlightFontColor' | 'shadowColor' |
   'shadowBlur' | 'highlightRound'
->>;
+>> & {
+  /**
+   * v0.2.102: per-theme per-mode custom CSS. Replaces the global
+   * `Settings.css` field (removed in the same version) so each
+   * (theme, light/dark) bucket can have its own custom styles.
+   * Injected into `<style id="user-theme-css">` by
+   * `applySettingsToDOM`; empty string clears the override.
+   */
+  customCss?: string;
+};
 
 /** Settings configuration with defaults */
 export interface Settings {
@@ -86,7 +104,14 @@ export interface Settings {
   rememberOpen: number;
   autoClose: number;
   autoScale: number;
-  css: string;
+  /**
+   * v0.2.102: REMOVED. The global "Custom CSS" field that lived
+   * here is gone — custom CSS is now per-theme per-mode, stored
+   * under `themeOverrides[themeId][mode].customCss` (see
+   * `ThemeModeOverrides`). v0.2.102's `initSettings` migrates a
+   * pre-v0.2.102 non-empty value into the current
+   * (theme, mode) bucket and clears this field.
+   */
   numberTop: number;
   numberClosed: number;
   numberRecent: number;

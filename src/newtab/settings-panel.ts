@@ -170,6 +170,56 @@ function clearPerThemeValue<K extends PerThemeKey>(key: K): void {
   void updateSettings({ themeOverrides: all });
 }
 
+// --- v0.2.102: per-theme per-mode custom CSS helpers ---
+//
+// `customCss` is the only entry in `themeOverrides` that does NOT
+// mirror a global `Settings` key. The 10 other per-theme fields
+// (font / fontSize / fontWeight / 5 colors / shadowBlur / highlightRound)
+// all read through `readPerThemeValue` with global fallback; CSS
+// has no global fallback (the global `Settings.css` field was
+// removed in v0.2.102 in favour of the per-theme model). The three
+// helpers below therefore take `string` directly rather than going
+// through the `PerThemeKey` type.
+
+function readPerThemeCustomCss(): string {
+  const t = currentBaseTheme();
+  const m = currentMode();
+  const all = (getSetting('themeOverrides') ?? {}) as Record<string, { light?: ThemeModeOverrides; dark?: ThemeModeOverrides }>;
+  return String(all[t]?.[m]?.customCss ?? '');
+}
+
+function writePerThemeCustomCss(value: string): void {
+  const t = currentBaseTheme();
+  const m = currentMode();
+  const all = { ...(getSetting('themeOverrides') ?? {}) } as Record<string, { light?: ThemeModeOverrides; dark?: ThemeModeOverrides }>;
+  const themeBucket = { ...(all[t] ?? {}) } as { light?: ThemeModeOverrides; dark?: ThemeModeOverrides };
+  const modeBucket = { ...(themeBucket[m] ?? {}) } as Partial<Settings> & { customCss?: string };
+  modeBucket.customCss = value;
+  themeBucket[m] = modeBucket as ThemeModeOverrides;
+  all[t] = themeBucket;
+  void updateSettings({ themeOverrides: all });
+}
+
+function clearPerThemeCustomCss(): void {
+  const t = currentBaseTheme();
+  const m = currentMode();
+  const all = { ...(getSetting('themeOverrides') ?? {}) } as Record<string, { light?: ThemeModeOverrides; dark?: ThemeModeOverrides }>;
+  const themeBucket = all[t];
+  if (!themeBucket) return;
+  const modeBucket = { ...(themeBucket[m] ?? {}) } as Partial<Settings> & { customCss?: string };
+  delete modeBucket.customCss;
+  themeBucket[m] = modeBucket as ThemeModeOverrides;
+  if (Object.keys(modeBucket).length === 0) {
+    delete (themeBucket as Record<string, unknown>)[m];
+  }
+  if (Object.keys(themeBucket).length === 0) {
+    delete all[t];
+  } else {
+    all[t] = themeBucket;
+  }
+  void updateSettings({ themeOverrides: all });
+}
+
 /** Compute the px value of `calc(var(--radius) - 2px)` for the
  *  currently active theme. Used as the default placeholder for
  *  the per-theme `highlightRound` input — the user can see
@@ -421,6 +471,32 @@ function refreshInputsFromSettings(): void {
     }
     const nextStr = String(next);
     if (input.value !== nextStr) input.value = nextStr;
+  }
+
+  // v0.2.102: per-theme per-mode custom CSS textarea. The 10 fields
+  //  above are refreshed via the `PER_THEME_KEYS` loop because they
+  //  mirror `keyof Settings` and have a `readPerThemeValue` helper
+  //  with a global fallback. `customCss` is the one field in
+  //  `themeOverrides` that does NOT mirror a `Settings` key (the
+  //  global `Settings.css` field was removed in v0.2.102) so it
+  //  needs a dedicated refresh that reads
+  //  `themeOverrides[currentBaseTheme()][currentMode()].customCss`
+  //  with no global fallback (empty string is the effective "no
+  //  override" state).
+  //
+  //  Without this block, switching the theme or darkMode select
+  //  would leave the textarea showing the *previous* (theme, mode)
+  //  bucket's CSS even after `refreshInputsFromSettings` updated
+  //  every other per-theme field — the user's first edit on the
+  //  new (theme, mode) would then write to the *correct* bucket
+  //  (the read is fresh on `change`), but visually the textarea
+  //  didn't reflect the resolved value, which made the field
+  //  look "stuck". One line of `if (input.value !== next) input.value = next`
+  //  is enough — the change handler still owns the write path.
+  const customCssEl = document.getElementById('sp-perTheme-customCss') as HTMLTextAreaElement | null;
+  if (customCssEl) {
+    const next = readPerThemeCustomCss();
+    if (customCssEl.value !== next) customCssEl.value = next;
   }
 }
 
@@ -697,11 +773,14 @@ function getDefaults(): Settings {
     showDevices: 1,
     showRoot: 1,
     newtab: 0,
-    rememberOpen: 1,
-    autoClose: 0,
-    autoScale: 1,
-    css: '',
-    numberTop: 10,
+  rememberOpen: 1,
+  autoClose: 0,
+  autoScale: 1,
+  // v0.2.102: the global `css` field was removed — custom CSS
+  //  is now per-theme per-mode under
+  //  `themeOverrides[themeId][mode].customCss`. Pre-v0.2.102
+  //  values are migrated by initSettings() → migrateLegacyGlobalCss.
+  numberTop: 10,
     numberClosed: 10,
     numberRecent: 10,
     lockColumns: 0,
@@ -918,6 +997,67 @@ function createTextInput(key: keyof Settings, scope: InputScope = 'global'): HTM
   return input;
 }
 
+/**
+ * v0.2.102: build the per-theme per-mode custom-CSS row.
+ *
+ * `customCss` is the one entry in `themeOverrides` that doesn't
+ * mirror a `Settings` key — there's no global fallback. The row is
+ * built directly (not via the standard `createRow` + `createXInput`
+ * combo) because the input isn't a `keyof Settings`. The wire-up:
+ *
+ * - Initial value: `readPerThemeCustomCss()` (the per-theme per-mode
+ *   bucket, or `''` if the user has never set one).
+ * - On `change`: `writePerThemeCustomCss(value)`. Storage write
+ *   fires `chrome.storage.onChanged` → `applySettingsToDOM` in
+ *   `features/settings/apply.ts` → `rebuildUserThemeCss` writes
+ *   the new CSS into `<style id="user-theme-css">` live (no
+ *   page reload needed).
+ * - ↩ revert: `clearPerThemeCustomCss()` removes the override.
+ *   Empty string is the effective "no custom CSS" state, so the
+ *   revert button's behaviour matches the user's intent of "I
+ *   want the theme defaults for this (theme, mode)".
+ */
+function buildPerThemeCustomCssRow(): HTMLElement {
+  const input = document.createElement('textarea');
+  input.id = 'sp-perTheme-customCss';
+  input.className = 'sp-textarea';
+  input.value = readPerThemeCustomCss();
+  input.placeholder = '/* 在此输入当前主题的自定义 CSS */';
+  input.spellcheck = false;
+  input.addEventListener('change', () => {
+    writePerThemeCustomCss(input.value);
+  });
+
+  const inputWrap = el('div', 'sp-input');
+  const revertBtn = el('button', 'sp-revert') as HTMLButtonElement;
+  revertBtn.type = 'button';
+  revertBtn.title = '清除当前主题+模式的自定义 CSS（恢复为无覆盖）';
+  revertBtn.textContent = '↩';
+  revertBtn.addEventListener('click', () => {
+    clearPerThemeCustomCss();
+    // After clearing, read back the (now-empty) bucket so the
+    // textarea reflects the post-clear state without a full
+    // tab re-render.
+    input.value = readPerThemeCustomCss();
+  });
+  inputWrap.appendChild(input);
+  inputWrap.appendChild(revertBtn);
+
+  const row = el('div', 'sp-row sp-row--with-desc sp-row--per-theme');
+  const labelEl = el('label', 'sp-label');
+  labelEl.textContent = '自定义 CSS';
+  labelEl.setAttribute('for', 'sp-perTheme-customCss');
+
+  row.appendChild(labelEl);
+  row.appendChild(inputWrap);
+
+  const desc = el('p', 'sp-desc');
+  desc.textContent = '仅对当前主题的当前模式生效，切换主题或暗色模式时此 CSS 不会跟随到其他主题/模式。注入到 <style id="user-theme-css">，位于 dynamic-styles 之后，cascade 优先级高于主题内置样式（必要时用 !important 覆盖）。留空 = 不注入。';
+  row.appendChild(desc);
+
+  return row;
+}
+
 function createCheckboxInput(key: keyof Settings): HTMLInputElement {
   const input = document.createElement('input');
   input.type = 'checkbox';
@@ -1097,6 +1237,20 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
     `书签高亮背景的圆角大小（px）。填 0 → 使用当前主题的 .rounded-md（当前主题 = ${themeRoundPx}px）。`,
     'perTheme',
   ));
+
+  // v0.2.102: per-theme per-mode custom CSS. Lives at the bottom
+  //  of the per-theme per-mode block because it's the most
+  //  "power-user" option (raw CSS, full selector scope) and
+  //  the row above (highlightRound) is the last "structured"
+  //  appearance option. The textarea reads/writes
+  //  `themeOverrides[currentBaseTheme()][currentMode()].customCss`
+  //  through the dedicated helpers (customCss is NOT a
+  //  `Settings` key, so it can't go through the standard
+  //  createTextInput / saveSetting path). The ↩ revert button
+  //  removes the per-theme override (no global fallback to
+  //  fall back to — empty string is the effective "no custom
+  //  CSS" state).
+  details.appendChild(buildPerThemeCustomCssRow());
 
   container.appendChild(details);
 
@@ -1529,13 +1683,13 @@ function renderFeaturesTab(): HTMLElement {
 function renderAdvancedTab(): HTMLElement {
   const container = el('div', 'sp-tab-content');
 
-  const cssTextarea = document.createElement('textarea');
-  cssTextarea.id = 'sp-css';
-  cssTextarea.className = 'sp-textarea';
-  cssTextarea.value = getSetting('css');
-  cssTextarea.placeholder = '/* 在此输入自定义 CSS */';
-  cssTextarea.addEventListener('change', () => saveSetting('css'));
-  container.appendChild(createRow('自定义 CSS', cssTextarea, 'css', '追加到新标签页末尾的自定义样式代码，可覆盖主题样式与布局细节。'));
+  // v0.2.102: the "Custom CSS" textarea was removed. Custom CSS is
+  //  now per-theme per-mode — see the bottom row of the per-theme
+  //  `<details>` block in the 外观 tab (label: "自定义 CSS", id
+  //  `sp-perTheme-customCss`). Pre-v0.2.102 users who had a value
+  //  in the old field get it auto-migrated into the current
+  //  (theme, mode) bucket by `initSettings` →
+  //  `migrateLegacyGlobalCss` in `lib/storage/settings.ts`.
 
   // Import / Export
   const actionsRow = el('div', 'sp-actions');
@@ -1555,8 +1709,22 @@ function renderAdvancedTab(): HTMLElement {
       reader.onload = () => {
         try {
           const imported = JSON.parse(reader.result as string) as Partial<Settings>;
-          const settings = { ...getDefaults(), ...imported };
-          const entries = Object.entries(settings) as [keyof Settings, unknown][];
+          // v0.2.102: only keep keys that are present in the
+          //  current `Settings` shape. Pre-v0.2.102 exported
+          //  files contain a `css` field that's no longer a
+          //  Settings key — silently drop it. (The actual CSS
+          //  value, if any, has already been migrated to
+          //  `themeOverrides[theme][mode].customCss` by
+          //  `initSettings`; this just stops `updateSetting('css', ...)`
+          //  from blowing up the import.)
+          const knownKeys = new Set(Object.keys(getDefaults()) as Array<keyof Settings>);
+          const filtered: Settings = { ...getDefaults() };
+          for (const [k, v] of Object.entries(imported) as Array<[keyof Settings, unknown]>) {
+            if (knownKeys.has(k)) {
+              (filtered as unknown as Record<string, unknown>)[k] = v;
+            }
+          }
+          const entries = Object.entries(filtered) as [keyof Settings, unknown][];
           for (const [k, v] of entries) {
             void updateSetting(k, v as Settings[keyof Settings]);
           }

@@ -61,7 +61,11 @@ const defaults: Settings = {
   rememberOpen: 1,
   autoClose: 0,
   autoScale: 1,
-  css: '',
+  // v0.2.102: the global `css` field was removed — custom CSS
+  // is now per-theme per-mode under
+  // `themeOverrides[themeId][mode].customCss`. initSettings()
+  // migrates a non-empty pre-v0.2.102 value into the current
+  // (theme, mode) bucket on first launch of the new build.
   numberTop: 10,
   numberClosed: 10,
   numberRecent: 10,
@@ -157,7 +161,13 @@ const LEGACY_KEY_MAP: Record<string, (raw: unknown) => [keyof Settings, unknown]
     }
     return null;
   },
-  customCSS: (raw) => (typeof raw === 'string' ? ['css', raw] : null),
+  // v0.2.102: removed. The bare `customCSS` key was mapped here
+  //  → ['css', raw]. The global `Settings.css` field is gone in
+  //  v0.2.102; legacy values are now migrated by
+  //  initSettings → migrateLegacyGlobalCss into the current
+  //  (theme, mode) bucket's `customCss` field. Leaving the entry
+  //  here would break `migrateLegacySettings` with a TS error
+  //  ('css' is no longer a `keyof Settings`).
 };
 
 /**
@@ -279,11 +289,39 @@ export async function initSettings(): Promise<Settings> {
       await setSync(SETTINGS_KEY, typed.next);
       debug.log('settings', 'migrate string-typed number settings', typed.dirtyKeys);
     }
-    currentSettings = typed.next;
+    // v0.2.102: the global `css` field is gone — move a leftover
+    // pre-v0.2.102 value (either in the unified storage under
+    // `css` or in the bare `customCSS` key) into the per-theme
+    // per-mode `themeOverrides[theme][mode].customCss` bucket.
+    // The migration picks the (theme, mode) bucket that the user
+    // was *currently* on so the global styles survive the field
+    // removal in the most intuitive place.
+    const cssMigrated = await migrateLegacyGlobalCss(typed.next);
+    if (cssMigrated.dirty) {
+      await setSync(SETTINGS_KEY, cssMigrated.next);
+      debug.log('settings', 'migrate global CSS to per-theme per-mode', {
+        theme: cssMigrated.next.theme,
+        mode: cssMigrated.next.darkMode,
+        length: cssMigrated.length,
+      });
+    }
+    currentSettings = cssMigrated.next;
   } else {
     await migrateLegacySettings();
+    // v0.2.102: bare `customCSS` key might also have survived
+    //  migrateLegacySettings (it was removed from LEGACY_KEY_MAP in
+    //  this version). Move it into the freshly-defaults settings
+    //  object under `themeOverrides[default][system].customCss`.
     const after = await getSync<Settings>(SETTINGS_KEY);
-    currentSettings = after ?? { ...defaults };
+    const fresh = after ?? { ...defaults };
+    const cssMigrated = await migrateLegacyGlobalCss(fresh);
+    if (cssMigrated.dirty) {
+      await setSync(SETTINGS_KEY, cssMigrated.next);
+      debug.log('settings', 'migrate bare customCSS to per-theme per-mode', {
+        length: cssMigrated.length,
+      });
+    }
+    currentSettings = cssMigrated.next;
   }
   initialized = true;
   debug.log('settings', 'initSettings', { fromStorage: !!stored, count: Object.keys(currentSettings).length });
@@ -327,4 +365,103 @@ function coerceNumberSettings(merged: Settings): { next: Settings; dirty: boolea
 /** Check if settings have been loaded */
 export function isSettingsInitialized(): boolean {
   return initialized;
+}
+
+/**
+ * v0.2.102: move a pre-v0.2.102 global custom-CSS value into the
+ * per-theme per-mode `themeOverrides[theme][mode].customCss` bucket.
+ *
+ * Sources of legacy data:
+ * 1. `Settings.css` — the unified storage field that was removed in
+ *    v0.2.102. We can't read it via the `Settings` type (the field
+ *    is gone), so we read the raw stored object and pull `css` off
+ *    via a cast.
+ * 2. Bare `customCSS` key — the pre-unified storage key that
+ *    `migrateLegacySettings` used to map to `['css', raw]`. Removed
+ *    from `LEGACY_KEY_MAP` in v0.2.102 (because `css` is no longer
+ *    a `Settings` key), so the bare value may still be in
+ *    `chrome.storage.sync` for users who upgrade from a very old
+ *    build.
+ *
+ * The migration picks the (theme, mode) bucket that the user was
+ * *currently* on (`merged.theme` + `merged.darkMode`, resolved
+ * against `prefers-color-scheme` for 'system'). The styles survive
+ * the field removal in the most intuitive place — the theme the
+ * user is actually looking at.
+ *
+ * If both sources are empty, returns `{ next: merged, dirty: false }`
+ * and the caller skips the `setSync` write.
+ */
+async function migrateLegacyGlobalCss(merged: Settings): Promise<{
+  next: Settings;
+  dirty: boolean;
+  length: number;
+}> {
+  // 1. Read raw unified storage to pluck the legacy `css` field.
+  //    The field is not in `Settings` anymore, so we read it through
+  //    the bare `getSync<unknown>` path and cast.
+  const storedRaw = (await getSync<unknown>(SETTINGS_KEY)) as
+    | (Settings & { css?: unknown })
+    | undefined;
+  const unifiedCss = typeof storedRaw?.css === 'string' ? storedRaw.css : '';
+
+  // 2. Read the bare `customCSS` key (pre-unified storage).
+  const bareRaw = await getSync<unknown>('customCSS');
+  const bareCss = typeof bareRaw === 'string' ? bareRaw : '';
+
+  // The unified value wins if both exist — it represents the most
+  // recent user edit (migrateLegacySettings copies the bare value
+  // to unified on every launch). Fall back to bare if unified is
+  // empty so pre-unified upgrades still preserve their CSS.
+  const legacyCss = unifiedCss || bareCss;
+  if (!legacyCss.trim()) {
+    return { next: merged, dirty: false, length: 0 };
+  }
+
+  // Resolve the bucket to write to. `merged.theme` is the base
+  // theme id (no `-dark` suffix); `merged.darkMode` is the user's
+  // intent ('system' / 'light' / 'dark'). For 'system' we mirror
+  // the same matchMedia check used by `applyTheme.resolveTheme`
+  // and `resolveEffectiveSettings` so the migration lands in the
+  // bucket the user is *actually* seeing on screen right now.
+  const theme = String(merged.theme ?? 'default');
+  const darkMode = String(merged.darkMode ?? 'system');
+  const mode: 'light' | 'dark' = darkMode === 'dark'
+    ? 'dark'
+    : darkMode === 'light'
+      ? 'light'
+      : (typeof window !== 'undefined'
+          && window.matchMedia?.('(prefers-color-scheme: dark)').matches)
+        ? 'dark'
+        : 'light';
+
+  // Build the new themeOverrides tree without mutating the input.
+  // We follow the same shallow-copy-on-each-level pattern as
+  // settings-panel.ts:writePerThemeValue (see that file for
+  // rationale — chrome.storage.onChanged + the panel's own
+  // refresh both expect a fresh object reference to detect the
+  // change).
+  const allOverrides = { ...(merged.themeOverrides ?? {}) } as Record<
+    string,
+    { light?: Record<string, unknown>; dark?: Record<string, unknown> }
+  >;
+  const themeBucket = { ...(allOverrides[theme] ?? {}) };
+  const modeBucket = { ...(themeBucket[mode] ?? {}) };
+  modeBucket.customCss = legacyCss;
+  themeBucket[mode] = modeBucket;
+  allOverrides[theme] = themeBucket;
+
+  // Strip the legacy `css` field from the in-memory object so a
+  //  subsequent `setSync(SETTINGS_KEY, next)` doesn't write it back.
+  //  The bare `customCSS` key is removed via `removeSync` below.
+  //  `Settings` has no string index signature, so go through
+  //  `unknown` before the cast.
+  const next: Settings = { ...merged, themeOverrides: allOverrides };
+  delete (next as unknown as Record<string, unknown>).css;
+
+  if (bareCss) {
+    await removeSync('customCSS');
+  }
+
+  return { next, dirty: true, length: legacyCss.length };
 }
