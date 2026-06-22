@@ -5,6 +5,27 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.101] - 2026-06-22
+
+### Changed
+- **Folder 三个小图标（open all links / open as group / open in split view） tooltip 改用 CSS-only 方案**。原来直接 `btn.title = '...'` 走浏览器原生 `title` 提示框，需要鼠标 hover 约 500ms-1s 才显示，三个小图标小（22×22）又位于半透明 (.folder-actions opacity:0.5) 容器内，体感上「经常没反应」。新方案照搬 v0.2.88 在 `.sp-appearance-toggle-btn` / `#options_button` 上落地的 `::after` 伪元素 + `attr(title)` 模式：CSS 层面 0 延迟出气泡，浏览器原生 `title`（无障碍 + 屏幕阅读器）继续保留。
+  - 影响：hover 三个图标瞬间出 tooltip 文字。
+  - 气泡背景 `var(--muted)` + 文字 `var(--muted-foreground)` + 1px `color-mix(--muted-foreground 25%, transparent)` 描边，跨主题视觉一致。z-index 1000 拉到 sp-overlay (110) / sp-panel (120) / split-picker (130) 之上。
+  - 父级 `.folder-actions` `opacity: 0.5` 会级联影响 `::after`，气泡显式 `opacity: 1` 重置保持不透明。
+
+### Fixed
+- **Folder 三个小图标 hover 背景色与部分主题外观模式不兼容**。`.folder-action-btn:hover` 原来用 `var(--newtab-highlight)`——这个是用户可调的高亮色（v0.2.97 per-theme per-mode 化后，覆盖值随主题 + 暗色模式走），某些主题 + 自定义 highlight 组合下 hover 背景与图标前景对比度差。改为 `var(--muted)`（shadcn 约定的「subdued surface」），跨主题读起来都是统一中性灰。
+- **Folder 三个小图标点击行为无法响应设置中的「打开链接方式」**。`openAllLinks` / `openAsGroup` / `openSplit` 三个 handler 原本硬编码 `createTab(url, false, ...)`，全部以 background 形式打开，无视 `Settings.newtab`。现在三个 handler 接收 `MouseEvent` 参数，`resolveNewtabMode(event)` 解析出 `0|1|2` 后按模式分发：
+  - **mode 0（当前标签页）**：`openAllLinks` / `openAsGroup` 把第一个 URL 用 `chrome.tabs.update` 替换当前 tab，剩下的 URL 用 `createTab(_, false, ...)` 在后台开；`openSplit` 用 `chrome.tabs.update` 把当前 tab 直接导航到分屏 URL（不走 `splitManager.open` + `active=false` 的「开新后台 tab」路径）。
+  - **mode 1（新前台标签）**：所有 URL `createTab(_, true, ...)`。
+  - **mode 2（新后台标签）**：所有 URL `createTab(_, false, ...)`（原行为）。
+  - 调用方更新：`folder-actions.ts` 给三个按钮的 `click` 监听器传入 `e`；`context-menu.ts` 的 "Open all links in folder" 菜单项合成 `new MouseEvent('click', { button: 0 })` 传入（让右键菜单走的还是用户配置的 newtab，而不是被当作中键强制 background）；`folder.ts` 的 folder header 中键监听器直接传原始 `e`。
+- **Folder 三个小图标不支持鼠标中键打开**。现在 `folder-actions.ts` 给三个按钮加 `auxclick` 监听器，`e.button === 1` 时调 handler 并传原始 `e`；handler 内 `resolveNewtabMode` 识别中键 → 强制 `newtab = 2`（background），行为与 `link.ts:renderLink` 一致。`folder.ts` 已有的 header 中键 `openAllLinks` 调用同步传 `e`（之前传的是无参版本）。
+
+### Notes
+- `SplitEngine.open` 签名扩展：`open(urls, layout, title?, active?)`（`src/features/split/types.ts:25`）。`active` 默认 `true` 保持向后兼容。`IframeSplitEngine.open` / `SplitManager.open` 透传该参数。`src/popup/app.ts:138` 的 popup 调用显式传 `active=true` 保持原行为（点 popup 的 "Open Split" 永远前台打开）。folder-action 三个 handler 按 newtab 模式动态传。
+- `folder-actions-handler.ts` 新增 `NewtabMode` 类型别名 + `resolveNewtabMode(event)` + `openUrlsInNewtabMode(urls, mode)` 辅助函数。三个 handler 内部按 mode 分支处理 `mode === 0` 的「第一 URL 替换当前 tab」特殊路径。
+
 ## [0.2.100] - 2026-06-21
 
 ### Fixed

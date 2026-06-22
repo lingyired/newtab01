@@ -135,7 +135,7 @@ function render(root: HTMLElement): void {
     // The split view's browser tab title becomes this string (see
     // app.ts:initApp -> parseSplitParams -> document.title).
     const title = buildPopupTitle(urls);
-    await splitManager.open(urls, layout, undefined, title);
+    await splitManager.open(urls, layout, undefined, title, true);
   });
 
   footer.appendChild(countSpan);

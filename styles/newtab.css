@@ -300,7 +300,44 @@
 
 .folder-action-btn:hover {
   opacity: 1;
-  background-color: var(--newtab-highlight);
+  /* v0.2.101: switch from --newtab-highlight to --muted. The former
+   * is the user-tweakable highlight color (per-theme, used by link
+   * hover / drag-ring / drop-indicator) and looked off in some
+   * themes' appearance modes when the user had a custom highlight
+   * color set. --muted is the shadcn-conventional "subdued surface"
+   * token and reads as a consistent neutral hover in every theme. */
+  background-color: var(--muted);
+}
+
+/* v0.2.101: hover-driven tooltip.
+ *
+ * Lives in document.body (see folder-actions.ts:attachTooltip) so it
+ * escapes the folder `<a class="folder">`'s `overflow: hidden` (which
+ * is needed to ellipsis long titles). A CSS `::after` pseudo-tooltip
+ * was tried first but got clipped by that overflow — see git log for
+ * commit 21e4d9c → reverted here.
+ *
+ * z-index 1000 lifts above the topbar (z 100), the sp-overlay
+ * (z 110), the sp-panel (z 120), and the split-picker (z 130).
+ * `pointer-events: none` so the bubble never blocks the underlying
+ * button's click. `position: fixed` (set inline in JS) keeps it
+ * aligned to the button even when the user scrolls. */
+.folder-action-tooltip {
+  position: fixed;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 1000;
+  font-weight: 400;
+  /* 1px ring of the surrounding --background color so the bubble
+   * reads as a "lifted" tooltip against any theme's link background
+   * (which uses --card, a different surface than --muted). */
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--muted-foreground) 25%, transparent);
 }
 
 /* ─── Columns ─── */
@@ -1334,8 +1371,15 @@
   top: calc(100% + 8px);
   left: 50%;
   transform: translateX(-50%);
-  background: var(--newtab-text);
-  color: var(--newtab-bg);
+  /* v0.2.101: align with the `.folder-action-tooltip` palette
+   * (--muted bg + --muted-foreground text + 1px --muted-foreground
+   * 25% ring) so all three topbar buttons + the 3 folder action
+   * icons share the same tooltip look. The pre-v0.2.101 palette
+   * (`--newtab-text` bg + `--newtab-bg` text) read as a dark bubble
+   * that visually clashed with the muted-surface palette used
+   * everywhere else in the panel. */
+  background: var(--muted);
+  color: var(--muted-foreground);
   padding: 4px 10px;
   border-radius: 4px;
   font-size: 12px;
@@ -1346,6 +1390,7 @@
   /* Reset font-weight so the bubble doesn't inherit a bold style
    * some buttons might have. */
   font-weight: 400;
+  box-shadow: 0 0 0 1px color-mix(in oklab, var(--muted-foreground) 25%, transparent);
 }
 
 .sp-status--success {

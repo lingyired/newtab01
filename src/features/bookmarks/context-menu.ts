@@ -136,7 +136,12 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
 
   items.push({
     label: 'Open all links in folder',
-    action: () => openAllLinks(node as any),
+    // Synthesize a left-click MouseEvent (button = 0) so the handler
+    // honours the user's `newtab` link setting rather than treating
+    // the context-menu click as a middle-click. The event is only
+    // inspected for `button` and read-only, so a partial stub is
+    // sufficient.
+    action: () => openAllLinks(node as any, new MouseEvent('click', { button: 0 })),
   });
 
   // Special items

@@ -14,6 +14,14 @@ export interface SplitHandle {
 export interface SplitEngine {
   readonly id: 'iframe' | 'native';
   readonly displayName: string;
-  open(urls: string[], layout: SplitLayout, title?: string): Promise<SplitHandle>;
+  /**
+   * `active` mirrors `chrome.tabs.create({ active })`: when true the
+   * new split-view tab is brought to the foreground (matching the
+   * "new foreground tab" link setting), when false it opens in the
+   * background. Defaults to `true` for backward compat with the
+   * popup and any older call sites that predate the folder-action
+   * newtab-aware behaviour.
+   */
+  open(urls: string[], layout: SplitLayout, title?: string, active?: boolean): Promise<SplitHandle>;
   close(handle: SplitHandle): Promise<void>;
 }
