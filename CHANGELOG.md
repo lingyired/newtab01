@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.112] - 2026-06-22
+
+### Fixed
+- **`background` service worker 注册失败：Uncaught TypeError: Cannot read properties of undefined (reading 'onClicked')` + `Service worker registration failed. Status code: 15`**。根因：`manifest.json` permissions 列表**缺** `"contextMenus"`，但 `background.ts:25` 调 `chrome.contextMenus.onClicked.addListener(...)` + `background.ts:32` 调 `chrome.contextMenus.create({ contexts: ['action'] })`。`chrome.contextMenus` 在没声明 permission 的扩展里是 `undefined`，访问 `.onClicked` 报 TypeError → SW 启动失败 → Chrome 返回 status code 15。这是项目**长期 latent bug**（v0.2.111 之前 manifest 也缺 contextMenus），但旧 SW 一直没重启所以报错没冒头；v0.2.111 升级添加 `management` permission 触发 SW 重启 + 严格权限校验，latent bug 浮现。修：`manifest.json` permissions 加 `"contextMenus"`。CLAUDE.md §5.1 权限清单也补上这一条以避免后续回归。
+
 ## [0.2.111] - 2026-06-22
 
 ### Added

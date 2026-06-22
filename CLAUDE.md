@@ -203,7 +203,7 @@ splitManager.register(new IframeSplitEngine());
   "options_ui": { "page": "options.html", "open_in_tab": true },
   "permissions": ["bookmarks", "favicon", "topSites", "tabs", "tabGroups",
                   "storage", "fontSettings", "sessions", "alarms",
-                  "declarativeNetRequest", "search"],
+                  "declarativeNetRequest", "search", "management", "contextMenus"],
   "host_permissions": ["<all_urls>"],
   "optional_permissions": []
 }
