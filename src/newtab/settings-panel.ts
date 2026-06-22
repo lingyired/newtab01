@@ -17,6 +17,15 @@ import { sendMessage } from '../lib/chrome/messages';
 import { applySettingChange } from '../features/settings/apply';
 import * as debug from '../lib/debug';
 import { renderColumns } from '../features/bookmarks/board';
+import { getColumns, setColumns, saveLayout } from '../features/drag-drop/layout-ops';
+import {
+  SPECIAL_IDS as MOVED_OUT_SPECIAL_IDS,
+  getMovedOut,
+  setMovedOutCache,
+  type MovedOutMap,
+} from '../features/bookmarks/moved-out';
+import { setLocal } from '../lib/storage';
+import { captureSnapshot, pushSnapshot } from '../features/drag-drop/history';
 
 /** Chinese labels for the theme dropdown in this panel. Theme ids without an
  *  entry fall back to the English id — see renderAppearanceTab. */
@@ -1716,7 +1725,7 @@ function renderAdvancedTab(): HTMLElement {
   //  (theme, mode) bucket by `initSettings` →
   //  `migrateLegacyGlobalCss` in `lib/storage/settings.ts`.
 
-  // v0.2.104: the 10 appearance-tab options now live in
+  // v0.2.106: the 10 appearance-tab options now live in
   //  `themeOverrides[themeId][mode]` (per-theme per-mode storage
   //  introduced in v0.2.97; customCss added in v0.2.102). These
   //  keys are silently dropped on export AND on import — exporting
@@ -1732,6 +1741,35 @@ function renderAdvancedTab(): HTMLElement {
 
   // Import / Export
   const actionsRow = el('div', 'sp-actions');
+
+  // v0.2.106: checkbox that gates whether the exported settings
+  //  JSON also carries the user's current layout (Columns +
+  //  MovedOutMap). Default-checked because the dominant use case
+  //  is "I'm about to wipe this profile / re-install / switch
+  //  devices and want to restore my bookmark organization in one
+  //  go" — making layout the default keeps the export button a
+  //  true one-click full-snapshot. Untick for a settings-only
+  //  payload (e.g. sharing a theme/font setup with someone else,
+  //  though v0.2.104+ custom themes are still exported regardless
+  //  via the URL-tracked `customThemes` array).
+  //
+  //  The checkbox is **read on both sides** — `export` reads it
+  //  when building the payload, `import` reads it (mirrored
+  //  boolean `importLayoutFromJson` is inferred from the presence
+  //  of the `layout` field in the imported JSON) to decide
+  //  whether to apply a layout restore. Since the import side
+  //  uses "field present in JSON" instead of "checkbox checked
+  //  at import time", an old export (pre-v0.2.106, no `layout`
+  //  field) is correctly treated as "settings only" even if the
+  //  current checkbox state is checked.
+  const includeLayoutCheckbox = document.createElement('input');
+  includeLayoutCheckbox.type = 'checkbox';
+  includeLayoutCheckbox.id = 'sp-include-layout';
+  includeLayoutCheckbox.checked = true;
+  const includeLayoutLabel = document.createElement('label');
+  includeLayoutLabel.htmlFor = 'sp-include-layout';
+  includeLayoutLabel.className = 'sp-checkbox-label';
+  includeLayoutLabel.textContent = '包含布局（列布局 + 嵌套隐藏可见性）';
 
   const importBtn = document.createElement('button');
   importBtn.type = 'button';
@@ -1757,6 +1795,19 @@ function renderAdvancedTab(): HTMLElement {
               //  here. Optional — pre-v0.2.104 exports omit the
               //  field; we no-op in that case.
               customThemes?: Array<{ name?: string; url?: string }>;
+              // v0.2.106: optional `layout` object carrying the
+              //  user's per-column folder order + per-parent
+              //  hidden-children map. Settings-only exports omit
+              //  this field; layout-bearing exports include it.
+              //  Special folder IDs (apps/top/recent/closed/devices)
+              //  are stripped on BOTH sides so a JSON never
+              //  overwrites the current browser environment's
+              //  `showTop / showApps / ...` toggles — those are
+              //  pure environment flags.
+              layout?: {
+                columns?: string[][];
+                movedOut?: MovedOutMap;
+              };
             };
             // v0.2.102: only keep keys that are present in the
             //  current `Settings` shape. Pre-v0.2.102 exported
@@ -1776,10 +1827,13 @@ function renderAdvancedTab(): HTMLElement {
             //  `customThemes` array is processed separately below
             //  and is skipped here (`customThemes` is not a
             //  `keyof Settings`).
+            //
+            // v0.2.106: also skip `layout` here (not a Settings
+            //  key; processed separately below).
             const knownKeys = new Set(Object.keys(getDefaults()) as Array<keyof Settings>);
             const filtered: Settings = { ...getDefaults() };
             for (const [k, v] of Object.entries(imported) as Array<[string, unknown]>) {
-              if (k === 'customThemes') continue;
+              if (k === 'customThemes' || k === 'layout') continue;
               const typedK = k as keyof Settings;
               if (knownKeys.has(typedK) && !PER_THEME_APPEARANCE_KEYS.has(typedK)) {
                 (filtered as unknown as Record<string, unknown>)[k] = v;
@@ -1788,6 +1842,126 @@ function renderAdvancedTab(): HTMLElement {
             const entries = Object.entries(filtered) as [keyof Settings, unknown][];
             for (const [k, v] of entries) {
               void updateSetting(k, v as Settings[keyof Settings]);
+            }
+
+            // v0.2.106: restore layout (Columns + MovedOutMap) if
+            //  the imported JSON carries a `layout` field. This
+            //  is **opt-in via the field's presence** — the
+            //  current export checkbox state is irrelevant to
+            //  import, because (a) the user's import time intent
+            //  is the JSON's contents, not the UI checkbox, and
+            //  (b) pre-v0.2.106 files (no `layout` field) are
+            //  correctly treated as settings-only.
+            //
+            //  Strip special-folder IDs from both sides so a
+            //  payload from an environment with different
+            //  showApps/showTop toggles doesn't force-enable
+            //  anything. Special folders are not user data —
+            //  they're computed by `verifyColumns` from the
+            //  current show* flags, so they're already
+            //  environment-correct after a `saveLayout` pass.
+            //
+            //  NOTE: this branch is a pure newtab-side display
+            //  restore. It MUST NOT call any `chrome.bookmarks.*`
+            //  API — `verifyColumns` (run inside `saveLayout`)
+            //  only mutates `chrome.storage.local` (the columns
+            //  cache) and re-renders; bookmark IDs that no
+            //  longer exist in the user's Chrome tree are simply
+            //  dropped from the displayed columns. Nothing in the
+            //  user's real Chrome bookmark tree is modified.
+            if (imported.layout && typeof imported.layout === 'object') {
+              try {
+                // Strip special-folder IDs from columns. Columns
+                //  is `string[][]` — we keep every entry that
+                //  isn't a special folder. Bookmarks that have
+                //  since been deleted from Chrome are handled by
+                //  `saveLayout` → `verifyColumns` (existing
+                //  behaviour, just relies on the current
+                //  `chrome.bookmarks.getTree()` snapshot).
+                const nextColumns: string[][] = Array.isArray(imported.layout.columns)
+                  ? imported.layout.columns
+                      .map((col) =>
+                        Array.isArray(col)
+                          ? col.filter(
+                              (id) =>
+                                typeof id === 'string' &&
+                                id &&
+                                !MOVED_OUT_SPECIAL_IDS.has(id),
+                            )
+                          : [],
+                      )
+                      // Drop empty columns that resulted from
+                      //  special-folder stripping — a column
+                      //  containing only a special folder ID is
+                      //  empty after stripping and shouldn't be
+                      //  recreated.
+                      .filter((col) => col.length > 0)
+                  : [];
+                // Strip special-folder IDs from movedOut.
+                //  movedOut is `Record<parentId, childId[]>` —
+                //  we filter out special-folder children from
+                //  each parent's list. A parent whose entire
+                //  child list is special-folder IDs gets
+                //  dropped (no entry). Bookmarks that no
+                //  longer exist in the current tree are
+                //  harmless (filterChildren just doesn't
+                //  match them) so we don't bother filtering
+                //  them — keeps the movedOut restore a
+                //  direct copy, no chrome.bookmarks.* calls.
+                const nextMovedOut: MovedOutMap = {};
+                if (
+                  imported.layout.movedOut &&
+                  typeof imported.layout.movedOut === 'object' &&
+                  !Array.isArray(imported.layout.movedOut)
+                ) {
+                  for (const [parentId, childIds] of Object.entries(
+                    imported.layout.movedOut,
+                  )) {
+                    if (!Array.isArray(childIds)) continue;
+                    const kept = childIds.filter(
+                      (id) =>
+                        typeof id === 'string' &&
+                        id &&
+                        !MOVED_OUT_SPECIAL_IDS.has(id),
+                    );
+                    if (kept.length > 0) nextMovedOut[parentId] = kept;
+                  }
+                }
+                // Snapshot the current layout BEFORE applying —
+                //  user can undo to roll back. `captureSnapshot`
+                //  reads both `getColumns()` and `getMovedOut()`
+                //  and packages them into a `HistorySnapshot`,
+                //  matching the shape `undo-button.ts:78`
+                //  expects on pop.
+                const before = await captureSnapshot();
+                pushSnapshot(before);
+                // Apply: setColumns updates the module-level
+                //  `columns` cache; saveLayout runs verifyColumns
+                //  (which itself calls renderColumns via the
+                //  storage.onChanged-style flow used elsewhere)
+                //  and persists to chrome.storage.local. The
+                //  movedOut cache + persistence are independent
+                //  — there's no `saveMovedOut` aggregator, so we
+                //  hit setLocal directly. This is the same
+                //  write pattern used by every other movedOut
+                //  mutation in the codebase.
+                setColumns(nextColumns);
+                setMovedOutCache(nextMovedOut);
+                await Promise.all([
+                  saveLayout(),
+                  setLocal('movedOut', nextMovedOut),
+                ]);
+                // Force a full re-render of the board so the
+                //  new columns + new movedOut filter take
+                //  effect on currently-expanded folders
+                //  (filterChildren reads from the movedOut
+                //  module cache; a `saveLayout` re-render
+                //  only re-fires the column-level view, not
+                //  the open-folder bodies).
+                renderColumns();
+              } catch (e) {
+                console.warn('[import] 布局恢复失败，settings 导入仍生效:', e);
+              }
             }
 
             // v0.2.104: re-install URL-tracked custom themes. Each
@@ -1920,7 +2094,36 @@ function renderAdvancedTab(): HTMLElement {
           `已导出 ${urlThemes.length} 个 URL 主题；另有 ${cssOnlyCount} 个 CSS 主题因无源 URL 而未导出。`,
         );
       }
-      const payload = { ...exportedSettings, customThemes: urlThemes };
+      // v0.2.106: include the user's current layout snapshot
+      //  (Columns + MovedOutMap) when the "包含布局" checkbox
+      //  is checked. Default checked — this is the dominant
+      //  use case (full restore on a re-install or new
+      //  device). Special-folder IDs (apps/top/recent/closed/
+      //  devices) are stripped from both columns and movedOut
+      //  on export, so a payload is always environment-neutral
+      //  for the special-folder slots. (Special folders are
+      //  re-derived from the current showApps/showTop/... flags
+      //  by `verifyColumns` at saveLayout time; the export
+      //  doesn't need to carry their IDs.)
+      const payload: Record<string, unknown> = {
+        ...exportedSettings,
+        customThemes: urlThemes,
+      };
+      if (includeLayoutCheckbox.checked) {
+        const currentColumns = getColumns();
+        const cleanColumns = currentColumns.map((col) =>
+          col.filter((id) => !MOVED_OUT_SPECIAL_IDS.has(id)),
+        );
+        const currentMovedOut = await getMovedOut();
+        const cleanMovedOut: MovedOutMap = {};
+        for (const [parentId, childIds] of Object.entries(currentMovedOut)) {
+          const kept = childIds.filter(
+            (id) => !MOVED_OUT_SPECIAL_IDS.has(id),
+          );
+          if (kept.length > 0) cleanMovedOut[parentId] = kept;
+        }
+        payload.layout = { columns: cleanColumns, movedOut: cleanMovedOut };
+      }
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
@@ -1933,7 +2136,16 @@ function renderAdvancedTab(): HTMLElement {
 
   actionsRow.appendChild(importBtn);
   actionsRow.appendChild(exportBtn);
+  // v0.2.106: append the "包含布局" checkbox on its own row
+  //  below the import/export buttons. Putting it on the same
+  //  row as the buttons would crowd them on narrow viewports;
+  //  a dedicated row is also semantically cleaner (it gates
+  //  export only — import is auto-detected from JSON).
+  const exportOptionsRow = el('div', 'sp-actions sp-actions--options');
+  exportOptionsRow.appendChild(includeLayoutCheckbox);
+  exportOptionsRow.appendChild(includeLayoutLabel);
   container.appendChild(actionsRow);
+  container.appendChild(exportOptionsRow);
 
   // Debug section — visible in dev/test builds (MODE !== 'production'); production strips
   // the UI but keeps the runtime no-op for the storage field. Use ?debug=1 in prod for

@@ -5,6 +5,28 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.106] - 2026-06-22
+
+### Added
+- **高级 tab 导出 settings JSON 时可包含布局（列布局 + 嵌套隐藏可见性）**。导入侧自动检测 `layout` 字段恢复，**完全可撤销**。解决用户「想快速恢复之前组织的书签位置」的需求。
+  - **UI**：导入/导出按钮下方新增独立一行 checkbox「包含布局（列布局 + 嵌套隐藏可见性）」，**默认勾选**（用户验证：重装/换设备/换 profile 时一键完整恢复是最常见用法）。
+  - **导出**：checkbox 勾上时，payload 顶层多一个 `layout: { columns, movedOut }` 字段：
+    - `columns` = 当前 `getColumns()`（`chrome.storage.local` 里的 `Columns: string[][]`）
+    - `movedOut` = `getMovedOut()`（`MovedOutMap: Record<parentId, childId[]>`，嵌套子文件夹从父级隐藏出去的可见性记录）
+    - **特殊文件夹 ID**（`apps` / `top` / `recent` / `closed` / `devices`）从 `columns` 和 `movedOut` **两侧**都剥掉——导出文件对 `showTop / showApps / ...` 开关是环境无关的，导入后这些特殊列由 `verifyColumns` 按**当前**的开关状态自动补出来。
+  - **导入**：检测到 `imported.layout` 字段就触发 layout 恢复（**不读 UI checkbox**——是 JSON 内容决定，不是 UI 状态；pre-v0.2.106 文件无 `layout` 字段被正确识别为 settings-only）：
+    1. 同样剥掉 `MOVED_OUT_SPECIAL_IDS`（防止异环境 force-enable 特殊文件夹）
+    2. `captureSnapshot()` 取当前 (columns + movedOut) → `pushSnapshot()` 压进撤销栈——用户可点撤销按钮回到 import 前的 layout（沿用 `history.ts:28 HistorySnapshot` 形状，`undo-button.ts:78` 已经按这个形状走）
+    3. `setColumns(next)` + `setMovedOutCache(next)` 写模块级 cache
+    4. `Promise.all([saveLayout(), setLocal('movedOut', next)])` 持久化到 `chrome.storage.local`
+    5. `renderColumns()` 强制全板重渲染，让已展开的 folder 立即按新 movedOut 重新 filter
+  - **安全边界（关键）**：layout 导入**只动 newtab 显示**——`saveLayout` → `verifyColumns` 只走 `setLocal` + `renderColumns` + `isSpecialVisible`，**绝不调 `chrome.bookmarks.*` API**。`columns` 里已经删除的书签 ID 在 verifyColumns 里按当前 `chrome.bookmarks.getTree()` 快照自动剔除。`movedOut` 里的失效 ID 无害（`filterChildren` 看不到的 parent 当作没记录），无需清理。用户 Chrome 书签树本身**永不**被 export/import 流程修改。
+
+### Notes
+- `payload.layout` 只在勾上 checkbox 时出现；不勾则 settings JSON 形状与 v0.2.105 完全相同（forward-compat）。
+- 导入 layout 部分 try/catch 包裹：失败（columns 解析错 / 数组不规整）走 `console.warn` 跳过，**不让一个损坏的 layout 阻塞 settings 主体导入**。
+- `special-folder stripping` 走单一来源——`moved-out.ts:12` 导出的 `SPECIAL_IDS` 常量，导入/导出两侧共用，避免重复定义。
+
 ## [0.2.105] - 2026-06-22
 
 ### Fixed
