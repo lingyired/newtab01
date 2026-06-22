@@ -5,6 +5,16 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.129] - 2026-07-05
+
+### Fixed
+- **Mac Edge 上 ⌘K 仍然不显示 — 真正的 root cause**。v0.2.126 时把 `t('topbar.search.placeholder')` 替换为 `buildSearchPlaceholder()`，但**只改了 `updateTopbarStrings()` 里的 L41**，**没改 `createTopbar()` 里的初始 placeholder (L84)**。结果：
+  1. `createTopbar()` 初始把 catalog 原值（无快捷键）写到 `searchInput.placeholder`
+  2. `updateTopbarStrings()` 在 `initLocale()` 末尾被调，但 `if (searchInputEl)` 守卫要求 `searchInputEl` 已赋值 —— 但 `createTopbar()` 的 L89 才赋值。某些 race 情况下（`applyLocaleToDom` 在 `createTopbar` 之前跑）守卫 short-circuit，placeholder 永远停在 catalog 原值
+  3. 用户看到的是「搜索书签...」无快捷键
+- **修法**：L84 也改成 `buildSearchPlaceholder()`。这样无论 locale 监听器时机如何，初始 placeholder 永远包含快捷键。`updateTopbarStrings()` 仍负责后续 locale 切换时的重画。
+- 同时删除 v0.2.128 加的临时 `[newtab01:topbar]` 和 `[newtab01:platform]` console.log（root cause 找到后无需再诊断）。`isMacPlatform()` 函数本体保留（OR 逻辑 + 3 个信号）。
+
 ## [0.2.128] - 2026-07-04
 
 ### Fixed

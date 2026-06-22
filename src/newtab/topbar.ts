@@ -35,7 +35,18 @@ function getSearchShortcutHint(): string {
  *  hint is a platform-specific key (⌘K or Ctrl+K) appended in code
  *  so the i18n catalog stays OS-agnostic. */
 function buildSearchPlaceholder(): string {
-  return `${t('topbar.search.placeholder')} (${getSearchShortcutHint()})`;
+  const text = t('topbar.search.placeholder');
+  const hint = getSearchShortcutHint();
+  // v0.2.128: temporary diagnostic — log every placeholder build
+  //  so we can see whether the topbar code path is even being
+  //  hit, what t() returns, and what the platform hint is. The
+  //  user reported the hint is missing on Mac Edge even though
+  //  isMacPlatform() returns true in the console — so the bug
+  //  may be elsewhere (wrong DOM node, wrong catalog, etc.).
+  //  Remove this log once the bug is closed.
+  // eslint-disable-next-line no-console
+  console.log('[newtab01:topbar] buildSearchPlaceholder:', { text, hint, combined: `${text} (${hint})` });
+  return `${text} (${hint})`;
 }
 
 /** Re-paint all topbar static strings (search placeholder + aria,
@@ -70,7 +81,7 @@ export function createTopbar(container: HTMLElement): void {
   const searchInput = document.createElement('input');
   searchInput.type = 'text';
   searchInput.id = 'search-input';
-  searchInput.placeholder = t('topbar.search.placeholder');
+  searchInput.placeholder = buildSearchPlaceholder();
   searchInput.classList.add('search-input');
   searchInput.setAttribute('aria-label', t('topbar.search.ariaLabel'));
   searchInput.setAttribute('autocomplete', 'off');
