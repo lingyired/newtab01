@@ -99,6 +99,8 @@ const messages = {
   'settings.customThemes.exportNoteUrlOnly': '只有 URL 安装的自定义主题会导出。CSS 粘贴的主题不导出。',
   'settings.customThemes.successInstalled': '已安装 "{name}"',
   'settings.customThemes.successUpdated': '已更新 "{name}"',
+  'settings.customThemes.browseHint': '寻找更多主题？前往社区主题库浏览：',
+  'settings.customThemes.browseLink': 'tweakcn.com/community',
   // Settings panel — features tab
   'settings.field.showTop': '显示常用网站',
   'settings.field.showTopDesc': '是否在列中渲染"常用网站"特殊文件夹（来自 Chrome topSites）。',

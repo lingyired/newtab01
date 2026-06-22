@@ -1561,6 +1561,31 @@ function buildCustomThemeImportSection(): HTMLElement {
   hint.textContent = t('settings.customThemes.urlDesc') + ' ' + t('settings.customThemes.cssDesc');
   section.appendChild(hint);
 
+  // v0.2.124: link to the tweakcn community gallery so users
+  // can browse community-submitted themes before installing. We
+  // do not use `<a target="_blank" href="...">` because MV3
+  // blocks navigation from chrome-extension:// pages to https
+  // URLs through the standard anchor click handler — see
+  // link.ts:48. Instead we attach a click handler that opens the
+  // URL via `window.open(url, '_blank')`, the same pattern the
+  // split view uses for opening bookmark URLs (split-view.ts:112).
+  // 1. Hint paragraph with the sentence + an inline sp-link.
+  const browseHint = el('p', 'sp-hint');
+  browseHint.textContent = t('settings.customThemes.browseHint') + ' ';
+  const browseLink = document.createElement('a');
+  browseLink.href = 'https://tweakcn.com/community';
+  browseLink.className = 'sp-link';
+  browseLink.textContent = t('settings.customThemes.browseLink');
+  // Prevent the default anchor navigation (would no-op under MV3
+  // anyway) and open via window.open which is allowed in the
+  // newtab page context.
+  browseLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    window.open('https://tweakcn.com/community', '_blank', 'noopener,noreferrer');
+  });
+  browseHint.appendChild(browseLink);
+  section.appendChild(browseHint);
+
   const textarea = document.createElement('textarea');
   textarea.id = 'sp-custom-theme-json';
   textarea.rows = 8;

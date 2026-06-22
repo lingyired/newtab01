@@ -98,6 +98,8 @@ const messages = {
   'settings.customThemes.exportNoteUrlOnly': 'Only URL-based custom themes are exported. CSS-paste themes are not exported.',
   'settings.customThemes.successInstalled': 'Installed "{name}"',
   'settings.customThemes.successUpdated': 'Updated "{name}"',
+  'settings.customThemes.browseHint': 'Looking for more themes? Browse the community gallery:',
+  'settings.customThemes.browseLink': 'tweakcn.com/community',
   // Settings panel — features tab
   'settings.field.showTop': 'Show "Most visited"',
   'settings.field.showTopDesc': 'Render the "Most visited" special folder (from Chrome topSites).',

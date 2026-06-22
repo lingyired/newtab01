@@ -94,6 +94,8 @@ const messages = {
   'settings.customThemes.exportNoteUrlOnly': 'Solo se exportan los temas personalizados basados en URL. Los temas pegados con CSS no se exportan.',
   'settings.customThemes.successInstalled': '"{name}" instalado',
   'settings.customThemes.successUpdated': '"{name}" actualizado',
+  'settings.customThemes.browseHint': '¿Buscas más temas? Explora la galería de la comunidad:',
+  'settings.customThemes.browseLink': 'tweakcn.com/community',
   // Settings panel — features tab
   'settings.field.showTop': 'Mostrar "Más visitados"',
   'settings.field.showTopDesc': 'Muestra la carpeta especial "Más visitados" (de los topSites de Chrome).',

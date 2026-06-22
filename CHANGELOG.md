@@ -5,6 +5,14 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.124] - 2026-06-30
+
+### Added
+- **自定义主题 tab 加 tweakcn community 链接**。「导入自定义主题」section 在 `urlDesc + cssDesc` 提示下方加一段：「寻找更多主题？前往社区主题库浏览：[tweakcn.com/community]」。点击在新标签页打开 https://tweakcn.com/community。10 种语言全部翻译。
+  - 实现：`<p class="sp-hint">` 包含一句 `t('settings.customThemes.browseHint')` + 内嵌 `<a class="sp-link">` 显示 `t('settings.customThemes.browseLink')`。
+  - **点击用 `window.open(url, '_blank', 'noopener,noreferrer')` 而不是 `<a target="_blank">`**：MV3 下 chrome-extension:// 页面用普通 anchor 跳外网会被 CSP / navigation 阻止，必须走 window.open。参考 split-view.ts:112 已有的同模式。
+- 2 个新 MessageKey：`settings.customThemes.browseHint` / `settings.customThemes.browseLink`。10 个 catalog 同步加（URL 在所有 locale 下保持 `tweakcn.com/community`，因为是 brand 域名）。
+
 ## [0.2.123] - 2026-06-29
 
 ### Changed

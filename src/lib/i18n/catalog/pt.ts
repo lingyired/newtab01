@@ -89,6 +89,8 @@ const messages = {
   'settings.customThemes.exportNoteUrlOnly': 'Apenas temas personalizados baseados em URL são exportados. Temas colados em CSS não são exportados.',
   'settings.customThemes.successInstalled': '"{name}" instalado',
   'settings.customThemes.successUpdated': '"{name}" atualizado',
+  'settings.customThemes.browseHint': 'Procurando mais temas? Explore a galeria da comunidade:',
+  'settings.customThemes.browseLink': 'tweakcn.com/community',
   'settings.field.showTop': 'Mostrar "Mais visitados"',
   'settings.field.showTopDesc': 'Renderiza a pasta especial "Mais visitados" (dos topSites do Chrome).',
   'settings.field.numberTop': 'Quantidade de "Mais visitados"',

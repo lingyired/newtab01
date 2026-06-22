@@ -89,6 +89,8 @@ const messages = {
   'settings.customThemes.exportNoteUrlOnly': 'Экспортируются только пользовательские темы на основе URL. Темы, вставленные CSS, не экспортируются.',
   'settings.customThemes.successInstalled': '«{name}» установлена',
   'settings.customThemes.successUpdated': '«{name}» обновлена',
+  'settings.customThemes.browseHint': 'Ищете другие темы? Просмотрите галерею сообщества:',
+  'settings.customThemes.browseLink': 'tweakcn.com/community',
   'settings.field.showTop': 'Показывать «Самые посещаемые»',
   'settings.field.showTopDesc': 'Отображать специальную папку «Самые посещаемые» (из topSites Chrome).',
   'settings.field.numberTop': 'Количество «Самых посещаемых»',

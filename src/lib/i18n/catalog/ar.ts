@@ -92,6 +92,8 @@ const messages = {
   'settings.customThemes.exportNoteUrlOnly': 'تُصدَّر فقط السمات المخصصة القائمة على الرابط. لا تُصدَّر السمات الملصوقة بـ CSS.',
   'settings.customThemes.successInstalled': 'تم تثبيت "{name}"',
   'settings.customThemes.successUpdated': 'تم تحديث "{name}"',
+  'settings.customThemes.browseHint': 'تبحث عن سمات أخرى؟ تصفح معرض المجتمع:',
+  'settings.customThemes.browseLink': 'tweakcn.com/community',
   'settings.field.showTop': 'إظهار "الأكثر زيارة"',
   'settings.field.showTopDesc': 'عرض مجلد "الأكثر زيارة" الخاص (من topSites في Chrome).',
   'settings.field.numberTop': 'عدد "الأكثر زيارة"',

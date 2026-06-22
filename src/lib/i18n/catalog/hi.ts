@@ -89,6 +89,8 @@ const messages = {
   'settings.customThemes.exportNoteUrlOnly': 'केवल URL-आधारित कस्टम थीम निर्यात की जाती हैं। CSS-पेस्ट थीम निर्यात नहीं की जाती।',
   'settings.customThemes.successInstalled': '"{name}" इंस्टॉल की गई',
   'settings.customThemes.successUpdated': '"{name}" अपडेट की गई',
+  'settings.customThemes.browseHint': 'और थीम खोज रहे हैं? समुदाय गैलरी देखें:',
+  'settings.customThemes.browseLink': 'tweakcn.com/community',
   'settings.field.showTop': '"सबसे अधिक देखे गए" दिखाएँ',
   'settings.field.showTopDesc': '"सबसे अधिक देखे गए" विशेष फ़ोल्डर रेंडर करें (Chrome के topSites से)।',
   'settings.field.numberTop': '"सबसे अधिक देखे गए" की संख्या',

@@ -132,6 +132,8 @@ export type MessageKey =
   | 'settings.customThemes.exportNoteUrlOnly'
   | 'settings.customThemes.successInstalled'
   | 'settings.customThemes.successUpdated'
+  | 'settings.customThemes.browseHint'
+  | 'settings.customThemes.browseLink'
   // Settings panel — features tab
   | 'settings.field.showTop'
   | 'settings.field.showTopDesc'

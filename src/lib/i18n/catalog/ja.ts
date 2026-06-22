@@ -89,6 +89,8 @@ const messages = {
   'settings.customThemes.exportNoteUrlOnly': 'URL ベースのカスタムテーマのみがエクスポートされます。CSS 貼り付けテーマはエクスポートされません。',
   'settings.customThemes.successInstalled': '「{name}」をインストールしました',
   'settings.customThemes.successUpdated': '「{name}」を更新しました',
+  'settings.customThemes.browseHint': '他のテーマをお探しですか？コミュニティギャラリーをご覧ください：',
+  'settings.customThemes.browseLink': 'tweakcn.com/community',
   'settings.field.showTop': '「よく閲覧する」を表示',
   'settings.field.showTopDesc': '「よく閲覧する」特殊フォルダ（Chrome の topSites から）を描画します。',
   'settings.field.numberTop': '「よく閲覧する」の数',

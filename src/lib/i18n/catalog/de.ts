@@ -89,6 +89,8 @@ const messages = {
   'settings.customThemes.exportNoteUrlOnly': 'Nur URL-basierte benutzerdefinierte Designs werden exportiert. Per CSS eingefügte Designs werden nicht exportiert.',
   'settings.customThemes.successInstalled': '„{name}" installiert',
   'settings.customThemes.successUpdated': '„{name}" aktualisiert',
+  'settings.customThemes.browseHint': 'Auf der Suche nach weiteren Designs? Durchstöbere die Community-Galerie:',
+  'settings.customThemes.browseLink': 'tweakcn.com/community',
   'settings.field.showTop': '„Am häufigsten besucht" anzeigen',
   'settings.field.showTopDesc': 'Zeigt den speziellen Ordner „Am häufigsten besucht" (aus Chrome topSites).',
   'settings.field.numberTop': 'Anzahl „Am häufigsten besucht"',
