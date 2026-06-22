@@ -5,6 +5,31 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.102] - 2026-06-22
+
+### Added
+- **外观 tab 末尾追加"自定义 CSS"（per-theme per-mode）**。新加 `themeOverrides[themeId][mode].customCss` 字段（`src/features/bookmarks/types.ts:ThemeModeOverrides`），跟其他 10 个 per-theme per-mode 字段（font / fontSize / ...）走同一份存储桶和解析路径。UI 是 `<details>` 折叠区最下面的 `<textarea id="sp-perTheme-customCss">`，配 `↩` revert 按钮。change 事件写 `themeOverrides[currentBaseTheme()][currentMode()].customCss`，`storage.onChanged` 触发 `applySettingsToDOM` → `rebuildUserThemeCss` 实时把内容写进 `<style id="user-theme-css">` 节点——填完即生效，无需刷新。
+  - 注入位置：`<head>` 里 `<style id="dynamic-styles">` 之后；cascade 优先级高于主题内置样式，需要进一步 override 时用 `!important`。
+  - 切主题 / 切 dark mode 时 CSS 自动跟着切到对应 bucket；留空 = 不注入，主题默认样式透出。
+
+### Removed
+- **高级 tab 的全局"自定义 CSS" textarea**。`<textarea id="sp-css">` + `Settings.css` 字段 + `LEGACY_KEY_MAP` 的 `customCSS` 条目 + `rebuildUserCss()` + `<style id="user-css">` 节点全部移除。所有 CSS 走 per-theme per-mode 路径，不再有「全局 CSS」概念。
+- **高级 tab 的导入过滤**。导入设置 JSON 时只接受当前 `Settings` shape 里存在的 key；pre-v0.2.102 导出的 `css` 字段会被静默丢弃（已迁移到 `themeOverrides[currentTheme][currentMode].customCss`，无需再导入）。
+
+### Fixed
+- **v0.2.102 升级时自动迁移老用户的全局 CSS**。`initSettings` 在 settings 加载完成后调 `migrateLegacyGlobalCss(merged)`：
+  1. 读取已存 settings 上的 `css` 字段（已不在 `Settings` 类型里，所以走 `getSync<unknown>` + cast）
+  2. 读取 bare `customCSS` 键（pre-unified 时代遗留）
+  3. 取两者中非空的那份（unified 优先），解析当前 `(theme, mode)` bucket
+  4. 写入 `themeOverrides[theme][mode].customCss`
+  5. `delete next.css` + `removeSync('customCSS')` 清源
+  - 老用户的 CSS 不会丢，会落到他升级时刻的 (theme, mode) bucket 里。
+
+### Notes
+- `Settings.css` 从 `Settings` 接口删除（`types.ts:Settings`）。`Settings.themeOverrides` 的 type 仍走 `chrome.storage.sync`（用户预算 100KB 充足；8 主题 × 2 模式 × 平均 3KB CSS = 48KB）。
+- `applySettingChange` 删除 v0.2.101 的 `if (key === 'css') { rebuildUserCss(); }` 分支；`themeOverrides` 改变时除了 `rebuildDynamicStyles` 还多调一次 `rebuildUserThemeCss`，让 per-theme CSS 在 `themeOverrides` 改变后立刻跟到新 bucket。
+- `ThemeModeOverrides` 是 `Partial<Pick<Settings, 10 keys>> & { customCss?: string }`：`customCss` 是这个 bucket 里唯一**不**镜像 `Settings` 全局 key 的字段——全局 `Settings.css` 移除后它没有 fallback。
+
 ## [0.2.101] - 2026-06-22
 
 ### Changed

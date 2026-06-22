@@ -10,7 +10,16 @@ import { applyTheme } from '../themes/switcher';
 import { log } from '../../lib/debug';
 
 const STYLE_ELEMENT_ID = 'dynamic-styles';
-const USER_CSS_ELEMENT_ID = 'user-css';
+// v0.2.102: removed `user-css` (replaced by `user-theme-css`).
+//  The legacy `<style id="user-css">` was sourced from
+//  `Settings.css` (the global custom-CSS field, also removed in
+//  v0.2.102). Custom CSS is now per-theme per-mode, stored under
+//  `themeOverrides[themeId][mode].customCss` and injected into
+//  `user-theme-css` by `rebuildUserThemeCss`. The node lives
+//  AFTER `dynamic-styles` in the head so its rules win the
+//  cascade for any selector that doesn't already use
+//  `!important`.
+const USER_THEME_CSS_ELEMENT_ID = 'user-theme-css';
 
 /**
  * Settings that drive the four `--newtab-*` CSS variables representing
@@ -282,11 +291,40 @@ export function rebuildDynamicStyles(): void {
   if (!style.isConnected) document.head.appendChild(style);
 }
 
-/** Update (or create) the `<style id="user-css">` node from current css setting. */
-function rebuildUserCss(): void {
-  const css = String(getSetting('css') ?? '');
-  const el = document.getElementById(USER_CSS_ELEMENT_ID) as HTMLStyleElement | null
-    ?? Object.assign(document.createElement('style'), { id: USER_CSS_ELEMENT_ID });
+/**
+ * Write the per-theme per-mode custom CSS to `<style id="user-theme-css">`.
+ *
+ * v0.2.102: source of truth is
+ * `themeOverrides[baseTheme][mode].customCss` — see
+ * `ThemeModeOverrides` in `features/bookmarks/types.ts`. Empty
+ * string clears the node's textContent so the theme defaults
+ * render through. Resolution of `(baseTheme, mode)` mirrors
+ * `resolveEffectiveSettings` (same darkMode / matchMedia logic)
+ * so the panel and the DOM write to the same bucket.
+ *
+ * The element is created lazily on first non-empty write and
+ * reused thereafter. When the resolved CSS is empty, we still
+ * keep the element around with `textContent = ''` so a subsequent
+ * non-empty write is just a string assignment (no DOM churn).
+ */
+function rebuildUserThemeCss(): void {
+  const baseTheme = String(getSetting('theme') ?? 'default');
+  const darkMode = String(getSetting('darkMode') ?? 'system');
+  const mode: 'light' | 'dark' = darkMode === 'dark'
+    ? 'dark'
+    : darkMode === 'light'
+      ? 'light'
+      : (typeof window !== 'undefined'
+          && window.matchMedia?.('(prefers-color-scheme: dark)').matches)
+        ? 'dark'
+        : 'light';
+  const allOverrides = (getSetting('themeOverrides') ?? {}) as Record<
+    string,
+    { light?: { customCss?: string }; dark?: { customCss?: string } }
+  >;
+  const css = String(allOverrides[baseTheme]?.[mode]?.customCss ?? '');
+  const el = document.getElementById(USER_THEME_CSS_ELEMENT_ID) as HTMLStyleElement | null
+    ?? Object.assign(document.createElement('style'), { id: USER_THEME_CSS_ELEMENT_ID });
   el.textContent = css;
   if (!el.isConnected) document.head.appendChild(el);
 }
@@ -302,7 +340,7 @@ function scale(value: number, mid: number, max: number, min: number = 0): number
 /**
  * Re-apply the non-palette parts of the current settings to the DOM.
  * Specifically: rebuild the dynamic-styles block (font, size, weight,
- * spacing, ...) and the user CSS node.
+ * spacing, ...) and the per-theme custom CSS node.
  *
  * Palette settings (`backgroundColor`, `fontColor`, `highlightColor`,
  * `highlightFontColor`, `shadowColor`) and the `theme` setting are
@@ -321,6 +359,9 @@ function scale(value: number, mid: number, max: number, min: number = 0): number
  * string-in / inline-style-out helper) rather than re-calling
  * `applyUserColorOverride` (which would re-read the global
  * `Settings` key, defeating the per-theme resolution).
+ *
+ * v0.2.102: also rebuild `user-theme-css` (replaces the
+ * v0.2.101 `rebuildUserCss` + global `Settings.css` field).
  */
 export function applySettingsToDOM(): void {
   log('apply', 'applySettingsToDOM');
@@ -335,7 +376,7 @@ export function applySettingsToDOM(): void {
   // shadowColor shares the highlightColor CSS var.
   writeResolvedColor('shadowColor', eff.shadowColor);
   rebuildDynamicStyles();
-  rebuildUserCss();
+  rebuildUserThemeCss();
 }
 
 /**
@@ -369,7 +410,15 @@ export function applySettingsToDOM(): void {
  *   the dynamic <style> block (font, size, weight, spacing, etc.).
  *   This calls `resolveEffectiveSettings`, so per-theme values are
  *   honored on the very next render.
- * - `css` → `rebuildUserCss` swaps the user CSS node.
+ * - `themeOverrides` change (v0.2.97 + v0.2.102) → in addition to
+ *   `rebuildDynamicStyles` (which re-resolves the 10 appearance
+ *   options), also call `rebuildUserThemeCss` so the per-theme
+ *   per-mode custom CSS (v0.2.102) follows the (theme, mode) change
+ *   live. Without this, the injected styles would still belong to
+ *   the previous bucket until the next full `applySettingsToDOM`.
+ *   v0.2.102 note: the v0.2.101 branch
+ *   `if (key === 'css') { rebuildUserCss(); }` is gone — `css` is
+ *   no longer a `Settings` key.
  */
 export function applySettingChange<K extends keyof Settings>(key: K): void {
   log('apply', 'applySettingChange', { key, value: getSetting(key) });
@@ -387,9 +436,13 @@ export function applySettingChange<K extends keyof Settings>(key: K): void {
     applyUserColorOverride(key as ColorKey);
   } else if (STYLE_KEYS.has(key)) {
     rebuildDynamicStyles();
-  }
-  if (key === 'css') {
-    rebuildUserCss();
+    // themeOverrides is in STYLE_KEYS (so the 10 per-theme
+    //  appearance options re-resolve on change). A change to
+    //  themeOverrides can also move the resolved per-theme
+    //  per-mode customCss bucket — re-inject that as well.
+    if (key === 'themeOverrides') {
+      rebuildUserThemeCss();
+    }
   }
 }
 
