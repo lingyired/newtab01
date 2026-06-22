@@ -475,12 +475,31 @@ export function installSettingsChangeListener(): void {
     if (newValue) {
       replaceSettings(newValue);
     }
-    // If `theme` changed, re-apply the theme (which clears the inline
-    // color overrides and writes the new theme's palette to <html>).
-    // For every other key change, `applySettingsToDOM` is enough — it
-    // reasserts the per-color overrides and rebuilds the dynamic-styles
-    // block without touching the theme.
-    if (newValue && oldValue && newValue.theme !== oldValue.theme) {
+    // If `theme` OR `darkMode` changed, re-apply the theme
+    // (which clears the inline color overrides and writes the
+    // new theme's palette to <html>). `darkMode` matters here
+    // because `applyTheme` internally calls
+    // `resolveTheme(baseTheme, darkMode)` to compute the
+    // resolved `<html data-theme>` value (which flips between
+    // `<base>` and `<base>-dark`); without re-running
+    // `applyTheme`, a darkMode-only change would leave
+    // `<html data-theme>` stuck on the previous variant until
+    // the next page reload. `applySettingsToDOM` reasserts the
+    // per-color overrides (with the new per-theme per-mode
+    // resolution) on top, so the final visual is correct.
+    // Bug: pre-v0.2.105 the listener only checked
+    // `newValue.theme !== oldValue.theme`, so importing a
+    // settings file with a different `darkMode` but the same
+    // `theme` left the data-theme attribute out of sync.
+    // For every other key change, `applySettingsToDOM` is
+    // enough — it reasserts the per-color overrides and
+    // rebuilds the dynamic-styles block without touching the
+    // theme.
+    if (
+      newValue && oldValue &&
+      (newValue.theme !== oldValue.theme ||
+       newValue.darkMode !== oldValue.darkMode)
+    ) {
       applyTheme(String(newValue.theme));
     }
     applySettingsToDOM();

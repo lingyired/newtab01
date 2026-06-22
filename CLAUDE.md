@@ -29,6 +29,7 @@
 | `feat/appearance-theme-overrides` | 🗄 冻结 | 外观 tab 10 选项 per-theme per-mode 化 + 高亮圆角改 px + 字号改 px 直接存（v0.2.97）+ 字号默认值 18→16（v0.2.98）+ 颜色 picker 空值回退到主题色（v0.2.99）+ 阴影颜色与高亮颜色 CSS 变量解耦（v0.2.100）| 见 git log |
 | `feat/folder-actions-tooltip-and-newtab-mode` | 🗄 冻结 | folder 三个小图标 tooltip 改 CSS-only + hover 背景 `--newtab-highlight` → `--muted` + 三个 handler 接收 `MouseEvent` 按 `Settings.newtab` 模式打开 + 中键强制 background（v0.2.101）| 见 git log |
 | `feat/per-theme-custom-css` | 🗄 冻结 | 移除高级 tab 全局"自定义 CSS" + `Settings.css` 字段 + `<style id="user-css">` + 升级迁移；外观 tab `<details>` 末尾追加 per-theme per-mode `customCss` textarea + 注入 `<style id="user-theme-css">`（v0.2.102）+ 修切换主题/darkMode 时 textarea 不刷新的回归（v0.2.103）| 见 git log |
+| `feat/import-export-cleanup-and-custom-themes` | 🗄 冻结 | 高级 tab 导出 JSON 移除已迁到 `themeOverrides` 的 10 个 per-theme 字段（font / fontSize / fontWeight / 5 颜色 / shadowBlur / highlightRound）+ import 同步静默丢弃；`CustomThemeEntry` 加 `sourceUrl?` 字段记录 URL 安装时的原始 URL；导出 `customThemes: [{ name, url }]` 数组（CSS paste 主题无 URL 跳过并 alert）；import 走 fetch + validate + install 路径重装 URL 主题（v0.2.104）| 见 git log |
 
 **为什么 v0.2.57 是 `main` 的基线（而不是 v0.2.36 / v0.2.59）**
 
