@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.108] - 2026-06-22
+
+### Fixed
+- **Apps 特殊 folder 不支持单独拖拽：拖它的 header 触发整列 column 拖拽**。根因在 `src/features/bookmarks/column.ts:73` 的 `renderNode`：判定 folder vs link 走 `if (node.children)`。`getSubTreeStub('apps')` 返回的 stub（`special-folders.ts:64`）结构是 `{ id: 'apps', title: 'Apps', type: 'apps', url: 'chrome://apps' }`——**没有 `children` 字段**（Apps 是 `chrome://apps` 页面，不是书签容器），所以走 `renderLink` 分支→不调 `enableDragFolder`→Apps header 不可拖；拖 Apps header 落进 column 的 draggable region（`drag-column.ts:14` `columnDiv.draggable = true`）→ 整列拖。其他 4 个 special folder（top/recent/closed/devices）的 stub 都有 `children: []`，走 renderFolder → enableDragFolder → 单独拖；只有 Apps 例外。修：`renderNode` 加 `node.type === 'apps'` 显式路由到 `renderFolder`。Apps 走 `renderFolder` 后 header 调 `enableDragFolder`，成为可单独拖的 folder。action 图标走 `folder.ts:63` 的 `node.children?.length ?? 0 = 0` 分支，无 children 时不显示 action（符合 Apps 不是书签容器的语义）。
+
 ## [0.2.107] - 2026-06-22
 
 ### Changed

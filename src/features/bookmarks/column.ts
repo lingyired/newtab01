@@ -69,14 +69,39 @@ export function renderAllNodes(
   return ul;
 }
 
-/** Render a single bookmark node (folder or link) */
+/** Render a single bookmark node (folder or link)
+ *
+ *  v0.2.108: Apps special folder routed through `renderFolder`
+ *  even though its stub has no `children` field.
+ *
+ *  Background: `getSubTreeStub('apps')` returns
+ *  `{ id: 'apps', title: 'Apps', type: 'apps', url: 'chrome://apps' }`
+ *  — no `children` because Apps is a URL page
+ *  (chrome://apps), not a bookmark container. The four other
+ *  special folders (top/recent/closed/devices) all have
+ *  `children: []`, so the naive `if (node.children)` check
+ *  sends them to `renderFolder` (which calls
+ *  `enableDragFolder` and makes them individually
+ *  draggable). Apps falls through to `renderLink`, which
+ *  doesn't call `enableDragFolder` — so dragging the Apps
+ *  header bubbled up to the column's draggable region and
+ *  triggered whole-column drag instead.
+ *
+ *  Fix: special-folder type `apps` is routed to
+ *  `renderFolder` explicitly. `renderFolder` already calls
+ *  `enableDragFolder(node, header, li)` unconditionally, so
+ *  Apps becomes individually draggable. The "0 children"
+ *  action-icon branch inside `renderFolder` is a no-op
+ *  visually for Apps (no bookmark children), which matches
+ *  the semantic that Apps isn't a folder of bookmarks.
+ */
 function renderNode(
   node: BookmarkNode,
   target: HTMLElement,
   depth: number,
   inBookmarkBarContext: boolean,
 ): void {
-  if (node.children) {
+  if (node.children || node.type === 'apps') {
     renderFolder(node, target, depth, inBookmarkBarContext);
   } else {
     renderLink(node, target);
