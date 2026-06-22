@@ -2283,6 +2283,19 @@ function renderAdvancedTab(): HTMLElement {
   container.appendChild(actionsRow);
   container.appendChild(exportOptionsRow);
 
+  // v0.2.125: render the includeLayout description as a hint
+  // paragraph below the checkbox row. The previous text was
+  // terse ("Also export the column order...") and didn't spell
+  // out that "layout" covers both column positions AND
+  // per-column folder order. The new copy explicitly names
+  // "custom columns" and "folders within them" and adds a
+  // note for the common case where the user only wants a
+  // preferences backup. Re-uses the `.sp-hint` style from the
+  // custom-themes tab for visual consistency.
+  const includeLayoutHint = el('p', 'sp-hint');
+  includeLayoutHint.textContent = t('settings.advanced.includeLayoutDesc');
+  container.appendChild(includeLayoutHint);
+
   // Debug section — visible in dev/test builds (MODE !== 'production'); production strips
   // the UI but keeps the runtime no-op for the storage field. Use ?debug=1 in prod for
   // one-off logs.

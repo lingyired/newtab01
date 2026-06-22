@@ -125,7 +125,7 @@ const messages = {
   'settings.advanced.exportSettings': 'Exportar configurações',
   'settings.advanced.exportSettingsDesc': 'Salve suas configurações atuais (e opcionalmente o layout de colunas) em um arquivo JSON. Use para backup ou sincronização entre navegadores.',
   'settings.advanced.includeLayout': 'Incluir layout',
-  'settings.advanced.includeLayoutDesc': 'Também exporta a ordem das colunas e pastas aninhadas ocultas. Reimportar restaurará o layout.',
+  'settings.advanced.includeLayoutDesc': 'Também exporta as posições de layout das suas colunas personalizadas e das pastas dentro delas. Deixe desmarcado se quiser apenas fazer backup das suas preferências.',
   'settings.advanced.importSettings': 'Importar configurações',
   'settings.advanced.importSettingsDesc': 'Restaura as configurações de um arquivo JSON. A sincronização entre abas e importações por dispositivo são suportadas.',
   'settings.advanced.importButton': 'Importar configurações',

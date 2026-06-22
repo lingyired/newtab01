@@ -125,7 +125,7 @@ const messages = {
   'settings.advanced.exportSettings': 'Einstellungen exportieren',
   'settings.advanced.exportSettingsDesc': 'Speichern Sie Ihre aktuellen Einstellungen (und optional das Spaltenlayout) in einer JSON-Datei. Verwenden Sie es zur Sicherung oder Synchronisierung zwischen Browsern.',
   'settings.advanced.includeLayout': 'Layout einschließen',
-  'settings.advanced.includeLayoutDesc': 'Exportiert auch die Spaltenreihenfolge und versteckte verschachtelte Ordner. Ein erneuter Import stellt das Layout wieder her.',
+  'settings.advanced.includeLayoutDesc': 'Exportiert auch die Layoutpositionen deiner benutzerdefinierten Spalten und der Ordner darin. Lass das Feld deaktiviert, wenn du nur deine Einstellungen sichern möchtest.',
   'settings.advanced.importSettings': 'Einstellungen importieren',
   'settings.advanced.importSettingsDesc': 'Stellt Einstellungen aus einer JSON-Datei wieder her. Tab-übergreifende Synchronisierung und geräteweise Importe werden unterstützt.',
   'settings.advanced.importButton': 'Einstellungen importieren',

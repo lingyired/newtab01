@@ -125,7 +125,7 @@ const messages = {
   'settings.advanced.exportSettings': 'Экспорт настроек',
   'settings.advanced.exportSettingsDesc': 'Сохраните текущие настройки (и, при желании, макет столбцов) в JSON-файл. Используйте для резервного копирования или синхронизации между браузерами.',
   'settings.advanced.includeLayout': 'Включить макет',
-  'settings.advanced.includeLayoutDesc': 'Также экспортирует порядок столбцов и скрытые вложенные папки. Повторный импорт восстановит макет.',
+  'settings.advanced.includeLayoutDesc': 'Также экспортирует позиции макета ваших пользовательских столбцов и папок в них. Оставьте неотмеченным, если хотите только создать резервную копию настроек.',
   'settings.advanced.importSettings': 'Импорт настроек',
   'settings.advanced.importSettingsDesc': 'Восстановить настройки из JSON-файла. Поддерживается межвкладочная синхронизация и по-устройственный импорт.',
   'settings.advanced.importButton': 'Импортировать настройки',

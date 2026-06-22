@@ -5,6 +5,13 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.125] - 2026-07-01
+
+### Fixed
+- **「包含布局」checkbox label 字号过小**。`styles/newtab.css` 的 `.sp-export-options .sp-checkbox-label` 之前没设字号，继承了根 1.0rem（10px），与其它 `.sp-label`（1.3rem / 13px）相比明显小一号。改为 `font-size: 1.3rem; line-height: 1.3; color: var(--foreground)`，与同 panel 内其它 label 视觉对齐。
+- **「包含布局」description 文案重写**。`settings.advanced.includeLayoutDesc` 之前是「也导出列顺序与隐藏的嵌套文件夹。重新导入后会恢复该布局。」—— 没明确「布局」覆盖哪些内容。新文案明确「包含自定义列以及其中目录的布局位置」，并补充「如果仅用于备份设置，可不勾选」帮助用户决策。10 个 catalog 同步重写。
+- **之前 `includeLayoutDesc` 没有渲染**。高级 tab 之前没有 desc 段显示这段文案（只渲染了 checkbox + label）。新增 `<p class="sp-hint">` 段在 exportOptionsRow 下面，把 `t('settings.advanced.includeLayoutDesc')` 显式挂上，复用 `.sp-hint` 样式（与 custom-themes tab 的 hint 一致）。
+
 ## [0.2.124] - 2026-06-30
 
 ### Added

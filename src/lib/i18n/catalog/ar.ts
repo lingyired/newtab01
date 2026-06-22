@@ -128,7 +128,7 @@ const messages = {
   'settings.advanced.exportSettings': 'تصدير الإعدادات',
   'settings.advanced.exportSettingsDesc': 'احفظ إعداداتك الحالية (وتخطيط الأعمدة اختياريًا) في ملف JSON. استخدمه للنسخ الاحتياطي أو المزامنة بين المتصفحات.',
   'settings.advanced.includeLayout': 'تضمين التخطيط',
-  'settings.advanced.includeLayoutDesc': 'تصدير ترتيب الأعمدة والمجلدات المتداخلة المخفية أيضًا. ستعيد الاستعادة التخطيط.',
+  'settings.advanced.includeLayoutDesc': 'يُصدِّر أيضًا مواقع التخطيط لأعمدتك المخصصة والمجلدات داخلها. اتركه غير محدد إذا كنت تريد فقط نسخ تفضيلاتك احتياطيًا.',
   'settings.advanced.importSettings': 'استيراد الإعدادات',
   'settings.advanced.importSettingsDesc': 'استعادة الإعدادات من ملف JSON. تدعم المزامنة بين علامات التبويب والاستيراد لكل جهاز.',
   'settings.advanced.importButton': 'استيراد الإعدادات',

@@ -125,7 +125,7 @@ const messages = {
   'settings.advanced.exportSettings': '設定をエクスポート',
   'settings.advanced.exportSettingsDesc': '現在の設定（および必要に応じて列レイアウト）を JSON ファイルに保存します。バックアップやブラウザー間の同期に使用します。',
   'settings.advanced.includeLayout': 'レイアウトを含める',
-  'settings.advanced.includeLayoutDesc': '列の順序と非表示のネストされたフォルダもエクスポートします。再インポート時にレイアウトが復元されます。',
+  'settings.advanced.includeLayoutDesc': 'カスタム列と各列内のフォルダのレイアウト位置もエクスポートします。設定のバックアップだけが必要な場合はチェックを外してください。',
   'settings.advanced.importSettings': '設定をインポート',
   'settings.advanced.importSettingsDesc': 'JSON ファイルから設定を復元します。タブ間同期とデバイスごとのインポートがサポートされています。',
   'settings.advanced.importButton': '設定をインポート',

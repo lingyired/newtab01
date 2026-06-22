@@ -125,7 +125,7 @@ const messages = {
   'settings.advanced.exportSettings': 'Exporter les paramètres',
   'settings.advanced.exportSettingsDesc': 'Enregistrez vos paramètres actuels (et éventuellement la mise en page des colonnes) dans un fichier JSON. Utilisez-le pour sauvegarder ou synchroniser entre navigateurs.',
   'settings.advanced.includeLayout': 'Inclure la mise en page',
-  'settings.advanced.includeLayoutDesc': 'Exporte aussi l\'ordre des colonnes et les dossiers imbriqués masqués. La réimportation restaurera la mise en page.',
+  'settings.advanced.includeLayoutDesc': 'Exporte aussi les positions de mise en page de vos colonnes personnalisées et des dossiers qu\'elles contiennent. Laissez décoché si vous ne souhaitez sauvegarder que vos préférences.',
   'settings.advanced.importSettings': 'Importer les paramètres',
   'settings.advanced.importSettingsDesc': 'Restaure les paramètres depuis un fichier JSON. La synchronisation entre onglets et les importations par appareil sont prises en charge.',
   'settings.advanced.importButton': 'Importer les paramètres',

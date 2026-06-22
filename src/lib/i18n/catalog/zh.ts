@@ -137,7 +137,7 @@ const messages = {
   'settings.advanced.exportSettings': '导出设置',
   'settings.advanced.exportSettingsDesc': '将当前设置（可选导出列布局）保存为 JSON 文件。可用于备份或在多浏览器之间同步。',
   'settings.advanced.includeLayout': '包含布局',
-  'settings.advanced.includeLayoutDesc': '同时导出列顺序与隐藏的嵌套文件夹。重新导入后会恢复该布局。',
+  'settings.advanced.includeLayoutDesc': '同时导出自定义列以及其中目录的布局位置。如果仅用于备份设置，可不勾选。',
   'settings.advanced.importSettings': '导入设置',
   'settings.advanced.importSettingsDesc': '从 JSON 文件恢复设置。支持跨标签页同步和按设备导入。',
   'settings.advanced.importButton': '导入设置',

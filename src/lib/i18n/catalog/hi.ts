@@ -125,7 +125,7 @@ const messages = {
   'settings.advanced.exportSettings': 'सेटिंग्स निर्यात करें',
   'settings.advanced.exportSettingsDesc': 'अपनी वर्तमान सेटिंग्स (और वैकल्पिक रूप से कॉलम लेआउट) को JSON फ़ाइल में सहेजें। बैकअप या ब्राउज़रों के बीच सिंक के लिए उपयोग करें।',
   'settings.advanced.includeLayout': 'लेआउट शामिल करें',
-  'settings.advanced.includeLayoutDesc': 'कॉलम क्रम और छिपे हुए नेस्टेड फ़ोल्डर भी निर्यात करता है। पुनः आयात करने पर लेआउट पुनर्स्थापित हो जाएगा।',
+  'settings.advanced.includeLayoutDesc': 'अपने कस्टम कॉलम और उनके अंदर मौजूद फ़ोल्डर के लेआउट पोज़िशन भी निर्यात करता है। यदि आप केवल अपनी प्राथमिकताओं का बैकअप लेना चाहते हैं तो अनचेक छोड़ दें।',
   'settings.advanced.importSettings': 'सेटिंग्स आयात करें',
   'settings.advanced.importSettingsDesc': 'JSON फ़ाइल से सेटिंग्स पुनर्स्थापित करें। क्रॉस-टैब सिंक और प्रति-उपकरण आयात समर्थित हैं।',
   'settings.advanced.importButton': 'सेटिंग्स आयात करें',

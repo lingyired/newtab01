@@ -1134,6 +1134,15 @@
 .sp-export-options .sp-checkbox-label {
   cursor: pointer;
   user-select: none;
+  /* v0.2.125: bump the include-layout checkbox label from the
+   *  inherited 1.0rem (root font-size baseline) up to 1.3rem to
+   *  match the other `.sp-label` text on the page. The previous
+   *  size read as a "footnote" — easy to miss and visually
+   *  inconsistent with sibling row labels. The default checkbox
+   *  is left at its native size; we only scale the text. */
+  font-size: 1.3rem;
+  line-height: 1.3;
+  color: var(--foreground);
 }
 
 .sp-btn {

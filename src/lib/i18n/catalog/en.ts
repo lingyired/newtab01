@@ -136,7 +136,7 @@ const messages = {
   'settings.advanced.exportSettings': 'Export settings',
   'settings.advanced.exportSettingsDesc': 'Save your current settings (and optionally the column layout) to a JSON file. Use it to back up or sync between browsers.',
   'settings.advanced.includeLayout': 'Include layout',
-  'settings.advanced.includeLayoutDesc': 'Also export the column order and hidden nested folders. Re-importing will restore the layout.',
+  'settings.advanced.includeLayoutDesc': 'Also export the layout positions of your custom columns and folders within them. Leave unchecked if you only want to back up your preferences.',
   'settings.advanced.importSettings': 'Import settings',
   'settings.advanced.importSettingsDesc': 'Restore settings from a JSON file. Cross-tab sync and per-device imports are supported.',
   'settings.advanced.importButton': 'Import settings',

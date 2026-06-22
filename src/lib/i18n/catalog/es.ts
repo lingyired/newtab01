@@ -132,7 +132,7 @@ const messages = {
   'settings.advanced.exportSettings': 'Exportar ajustes',
   'settings.advanced.exportSettingsDesc': 'Guarda tus ajustes actuales (y opcionalmente el diseño de columnas) en un archivo JSON. Úsalo para hacer una copia de seguridad o sincronizar entre navegadores.',
   'settings.advanced.includeLayout': 'Incluir diseño',
-  'settings.advanced.includeLayoutDesc': 'También exporta el orden de las columnas y las carpetas anidadas ocultas. Al reimportar se restaurará el diseño.',
+  'settings.advanced.includeLayoutDesc': 'También exporta las posiciones del diseño de tus columnas personalizadas y las carpetas dentro de ellas. Déjalo sin marcar si solo quieres hacer una copia de seguridad de tus preferencias.',
   'settings.advanced.importSettings': 'Importar ajustes',
   'settings.advanced.importSettingsDesc': 'Restaura los ajustes desde un archivo JSON. Se admiten la sincronización entre pestañas y las importaciones por dispositivo.',
   'settings.advanced.importButton': 'Importar ajustes',
