@@ -87,8 +87,17 @@ export function renderLink(node: BookmarkNode, target: HTMLElement): HTMLLIEleme
   return li;
 }
 
-/** Open a link in the appropriate tab mode */
-async function openLink(url: string, newtab: number): Promise<void> {
+/** Open a link in the appropriate tab mode.
+ *
+ *  Exported (v0.2.109) so that the Apps special-folder header
+ *  in `folder.ts` can use the same chrome:// URL navigation
+ *  path as actual `chrome://` bookmark links. Apps' header
+ *  looks like a folder (so it can be individually dragged)
+ *  but clicking it should open `chrome://apps` in the tab
+ *  the user has configured under "打开链接方式" — exactly
+ *  the same dispatch the link chrome:// branch does.
+ */
+export async function openLink(url: string, newtab: number): Promise<void> {
   const tab = await getCurrentTab();
   if (!tab?.id) return;
 

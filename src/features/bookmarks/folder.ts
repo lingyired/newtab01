@@ -4,6 +4,7 @@ import type { BookmarkNode } from './types';
 import { createFavicon } from './favicon';
 import { createFolderActions } from './folder-actions';
 import { openAllLinks } from './folder-actions-handler';
+import { openLink } from './link';
 import { getChildren } from './special-folders';
 import { renderLink } from './link';
 import { renderMenu, getFolderMenuItems } from './context-menu';
@@ -117,6 +118,57 @@ export function renderFolder(
   // Enable drag on folder header (li wraps the whole subtree, header
   // is the draggable target)
   enableDragFolder(node, header, li);
+
+  // v0.2.109: Apps special folder — the header LOOKS like a folder
+  //  (so it gets the folder icon, is individually draggable via
+  //  enableDragFolder above, and renders in the right column
+  //  position), but **clicking the header navigates to
+  //  chrome://apps** instead of toggling expand/collapse. This
+  //  matches the pre-v0.2.95 behaviour (HNTP's original Apps
+  //  entry was a link to the chrome://apps page) and avoids
+  //  the v0.2.108 regression of "empty folder" when we wired
+  //  Apps through renderFolder (the stub has no `children`).
+  //
+  //  Implementation: we short-circuit the toggle click + Enter
+  //  keypress handlers to navigate instead. The auxclick (middle
+  //  mouse → open all links) and contextmenu paths are not
+  //  affected — middle-click on Apps would no-op cleanly
+  //  (openAllLinks on an empty children list is a no-op) and
+  //  the right-click context menu still works for "Open in new
+  //  tab" etc.
+  //
+  //  We use the same `openLink` helper that `link.ts:65` uses
+  //  for chrome:// URLs so the navigation respects the user's
+  //  "打开链接方式" setting (current tab / new tab / new
+  //  background tab).
+  if (node.type === 'apps') {
+    // Same dispatch the link chrome:// branch uses
+    // (`link.ts:72`): honour the user's "打开链接方式"
+    // setting; Ctrl+click forces a new background tab to
+    // match the convention for bookmark links.
+    const newtab = getSetting('newtab');
+    const handleOpen = (e: MouseEvent | KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.closest('.folder-action-btn')) return;
+      e.preventDefault();
+      e.stopPropagation();
+      // KeyboardEvent doesn't carry ctrlKey for our purposes
+      //  (Enter → open in configured mode; Ctrl+Enter isn't
+      //  a real chord on a folder header). MouseEvent respects
+      //  the ctrlKey override.
+      const ctrl = 'ctrlKey' in e ? e.ctrlKey : false;
+      void openLink('chrome://apps', newtab || (ctrl ? 2 : 0));
+    };
+    header.addEventListener('click', handleOpen);
+    header.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') handleOpen(e);
+    });
+    // No expand/collapse handlers — return early so the regular
+    //  click/keypress handlers below don't double-bind and try
+    //  to toggle this non-expandable header.
+    target.appendChild(li);
+    return li;
+  }
 
   // Context menu on right-click
   header.addEventListener('contextmenu', (e) => {

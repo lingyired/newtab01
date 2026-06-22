@@ -5,6 +5,12 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.109] - 2026-06-22
+
+### Changed
+- **Apps 特殊 folder 点击行为回到 v0.2.95 之前：点击 header 直接跳 `chrome://apps` 整页**。v0.2.108 修拖拽时把 Apps 路由进 `renderFolder`（`column.ts:104`），header 看起来是 folder 但 `getSubTreeStub('apps')` 没有 `children` 字段 → 展开后是空 folder（`< Empty >` 占位）。v0.2.109 修正：保留 folder 视觉（folder icon + 可单独拖拽 + 参与列布局），但点击和 Enter 走 `link.ts` 的 `openLink('chrome://apps', newtab)`，跟 `chrome://` bookmark 链接完全一致——尊重用户「打开链接方式」设置（当前标签 / 新标签 / 后台标签），Ctrl+click 强制后台。`enableDragFolder` / `auxclick`（中键 no-op）/ context menu（右键菜单）行为不变。`link.ts:91` 的 `openLink` 改 export 给 `folder.ts` 共用。
+- 不走「用 `chrome.management.getAll()` 填入真实应用列表」路线：需要新增 `management` 权限（Chrome 弹权限 dialog）、`getSubTreeStub` 同步转异步会级联到 `column.ts:50-89` `renderColumn` 整条调用链、`appLaunchUrl` 经常是 `chrome-extension://<id>/_generated_background_page.html` 这种不适合直接当 link 打开、新增/删除应用时需要 refresh。综合复杂度高，且用户实测不需要——点击 header 跳 `chrome://apps` 是 HNTP 原始行为且足够直观。
+
 ## [0.2.108] - 2026-06-22
 
 ### Fixed
