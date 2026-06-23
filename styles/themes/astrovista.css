@@ -5,27 +5,14 @@
  * Light: cool-white bg with near-black text and a soft blue accent
  * Dark:  near-black bg with near-white text and a deeper blue accent
  *
- * The orange primary (oklch(0.6420 0.1691 38.5815)) drives the focus
- * ring; the blue accent drives link hover. Both are soft on purpose
- * — the theme is meant to recede, not to dominate. radius=0.5rem
- * and a 0em letter-spacing match shadcn defaults.
- *
- * Uses OKLCH directly (manifest minimum_chrome_version is bumped to
- * 111 in v0.2.41 to match globals.css color-mix + these OKLCH
- * values).
- *
- * v0.2.55: extend the 8 shadcn color variables with the full set of
- * tweakcn design tokens (radius, the shadow system, font families,
- * letter-spacing, tracking, spacing) AND the 11 shadcn surface
- * tokens (secondary / accent / destructive / card / popover / input
- * + their foregrounds). The surface tokens are what the shadcn
- * button + input hover / focus classes reference, so a theme that
- * doesn't define them falls back to the initial values of the
- * background-color / color properties (transparent + canvastext),
- * and on a themed page like AstroVista (cool white bg with a soft
- * blue accent) the hover state becomes invisible because the
- * fallback accent doesn't differ enough from the page bg. Filled
- * in verbatim from tweakcn.
+ * v0.2.55: 8 shadcn color variables + the full set of tweakcn
+ *  design tokens (radius, shadow stack, font families, letter-
+ *  spacing, tracking, spacing) AND the 11 shadcn surface tokens
+ *  (secondary / accent / destructive / card / popover / input +
+ *  their foregrounds). The surface tokens drive the shadcn
+ *  button + input hover / focus classes — without them the
+ *  hover state falls back to transparent + canvastext and on a
+ *  cool-white page bg the link-hover effect becomes invisible.
  */
 :root[data-theme="astrovista"] {
   /* Required 8 (validation gate for runtime imports). */
@@ -38,10 +25,8 @@
   --border: oklch(0.8452 0 0);
   --ring: oklch(0.6397 0.1720 36.4421);
 
-  /* Design tokens. AstroVista ships shadcn defaults for radius
-   * (0.5rem) and shadow (subtle 1px 3px drop), so the visual feel
-   * is calm. Outfit / Fira Code / Merriweather are the signature
-   * font families. */
+  /* Design tokens. radius=0.5rem + Outfit / Fira Code / Merriweather
+   * match the tweakcn AstroVista preview exactly. */
   --radius: 0.5rem;
   --shadow-color: #1a1a1a;
   --shadow-opacity: 0.1;
@@ -64,11 +49,9 @@
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
-  /* Shadcn surface tokens. accent = soft blue
-   * (oklch(0.9119 0.0222 243.8174)) which on a cool-white page bg
-   * (oklch 0.9383) reads as a slightly deeper blue tint on hover —
-   * subtle but visible. secondary = muted indigo
-   * (oklch(0.4138 0.0846 259.8759)) for muted button variants. */
+  /* Shadcn surface tokens. accent = soft blue which on cool-white
+   * bg reads as a slightly deeper blue tint on hover — subtle but
+   * visible. */
   --secondary: oklch(0.4138 0.0846 259.8759);
   --secondary-foreground: oklch(1.0000 0 0);
   --accent: oklch(0.9119 0.0222 243.8174);
@@ -93,8 +76,7 @@
   --border: oklch(0.3290 0 0);
   --ring: oklch(0.6397 0.1720 36.4421);
 
-  /* Design tokens. Same shadow stack as light (subtle 1px 3px at
-   * 0.10 opacity) — AstroVista dark is calm, not high-contrast. */
+  /* Design tokens. Same as light (subtle 1px 3px at 0.10 opacity). */
   --radius: 0.5rem;
   --shadow-color: #1a1a1a;
   --shadow-opacity: 0.1;
@@ -117,9 +99,7 @@
   --tracking-normal: 0em;
   --spacing: 0.25rem;
 
-  /* Shadcn surface tokens. Dark accent = deeper blue
-   * (oklch(0.3380 0.0589 267.5867)) which on a near-black page bg
-   * (oklch 0.2178) reads as a clear blue tint on hover. */
+  /* Shadcn surface tokens. Dark accent = deeper blue. */
   --secondary: oklch(0.3743 0.0726 258.5213);
   --secondary-foreground: oklch(0.9219 0 0);
   --accent: oklch(0.3380 0.0589 267.5867);

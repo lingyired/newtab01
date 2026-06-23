@@ -147,15 +147,6 @@ const messages = {
   'settings.advanced.importSuccess': 'Settings imported successfully.',
   'settings.advanced.undo': 'Undo import',
   'settings.advanced.undoHint': 'Revert to the pre-import state. Available until the next layout edit.',
-  // Theme labels
-  'theme.default': 'Default',
-  'theme.default-dark': 'Default · Dark',
-  'theme.mx-brutalist': 'MX-Brutalist',
-  'theme.mx-brutalist-dark': 'MX-Brutalist · Dark',
-  'theme.cyberpunk': 'Cyberpunk',
-  'theme.cyberpunk-dark': 'Cyberpunk · Dark',
-  'theme.astrovista': 'AstroVista',
-  'theme.astrovista-dark': 'AstroVista · Dark',
   // Special folder titles
   'specialFolder.top': 'Most visited',
   'specialFolder.apps': 'Apps',

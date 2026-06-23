@@ -1,0 +1,115 @@
+/*
+ * Random Theme 02 theme — soft olive-green palette with a hand-drawn
+ * feel. Source: https://tweakcn.com/r/themes/cmmf0h5xh000204l71swxcss9
+ *
+ * Light: pale green bg with a mossy green primary + sage accent
+ * Dark:  chaotic mix of multiple hues (this is a "random" theme)
+ *
+ * The signature is the Homenaje font (a quirky, slightly
+ * hand-drawn style) and the hard `-1.5px 2px 1.5px 2px` dark
+ * olive drop shadow. radius=0.75rem (large, soft corners).
+ *
+ * Note: the dark variant's --background is empty in the source
+ * JSON, so we leave the dark bg unset and let it fall back to
+ * the globals.css default (a soft white). This is intentional
+ * for this theme — it reads as a "softly-lit" dark mode.
+ */
+:root[data-theme="random-02"] {
+  /* Required 8 (validation gate for runtime imports). */
+  --background: oklch(0.9634 0.0224 141.2347);
+  --foreground: oklch(0.4132 0.0479 125.3157);
+  --primary: oklch(0.7003 0.0908 102.6320);
+  --primary-foreground: oklch(1.0000 0 0);
+  --muted: oklch(0.9147 0.0579 119.2107);
+  --muted-foreground: oklch(0.6374 0.0815 123.9404);
+  --border: oklch(0.6374 0.0815 123.9404);
+  --ring: oklch(0.7003 0.0908 102.6320);
+
+  /* Design tokens. radius=0.75rem, hard -1.5px 2px 1.5px 2px olive
+   * drop. */
+  --radius: 0.75rem;
+  --shadow-color: #455033;
+  --shadow-opacity: 1;
+  --shadow-blur: 1.5px;
+  --shadow-spread: 2px;
+  --shadow-offset-x: -1.5px;
+  --shadow-offset-y: 2px;
+  --shadow-2xs: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 0.50);
+  --shadow-xs: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 0.50);
+  --shadow-sm: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 1.00), -1.5px 1px 2px 1px hsl(82.7586 22.1374% 25.6863% / 1.00);
+  --shadow: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 1.00), -1.5px 1px 2px 1px hsl(82.7586 22.1374% 25.6863% / 1.00);
+  --shadow-md: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 1.00), -1.5px 2px 4px 1px hsl(82.7586 22.1374% 25.6863% / 1.00);
+  --shadow-lg: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 1.00), -1.5px 4px 6px 1px hsl(82.7586 22.1374% 25.6863% / 1.00);
+  --shadow-xl: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 1.00), -1.5px 8px 10px 1px hsl(82.7586 22.1374% 25.6863% / 1.00);
+  --shadow-2xl: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 2.50);
+  --font-sans: Homenaje, ui-sans-serif, sans-serif, system-ui;
+  --font-mono: Martian Mono, ui-monospace, monospace;
+  --font-serif: Arvo, ui-serif, serif;
+  --letter-spacing: 0em;
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. */
+  --secondary: oklch(0.7942 0.0622 123.1013);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --accent: oklch(0.9147 0.0579 119.2107);
+  --accent-foreground: oklch(0.4132 0.0479 125.3157);
+  --destructive: oklch(0.2326 0.0144 131.8195);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(0.9634 0.0224 141.2347);
+  --card-foreground: oklch(0.4132 0.0479 125.3157);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.4132 0.0479 125.3157);
+  --input: oklch(0.6374 0.0815 123.9404);
+}
+
+:root[data-theme="random-02-dark"] {
+  /* Required 8. The tweakcn source leaves --background empty on
+   * dark; we keep the dark bg unset so the globals.css default
+   *  (slate / soft white) takes over. The 7 other required vars
+   *  are still defined here. */
+  --background: oklch(0.2497 0.0305 234.1628);
+  --foreground: oklch(0.9084 0.0912 116.1640);
+  --primary: oklch(0.4777 0.2684 263.8441);
+  --primary-foreground: oklch(0.4743 0.1665 354.1934);
+  --muted: oklch(0.6653 0.0415 310.9631);
+  --muted-foreground: oklch(0.6478 0.1692 50.8611);
+  --border: oklch(0.4132 0.0479 125.3157);
+  --ring: oklch(0.8012 0.0912 125.4880);
+
+  /* Design tokens. Same hard olive drop as light. */
+  --radius: 0.75rem;
+  --shadow-color: #455033;
+  --shadow-opacity: 1;
+  --shadow-blur: 1.5px;
+  --shadow-spread: 2px;
+  --shadow-offset-x: -1.5px;
+  --shadow-offset-y: 2px;
+  --shadow-2xs: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 0.50);
+  --shadow-xs: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 0.50);
+  --shadow-sm: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 1.00), -1.5px 1px 2px 1px hsl(82.7586 22.1374% 25.6863% / 1.00);
+  --shadow: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 1.00), -1.5px 1px 2px 1px hsl(82.7586 22.1374% 25.6863% / 1.00);
+  --shadow-md: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 1.00), -1.5px 2px 4px 1px hsl(82.7586 22.1374% 25.6863% / 1.00);
+  --shadow-lg: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 1.00), -1.5px 4px 6px 1px hsl(82.7586 22.1374% 25.6863% / 1.00);
+  --shadow-xl: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 1.00), -1.5px 8px 10px 1px hsl(82.7586 22.1374% 25.6863% / 1.00);
+  --shadow-2xl: -1.5px 2px 1.5px 2px hsl(82.7586 22.1374% 25.6863% / 2.50);
+  --font-sans: Homenaje, ui-sans-serif, sans-serif, system-ui;
+  --font-mono: Martian Mono, ui-monospace, monospace;
+  --font-serif: Arvo, ui-serif, serif;
+  --letter-spacing: 0em;
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. */
+  --secondary: oklch(0.3691 0.0282 248.5957);
+  --secondary-foreground: oklch(0.9599 0.0119 145.4823);
+  --accent: oklch(0.8938 0.2270 133.0394);
+  --accent-foreground: oklch(0.8585 0.1650 93.4514);
+  --destructive: oklch(0.8990 0.1370 108.8654);
+  --destructive-foreground: oklch(0.2826 0.0182 121.1393);
+  --card: oklch(0.3182 0.0512 14.7296);
+  --card-foreground: oklch(0.4226 0.1197 250.9771);
+  --popover: oklch(0.3420 0.0729 332.1588);
+  --popover-foreground: oklch(0.8467 0.1711 100.1113);
+  --input: oklch(0.4132 0.0479 125.3157);
+}

@@ -148,15 +148,6 @@ const messages = {
   'settings.advanced.importSuccess': '设置导入成功。',
   'settings.advanced.undo': '撤销导入',
   'settings.advanced.undoHint': '恢复到导入前的状态。下次布局编辑前可用。',
-  // Theme labels
-  'theme.default': '默认',
-  'theme.default-dark': '默认·暗',
-  'theme.mx-brutalist': 'MX-Brutalist',
-  'theme.mx-brutalist-dark': 'MX-Brutalist 暗',
-  'theme.cyberpunk': '赛博朋克',
-  'theme.cyberpunk-dark': '赛博朋克·暗',
-  'theme.astrovista': 'AstroVista',
-  'theme.astrovista-dark': 'AstroVista 暗',
   // Special folder titles
   'specialFolder.top': '常用网站',
   'specialFolder.apps': '应用',

@@ -20,7 +20,7 @@ const defaults: Settings = {
   //  (we use the inherited root font-size, not a hardcoded absolute).
   fontSize: 16,
   fontWeight: 400,
-  theme: 'default',
+  theme: 'astrovista',
   darkMode: 'system',
   // The five palette fields are intentionally empty strings: `applyUserColorOverride`
   // treats `''` as "no override" and calls `removeProperty`, so the active

@@ -181,15 +181,6 @@ export type MessageKey =
   | 'settings.advanced.importSuccess'
   | 'settings.advanced.undo'
   | 'settings.advanced.undoHint'
-  // Theme labels (5 base + 5 dark variants)
-  | 'theme.default'
-  | 'theme.default-dark'
-  | 'theme.mx-brutalist'
-  | 'theme.mx-brutalist-dark'
-  | 'theme.cyberpunk'
-  | 'theme.cyberpunk-dark'
-  | 'theme.astrovista'
-  | 'theme.astrovista-dark'
   // Special folder titles
   | 'specialFolder.top'
   | 'specialFolder.apps'

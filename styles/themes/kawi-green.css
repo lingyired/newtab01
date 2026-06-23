@@ -1,0 +1,112 @@
+/*
+ * kawi-green theme — high-tech brutalist with neon green + red on
+ * pure black. Source:
+ *   https://tweakcn.com/r/themes/cmoevymna000504l13kcterlq
+ *
+ * Light: pure black bg with white text + lime green primary + red
+ *        secondary (intentional inversion of the dark default)
+ * Dark:  pure black bg with white text + lime green primary + red
+ *        secondary (same palette; the theme has no light/dark split)
+ *
+ * This is a "brutalist" / high-contrast theme — pure black bg,
+ * pure white text, with a single hot accent color. The signature
+ * is the "Inter" sans-serif font and a hard 4px 4px lime green
+ * drop shadow on light. The dark variant flips the drop to white
+ * with a -4px 4px offset for a "carved out" feel.
+ */
+:root[data-theme="kawi-green"] {
+  /* Required 8 (validation gate for runtime imports). */
+  --background: oklch(0 0 0);
+  --foreground: oklch(1.0000 0 0);
+  --primary: oklch(0.8815 0.2750 138.4872);
+  --primary-foreground: oklch(0 0 0);
+  --muted: oklch(0.1776 0 0);
+  --muted-foreground: oklch(1.0000 0 0);
+  --border: oklch(1.0000 0 0);
+  --ring: oklch(0.8815 0.2750 138.4872);
+
+  /* Design tokens. radius=0, 4px 4px hard lime green drop. */
+  --radius: 0px;
+  --shadow-color: #66ff00;
+  --shadow-opacity: 100%;
+  --shadow-blur: 0px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 4px;
+  --shadow-offset-y: 4px;
+  --shadow-2xs: 4px 4px 0px 0px hsl(96 100% 50% / 50.00);
+  --shadow-xs: 4px 4px 0px 0px hsl(96 100% 50% / 50.00);
+  --shadow-sm: 4px 4px 0px 0px hsl(96 100% 50% / 100.00), 4px 1px 2px -1px hsl(96 100% 50% / 100.00);
+  --shadow: 4px 4px 0px 0px hsl(96 100% 50% / 100.00), 4px 1px 2px -1px hsl(96 100% 50% / 100.00);
+  --shadow-md: 4px 4px 0px 0px hsl(96 100% 50% / 100.00), 4px 2px 4px -1px hsl(96 100% 50% / 100.00);
+  --shadow-lg: 4px 4px 0px 0px hsl(96 100% 50% / 100.00), 4px 4px 6px -1px hsl(96 100% 50% / 100.00);
+  --shadow-xl: 4px 4px 0px 0px hsl(96 100% 50% / 100.00), 4px 8px 10px -1px hsl(96 100% 50% / 100.00);
+  --shadow-2xl: 4px 4px 0px 0px hsl(96 100% 50% / 250.00);
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-serif: 'Georgia', serif;
+  --letter-spacing: 0.02em;
+  --tracking-normal: 0.05em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. accent = primary (lime green). secondary
+   * = red. */
+  --secondary: oklch(0.6280 0.2577 29.2339);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --accent: oklch(0.8815 0.2750 138.4872);
+  --accent-foreground: oklch(0 0 0);
+  --destructive: oklch(0.6280 0.2577 29.2339);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(0 0 0);
+  --card-foreground: oklch(1.0000 0 0);
+  --popover: oklch(0 0 0);
+  --popover-foreground: oklch(1.0000 0 0);
+  --input: oklch(0 0 0);
+}
+
+:root[data-theme="kawi-green-dark"] {
+  /* Required 8. */
+  --background: oklch(0 0 0);
+  --foreground: oklch(1.0000 0 0);
+  --primary: oklch(0.8815 0.2750 138.4872);
+  --primary-foreground: oklch(0 0 0);
+  --muted: oklch(0.1448 0 0);
+  --muted-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.8815 0.2750 138.4872);
+  --ring: oklch(0.8815 0.2750 138.4872);
+
+  /* Design tokens. -4px 4px hard white drop (inverted direction). */
+  --radius: 0px;
+  --shadow-color: #ffffff;
+  --shadow-opacity: 100%;
+  --shadow-blur: 0px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: -4px;
+  --shadow-offset-y: 4px;
+  --shadow-2xs: -4px 4px 0px 0px hsl(0 0% 100% / 50.00);
+  --shadow-xs: -4px 4px 0px 0px hsl(0 0% 100% / 50.00);
+  --shadow-sm: -4px 4px 0px 0px hsl(0 0% 100% / 100.00), -4px 1px 2px -1px hsl(0 0% 100% / 100.00);
+  --shadow: -4px 4px 0px 0px hsl(0 0% 100% / 100.00), -4px 1px 2px -1px hsl(0 0% 100% / 100.00);
+  --shadow-md: -4px 4px 0px 0px hsl(0 0% 100% / 100.00), -4px 2px 4px -1px hsl(0 0% 100% / 100.00);
+  --shadow-lg: -4px 4px 0px 0px hsl(0 0% 100% / 100.00), -4px 4px 6px -1px hsl(0 0% 100% / 100.00);
+  --shadow-xl: -4px 4px 0px 0px hsl(0 0% 100% / 100.00), -4px 8px 10px -1px hsl(0 0% 100% / 100.00);
+  --shadow-2xl: -4px 4px 0px 0px hsl(0 0% 100% / 250.00);
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-serif: 'Georgia', serif;
+  --letter-spacing: 0.05em;
+  --tracking-normal: 0.05em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. */
+  --secondary: oklch(0.6280 0.2577 29.2339);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --accent: oklch(1.0000 0 0);
+  --accent-foreground: oklch(0 0 0);
+  --destructive: oklch(0.6280 0.2577 29.2339);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(0 0 0);
+  --card-foreground: oklch(1.0000 0 0);
+  --popover: oklch(0 0 0);
+  --popover-foreground: oklch(1.0000 0 0);
+  --input: oklch(0 0 0);
+}

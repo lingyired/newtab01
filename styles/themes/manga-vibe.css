@@ -1,0 +1,108 @@
+/*
+ * Manga Vibe theme — pure black & white hand-drawn aesthetic.
+ * Source: https://tweakcn.com/r/themes/cmbco9sbv000104l5a7wd1hn3
+ *
+ * Light: white bg with pure black text and a black primary
+ * Dark:  pure black bg with near-white text and a white primary
+ *
+ * The whole theme is monochrome — no color, no saturation, just
+ * pure black & white. The signature font is "Architects Daughter"
+ * (a hand-written style), with radius=0 (sharp corners) and a
+ * subtle 1px 1px drop shadow. The theme is meant to evoke a
+ * hand-drawn manga sketch.
+ */
+:root[data-theme="manga-vibe"] {
+  /* Required 8 (validation gate for runtime imports). */
+  --background: oklch(0.9761 0 0);
+  --foreground: oklch(0 0 0);
+  --primary: oklch(0 0 0);
+  --primary-foreground: oklch(1.0000 0 0);
+  --muted: oklch(0.8078 0 0);
+  --muted-foreground: oklch(0 0 0);
+  --border: oklch(0 0 0);
+  --ring: oklch(0.5999 0 0);
+
+  /* Design tokens. radius=0, 1px 1px subtle drop. */
+  --radius: 0px;
+  --shadow-color: #000000;
+  --shadow-opacity: 0.1;
+  --shadow-blur: 2px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 1px;
+  --shadow-offset-y: 1px;
+  --shadow-2xs: 1px 1px 2px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 1px 1px 2px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 1px 1px 2px 0px hsl(0 0% 0% / 0.10), 1px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 1px 1px 2px 0px hsl(0 0% 0% / 0.10), 1px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 1px 1px 2px 0px hsl(0 0% 0% / 0.10), 1px 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 1px 1px 2px 0px hsl(0 0% 0% / 0.10), 1px 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 1px 1px 2px 0px hsl(0 0% 0% / 0.10), 1px 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 1px 1px 2px 0px hsl(0 0% 0% / 0.25);
+  --font-sans: Architects Daughter;
+  --font-mono: Architects Daughter;
+  --font-serif: Architects Daughter;
+  --letter-spacing: 0px;
+  --tracking-normal: 0px;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. */
+  --secondary: oklch(0.5999 0 0);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --accent: oklch(0 0 0);
+  --accent-foreground: oklch(1.0000 0 0);
+  --destructive: oklch(0 0 0);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0 0 0);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0 0 0);
+  --input: oklch(1.0000 0 0);
+}
+
+:root[data-theme="manga-vibe-dark"] {
+  /* Required 8. */
+  --background: oklch(0 0 0);
+  --foreground: oklch(0.9761 0 0);
+  --primary: oklch(0.9761 0 0);
+  --primary-foreground: oklch(0 0 0);
+  --muted: oklch(0.3715 0 0);
+  --muted-foreground: oklch(0.9761 0 0);
+  --border: oklch(0.9761 0 0);
+  --ring: oklch(0.3715 0 0);
+
+  /* Design tokens. */
+  --radius: 0px;
+  --shadow-color: #000000;
+  --shadow-opacity: 0.1;
+  --shadow-blur: 2px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 1px;
+  --shadow-offset-y: 1px;
+  --shadow-2xs: 1px 1px 2px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 1px 1px 2px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 1px 1px 2px 0px hsl(0 0% 0% / 0.10), 1px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 1px 1px 2px 0px hsl(0 0% 0% / 0.10), 1px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 1px 1px 2px 0px hsl(0 0% 0% / 0.10), 1px 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 1px 1px 2px 0px hsl(0 0% 0% / 0.10), 1px 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 1px 1px 2px 0px hsl(0 0% 0% / 0.10), 1px 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 1px 1px 2px 0px hsl(0 0% 0% / 0.25);
+  --font-sans: Architects Daughter;
+  --font-mono: Architects Daughter;
+  --font-serif: Architects Daughter;
+  --letter-spacing: 0px;
+  --tracking-normal: 0px;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. */
+  --secondary: oklch(0.3715 0 0);
+  --secondary-foreground: oklch(0.9761 0 0);
+  --accent: oklch(0.9761 0 0);
+  --accent-foreground: oklch(0 0 0);
+  --destructive: oklch(0.9761 0 0);
+  --destructive-foreground: oklch(0 0 0);
+  --card: oklch(0.2178 0 0);
+  --card-foreground: oklch(0.9761 0 0);
+  --popover: oklch(0.2178 0 0);
+  --popover-foreground: oklch(0.9761 0 0);
+  --input: oklch(0.2178 0 0);
+}
