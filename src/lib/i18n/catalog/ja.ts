@@ -210,6 +210,8 @@ const messages = {
   'about.themesLink': 'tweakcn',
   'about.repoIntro': 'GitHub でオープンソースを公開中：{link}',
   'about.repoLink': 'github.com/lingyired/newtab01',
+  'about.moreExtensionsTitle': 'この作者の他の拡張機能',
+  'about.extension.noLazyload': 'No LazyLoad — 画像の遅延読み込みを無効化',
 } as const satisfies LocaleMessages;
 
 export const ja: LocaleBundle = {

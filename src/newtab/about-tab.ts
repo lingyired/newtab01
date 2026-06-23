@@ -22,6 +22,24 @@ const AUTHOR_GITHUB_URL = 'https://github.com/lingyired';
 const REPO_URL = 'https://github.com/lingyired/newtab01';
 const TWEAKCN_COMMUNITY_URL = 'https://tweakcn.com/community';
 
+/** Other Chrome extensions by the same author, shown in the
+ *  "More from this author" section. Order matters — the list
+ *  renders top-to-bottom in declaration order. To add another
+ *  extension: drop a new `{ url, nameKey }` row here and add
+ *  the matching MessageKey to types.ts + all 10 catalogs (tsc
+ *  will catch missing entries). The URL is a hard-coded constant
+ *  because URLs are not localizable; only the displayed extension
+ *  name goes through `t()`. */
+const OTHER_EXTENSIONS: ReadonlyArray<{
+  url: string;
+  nameKey: 'about.extension.noLazyload';
+}> = [
+  {
+    url: 'https://chromewebstore.google.com/detail/no-lazyload-disable-image/gdaoomgmekonglmdeaoengblkjeopall',
+    nameKey: 'about.extension.noLazyload',
+  },
+];
+
 /** Author handle shown next to "by". Kept as a const so the
  *  github.com/lingyired text in the catalog stays a description
  *  (not a stringly-typed copy of the handle). */
@@ -175,6 +193,34 @@ function buildRepoSection(): HTMLElement {
   return p;
 }
 
+/** Render the "More from this author" section: a list of links
+ *  to the author's other Chrome Web Store extensions. The list
+ *  source-of-truth is the `OTHER_EXTENSIONS` constant above —
+ *  adding a new entry there automatically picks up here. */
+function buildMoreExtensionsSection(): HTMLElement {
+  const wrap = document.createElement('div');
+  wrap.className = 'sp-about-section';
+
+  const title = document.createElement('p');
+  title.className = 'sp-about-lede';
+  title.textContent = t('about.moreExtensionsTitle');
+  wrap.appendChild(title);
+
+  const list = document.createElement('ul');
+  list.className = 'sp-about-extensions';
+  for (const ext of OTHER_EXTENSIONS) {
+    const li = document.createElement('li');
+    // `t()` is invoked at render time so a language switch
+    // refreshes the displayed name in place (same as the
+    // feature list above).
+    const a = makeExternalLink(ext.url, t(ext.nameKey));
+    li.appendChild(a);
+    list.appendChild(li);
+  }
+  wrap.appendChild(list);
+  return wrap;
+}
+
 /** Render the full About tab. Returns a `<div class="sp-tab-content">`
  *  matching the convention of every other tab in settings-panel.ts. */
 export function renderAboutTab(): HTMLElement {
@@ -202,6 +248,13 @@ export function renderAboutTab(): HTMLElement {
 
   // Section 4 — open source repo.
   container.appendChild(buildRepoSection());
+
+  container.appendChild(buildDivider());
+
+  // Section 5 — other extensions by the same author. Sits at the
+  // bottom because it's the "after you're done reading about this
+  // project" footer of the page.
+  container.appendChild(buildMoreExtensionsSection());
 
   return container;
 }

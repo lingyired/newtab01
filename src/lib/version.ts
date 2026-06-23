@@ -7,5 +7,7 @@
 // number than chrome://extensions; the extension still works.
 //
 // v1.0.0: first Chrome Web Store release.
+// v1.0.3: added "More from this author" section to the About tab
+//          (1 new author extension + section title).
 
-export const VERSION = '1.0.2';
+export const VERSION = '1.0.3';

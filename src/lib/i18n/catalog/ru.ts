@@ -210,6 +210,8 @@ const messages = {
   'about.themesLink': 'tweakcn',
   'about.repoIntro': 'Открытый исходный код на GitHub: {link}',
   'about.repoLink': 'github.com/lingyired/newtab01',
+  'about.moreExtensionsTitle': 'Другие расширения автора',
+  'about.extension.noLazyload': 'No LazyLoad — Отключить ленивую загрузку изображений',
 } as const satisfies LocaleMessages;
 
 export const ru: LocaleBundle = {
