@@ -44,6 +44,8 @@ const messages = {
   // Settings panel — appearance tab
   'settings.field.theme': 'Theme',
   'settings.field.themeDesc': 'Active color theme. Manage custom themes (URL / CSS paste) in the dedicated "Custom themes" tab.',
+  'settings.field.activeSuffix': '({name})',
+  'themePicker.previewAriaLabel': 'Theme preview list. Click a theme to apply it.',
   'settings.field.darkMode': 'Dark mode',
   'settings.field.darkModeDesc': 'Whether the theme uses the light or dark variant. "Follow system" tracks the OS appearance setting.',
   'settings.darkMode.light': 'Light',

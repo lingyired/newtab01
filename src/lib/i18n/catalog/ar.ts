@@ -39,6 +39,8 @@ const messages = {
   'settings.field.lockDesc': 'منع المستخدم من إعادة ترتيب عناصر الإشارات عن طريق السحب.',
   'settings.field.theme': 'السمة',
   'settings.field.themeDesc': 'سمة اللون النشطة. إدارة السمات المخصصة (URL / لصق CSS) في تبويب "السمات المخصصة".',
+  'settings.field.activeSuffix': '({name})',
+  'themePicker.previewAriaLabel': 'قائمة معاينة السمات. انقر على سمة لتطبيقها.',
   'settings.field.darkMode': 'الوضع الداكن',
   'settings.field.darkModeDesc': 'هل تستخدم السمة المتغير الفاتح أم الداكن. "متابعة النظام" تتبع إعداد مظهر نظام التشغيل.',
   'settings.darkMode.light': 'فاتح',

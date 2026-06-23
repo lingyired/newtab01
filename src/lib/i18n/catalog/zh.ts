@@ -45,6 +45,8 @@ const messages = {
   // Settings panel — appearance tab
   'settings.field.theme': '主题',
   'settings.field.themeDesc': '当前使用的主题。管理自定义主题（URL / CSS 粘贴）请前往「自定义主题」tab。',
+  'settings.field.activeSuffix': '（{name}）',
+  'themePicker.previewAriaLabel': '主题预览列表。点击任意主题即可应用。',
   'settings.field.darkMode': '暗色模式',
   'settings.field.darkModeDesc': '决定主题使用浅色还是深色变体。选「跟随系统」会随 macOS / Windows 的外观设置自动切换。',
   'settings.darkMode.light': '浅色',

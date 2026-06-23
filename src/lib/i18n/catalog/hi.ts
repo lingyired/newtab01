@@ -36,6 +36,8 @@ const messages = {
   'settings.field.lockDesc': 'उपयोगकर्ता को खींचकर बुकमार्क आइटम पुनः क्रमित करने से रोकें।',
   'settings.field.theme': 'थीम',
   'settings.field.themeDesc': 'सक्रिय रंग थीम। कस्टम थीम (URL / CSS पेस्ट) का प्रबंधन समर्पित "कस्टम थीम" टैब में करें।',
+  'settings.field.activeSuffix': '({name})',
+  'themePicker.previewAriaLabel': 'थीम पूर्वावलोकन सूची। थीम लागू करने के लिए किसी एक पर क्लिक करें।',
   'settings.field.darkMode': 'डार्क मोड',
   'settings.field.darkModeDesc': 'क्या थीम लाइट या डार्क वेरिएंट का उपयोग करती है। "सिस्टम का पालन करें" OS के रूप सेटिंग का पालन करता है।',
   'settings.darkMode.light': 'लाइट',

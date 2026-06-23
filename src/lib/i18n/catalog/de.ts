@@ -36,6 +36,8 @@ const messages = {
   'settings.field.lockDesc': 'Verhindert, dass der Benutzer Lesezeichen per Drag & Drop neu anordnet.',
   'settings.field.theme': 'Design',
   'settings.field.themeDesc': 'Aktives Farbdesign. Verwalten Sie benutzerdefinierte Designs (URL / CSS einfügen) im Tab „Benutzerdefinierte Designs".',
+  'settings.field.activeSuffix': '({name})',
+  'themePicker.previewAriaLabel': 'Design-Vorschauliste. Klicke auf ein Design, um es anzuwenden.',
   'settings.field.darkMode': 'Dunkler Modus',
   'settings.field.darkModeDesc': 'Ob das Design die helle oder dunkle Variante verwendet. „System folgen" folgt dem Erscheinungsbild des Betriebssystems.',
   'settings.darkMode.light': 'Hell',

@@ -40,6 +40,8 @@ const messages = {
   // Settings panel — appearance tab
   'settings.field.theme': 'Tema',
   'settings.field.themeDesc': 'Tema de color activo. Administra los temas personalizados (URL / pegar CSS) en la pestaña "Temas personalizados".',
+  'settings.field.activeSuffix': '({name})',
+  'themePicker.previewAriaLabel': 'Lista de vista previa de temas. Haz clic en un tema para aplicarlo.',
   'settings.field.darkMode': 'Modo oscuro',
   'settings.field.darkModeDesc': 'Si el tema usa la variante clara u oscura. "Seguir al sistema" sigue la apariencia del sistema operativo.',
   'settings.darkMode.light': 'Claro',
