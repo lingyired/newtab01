@@ -9,6 +9,7 @@ const messages = {
   'settings.tab.customThemes': 'Пользовательские темы',
   'settings.tab.features': 'Функции',
   'settings.tab.advanced': 'Дополнительно',
+  'settings.tab.about': 'О расширении',
   'settings.revert.toDefault': 'Сбросить по умолчанию',
   'settings.revert.clearPerTheme': 'Очистить переопределение для текущей темы + режима (вернуться к глобальному значению)',
   'settings.section.themeOverridesSummary': 'Оформление текущей темы ({theme} · {mode})',
@@ -204,6 +205,19 @@ const messages = {
   'newtab.loading': 'Загрузка…',
   'newtab.error.loadFailed': 'Не удалось загрузить закладки. Обновите страницу.',
   'newtab.split.invalidUrl': 'Неверный URL разделённого вида: параметры #urls / #layout отсутствуют или повреждены',
+  // About tab (v1.0.0) — credits, inspiration, theme source, repo link
+  'about.versionPrefix': 'v{version}',
+  'about.authorByline': 'автор: {author}',
+  'about.builtWith': 'Создано с помощью {tools}',
+  'about.inspiredBy': 'Вдохновлено Humble New Tab Page. newtab01 расширяет его возможности:',
+  'about.feature.theming': 'Темы',
+  'about.feature.splitView': 'Разделённый экран',
+  'about.feature.tabGroups': 'Группы вкладок',
+  'about.feature.bookmarkSearch': 'Поиск по закладкам',
+  'about.themesIntro': 'Темы основаны на {link}. Посетите галерею сообщества, чтобы скопировать и импортировать тему.',
+  'about.themesLink': 'tweakcn',
+  'about.repoIntro': 'Открытый исходный код на GitHub: {link}',
+  'about.repoLink': 'github.com/lingyired/newtab01',
 } as const satisfies LocaleMessages;
 
 export const ru: LocaleBundle = {

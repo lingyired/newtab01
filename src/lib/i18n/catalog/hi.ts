@@ -9,6 +9,7 @@ const messages = {
   'settings.tab.customThemes': 'कस्टम थीम',
   'settings.tab.features': 'विशेषताएँ',
   'settings.tab.advanced': 'उन्नत',
+  'settings.tab.about': 'के बारे में',
   'settings.revert.toDefault': 'डिफ़ॉल्ट पर रीसेट करें',
   'settings.revert.clearPerTheme': 'वर्तमान थीम + मोड के लिए ओवरराइड साफ़ करें (वैश्विक मान पर वापस जाएँ)',
   'settings.section.themeOverridesSummary': 'वर्तमान थीम का रूप ({theme} · {mode})',
@@ -204,6 +205,19 @@ const messages = {
   'newtab.loading': 'लोड हो रहा है…',
   'newtab.error.loadFailed': 'बुकमार्क लोड करने में विफल। कृपया पृष्ठ ताज़ा करें।',
   'newtab.split.invalidUrl': 'अमान्य विभाजित दृश्य URL: #urls / #layout पैरामीटर गायब या विकृत हैं',
+  // About tab (v1.0.0) — credits, inspiration, theme source, repo link
+  'about.versionPrefix': 'v{version}',
+  'about.authorByline': 'द्वारा {author}',
+  'about.builtWith': '{tools} के साथ निर्मित',
+  'about.inspiredBy': 'Humble New Tab Page से प्रेरित, newtab01 इसे विस्तारित करता है:',
+  'about.feature.theming': 'थीमिंग',
+  'about.feature.splitView': 'स्प्लिट व्यू',
+  'about.feature.tabGroups': 'टैब समूह',
+  'about.feature.bookmarkSearch': 'बुकमार्क खोज',
+  'about.themesIntro': 'थीमिंग {link} द्वारा संचालित है। थीम कॉपी करने और आयात करने के लिए सामुदायिक गैलरी ब्राउज़ करें।',
+  'about.themesLink': 'tweakcn',
+  'about.repoIntro': 'GitHub पर ओपन सोर्स: {link}',
+  'about.repoLink': 'github.com/lingyired/newtab01',
 } as const satisfies LocaleMessages;
 
 export const hi: LocaleBundle = {

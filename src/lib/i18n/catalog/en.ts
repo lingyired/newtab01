@@ -14,6 +14,7 @@ const messages = {
   'settings.tab.customThemes': 'Custom themes',
   'settings.tab.features': 'Features',
   'settings.tab.advanced': 'Advanced',
+  'settings.tab.about': 'About',
   'settings.revert.toDefault': 'Reset to default',
   'settings.revert.clearPerTheme': 'Clear the override for the current theme + mode (fall back to global value)',
   'settings.section.themeOverridesSummary': 'Current theme appearance ({theme} · {mode})',
@@ -228,6 +229,19 @@ const messages = {
   'newtab.loading': 'Loading…',
   'newtab.error.loadFailed': 'Failed to load bookmarks. Please refresh the page.',
   'newtab.split.invalidUrl': 'Invalid split view URL: missing or malformed #urls / #layout parameters',
+  // About tab (v1.0.0) — credits, inspiration, theme source, repo link
+  'about.versionPrefix': 'v{version}',
+  'about.authorByline': 'by {author}',
+  'about.builtWith': 'Built with {tools}',
+  'about.inspiredBy': 'Inspired by Humble New Tab Page, newtab01 extends it with:',
+  'about.feature.theming': 'Theming',
+  'about.feature.splitView': 'Split view',
+  'about.feature.tabGroups': 'Tab groups',
+  'about.feature.bookmarkSearch': 'Bookmark search',
+  'about.themesIntro': 'Theming is powered by {link}. Browse the community gallery to copy and import a theme.',
+  'about.themesLink': 'tweakcn',
+  'about.repoIntro': 'Open source on GitHub: {link}',
+  'about.repoLink': 'github.com/lingyired/newtab01',
 } as const satisfies LocaleMessages;
 
 export const en: LocaleBundle = {

@@ -5,6 +5,45 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-07-15
+
+First Chrome Web Store release.
+
+### Added
+- **设置面板新增「关于」tab**。v0.2.117 ~ v0.2.135 期间累积的设置项有 5 个 tab（布局 / 外观 / 自定义主题 / 功能 / 高级），面向"如何使用"的设置。本版本新增「关于」tab，面向"这是什么 / 谁做的"的项目元信息：
+  - **版本 + 作者** 一行：`v1.0.0 · by lingyired · Built with MiniMax M3 + TRAE Work`。作者 `lingyired` 是可点击的 GitHub 主页链接；`MiniMax M3 + TRAE Work` 是构建用的工具（专有名词、不进 catalog）。
+  - **项目来源**：灵感来源于 Humble New Tab Page，newtab01 在其基础上扩充了 4 项能力：主题化、分屏页面、标签分组、书签搜索。
+  - **主题化来源**：主题化基于 tweakcn，可前往其社区主题库（tweakcn.com/community）浏览并导入主题。
+  - **开源地址**：GitHub 仓库地址（github.com/lingyired/newtab01）。
+  - 内容按 i18n 规范全部走 `t()` —— 新增 12 个 MessageKey（`settings.tab.about` + 11 个 about.* key），10 个 catalog 同步加翻译，切到任意 locale 整页内容（4 个 section + 4 个特性 bullet）in-place 刷新。
+- **新增 `src/lib/version.ts` 单文件版本号**。`export const VERSION = '1.0.0'`。与 `manifest.json` 的 `version` 字段、`package.json` 的 `version` 字段保持一致（手动同步 —— 没有引入 build step）。About tab 的版本号从这里读，未来 bump 时三处一起改。
+- **新增 12 个 MessageKey**：
+  - `settings.tab.about`：tab 标签名（"关于" / "About" / "À propos" / ...）
+  - `about.versionPrefix`：`v{version}`（prefix 文案本地化，version 是占位符）
+  - `about.authorByline`：`by {author}` / `作者 {author}` 等
+  - `about.builtWith`：`Built with {tools}` / `使用 {tools} 构建` 等
+  - `about.inspiredBy`：引言段
+  - `about.feature.theming` / `splitView` / `tabGroups` / `bookmarkSearch`：4 个特性 bullet
+  - `about.themesIntro` / `about.themesLink`：tweakcn 段落
+  - `about.repoIntro` / `about.repoLink`：开源仓库段落
+  - 10 个 catalog（en / zh / es / ar / hi / fr / pt / de / ja / ru）全部加翻译，tsc 编译期强制。
+
+### Changed
+- **设置面板 nav 由 5 个 tab 增加为 6 个**。SettingsTab 联合类型加 `'about'`；`renderNav` / `renderContent` switch 同步。视觉上 nav 多了 1 行（"关于"在"高级"下面），但每行高度和样式保持不变。
+- **版本号 bump 至 1.0.0**：`manifest.json` 和 `package.json` 同步到 1.0.0。从 Chrome Web Store 发布角度看，1.0.0 是"用户公开版本"的第一个稳定 release。
+
+### Implementation notes
+- About tab 是一个独立模块 `src/newtab/about-tab.ts`，不参与 `chrome.storage.onChanged` 刷新（只读、无设置项）；切语言时由 `refreshSettingsPanelLocale` → `renderContent('about')` 重建，行为与其他 tab 一致。
+- 三个外部链接（github.com/lingyired / tweakcn.com/community / github.com/lingyired/newtab01）走 `window.open(url, '_blank', 'noopener,noreferrer')` 而不是 `<a target="_blank">`：MV3 禁止 chrome-extension:// 页通过标准 anchor 跳转到 https URL（与 settings-panel.ts 内 tweakcn 社区链接的处理一致）。
+- 视觉上遵循项目"no Card by default"原则（CLAUDE.md §4）：4 个 section 之间用 1px `var(--border)` 横线分隔（`<hr>`），无 thick border、无 gradient、无 card mosaic。所有色值走语义 CSS 变量（`--foreground` / `--muted-foreground` / `--primary` / `--border`），4 套内置主题 + 用户自定义主题都能正确渲染。
+- 特性 list 走 `inset-inline-start` 定位的圆点 bullet，自动适配 LTR / RTL（`<html dir="rtl">` 时 bullet 在右侧）。
+- 整段代码（about-tab.ts）~110 行，CSS ~120 行，没有引入任何新依赖。
+
+### 影响范围
+- 仅设置面板 nav + 一个新的 tab 内容；不影响 newtab 主页 / 主题应用 / 书签渲染 / 拖拽 / 搜索。
+- i18n：所有 10 个 catalog 同步新增 12 个 key；切到任意 locale 整页内容（4 个 section + 4 个特性 bullet）都 in-place 刷新，不需刷新页面。
+- 性能：open settings panel 时渲染一次（与打开其他 tab 行为一致），不增加常态运行开销。
+
 ## [0.2.135] - 2026-07-14
 
 ### Changed

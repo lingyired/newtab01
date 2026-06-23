@@ -12,6 +12,7 @@ const messages = {
   'settings.tab.customThemes': 'سمات مخصصة',
   'settings.tab.features': 'الميزات',
   'settings.tab.advanced': 'متقدم',
+  'settings.tab.about': 'حول',
   'settings.revert.toDefault': 'إعادة إلى الافتراضي',
   'settings.revert.clearPerTheme': 'مسح التجاوز للسمة + الوضع الحالي (العودة إلى القيمة العامة)',
   'settings.section.themeOverridesSummary': 'مظهر السمة الحالية ({theme} · {mode})',
@@ -207,6 +208,19 @@ const messages = {
   'newtab.loading': 'جارٍ التحميل…',
   'newtab.error.loadFailed': 'فشل تحميل الإشارات. يرجى تحديث الصفحة.',
   'newtab.split.invalidUrl': 'رابط العرض المقسم غير صالح: معلمات #urls / #layout مفقودة أو تالفة',
+  // About tab (v1.0.0) — credits, inspiration, theme source, repo link
+  'about.versionPrefix': 'v{version}',
+  'about.authorByline': 'بواسطة {author}',
+  'about.builtWith': 'تم البناء باستخدام {tools}',
+  'about.inspiredBy': 'مستوحى من Humble New Tab Page، newtab01 يوسع ذلك بإضافة:',
+  'about.feature.theming': 'السمات',
+  'about.feature.splitView': 'العرض المقسم',
+  'about.feature.tabGroups': 'مجموعات علامات التبويب',
+  'about.feature.bookmarkSearch': 'البحث في الإشارات',
+  'about.themesIntro': 'السمات مدعومة من {link}. تصفح معرض المجتمع لنسخ سمة واستيرادها.',
+  'about.themesLink': 'tweakcn',
+  'about.repoIntro': 'مفتوح المصدر على GitHub: {link}',
+  'about.repoLink': 'github.com/lingyired/newtab01',
 } as const satisfies LocaleMessages;
 
 export const ar: LocaleBundle = {

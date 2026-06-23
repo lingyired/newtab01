@@ -10,6 +10,7 @@ const messages = {
   'settings.tab.customThemes': 'Temas personalizados',
   'settings.tab.features': 'Funciones',
   'settings.tab.advanced': 'Avanzado',
+  'settings.tab.about': 'Acerca de',
   'settings.revert.toDefault': 'Restablecer predeterminado',
   'settings.revert.clearPerTheme': 'Borrar la anulación del tema + modo actual (volver al valor global)',
   'settings.section.themeOverridesSummary': 'Apariencia del tema actual ({theme} · {mode})',
@@ -224,6 +225,19 @@ const messages = {
   'newtab.loading': 'Cargando…',
   'newtab.error.loadFailed': 'Error al cargar los marcadores. Actualiza la página.',
   'newtab.split.invalidUrl': 'URL de vista dividida no válida: faltan o están mal formados los parámetros #urls / #layout',
+  // About tab (v1.0.0) — credits, inspiration, theme source, repo link
+  'about.versionPrefix': 'v{version}',
+  'about.authorByline': 'por {author}',
+  'about.builtWith': 'Construido con {tools}',
+  'about.inspiredBy': 'Inspirado en Humble New Tab Page, newtab01 lo amplía con:',
+  'about.feature.theming': 'Temas',
+  'about.feature.splitView': 'Vista dividida',
+  'about.feature.tabGroups': 'Grupos de pestañas',
+  'about.feature.bookmarkSearch': 'Búsqueda de marcadores',
+  'about.themesIntro': 'Los temas se basan en {link}. Visita la galería de la comunidad para copiar e importar un tema.',
+  'about.themesLink': 'tweakcn',
+  'about.repoIntro': 'Código abierto en GitHub: {link}',
+  'about.repoLink': 'github.com/lingyired/newtab01',
 } as const satisfies LocaleMessages;
 
 export const es: LocaleBundle = {

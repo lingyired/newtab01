@@ -31,6 +31,7 @@ import {
 import { setLocal } from '../lib/storage';
 import { captureSnapshot, pushSnapshot } from '../features/drag-drop/history';
 import { t, listLocales, type LocaleCode } from '../lib/i18n';
+import { renderAboutTab } from './about-tab';
 
 /** Theme id → display label. The label is now localized via
  *  `t(\`theme.${id}\`)` (see `LocaleMessages`) — `theme.default`,
@@ -67,7 +68,7 @@ function buildThemeLabels(): Record<string, string> {
   };
 }
 
-type SettingsTab = 'layout' | 'appearance' | 'custom-themes' | 'features' | 'advanced';
+type SettingsTab = 'layout' | 'appearance' | 'custom-themes' | 'features' | 'advanced' | 'about';
 
 /** Settings that affect column rendering — require re-render after change */
 const RERENDER_KEYS: ReadonlySet<keyof Settings> = new Set([
@@ -708,6 +709,7 @@ function renderNav(nav: HTMLElement): void {
     { id: 'custom-themes', label: t('settings.tab.customThemes') },
     { id: 'features', label: t('settings.tab.features') },
     { id: 'advanced', label: t('settings.tab.advanced') },
+    { id: 'about', label: t('settings.tab.about') },
   ];
 
   for (const tab of tabs) {
@@ -787,6 +789,15 @@ function renderContent(container: HTMLElement): void {
       break;
     case 'advanced':
       container.appendChild(renderAdvancedTab());
+      break;
+    case 'about':
+      // v1.0.0: read-only "About" tab — credits, inspiration, theme
+      // source, repo link. Lives in its own module (about-tab.ts)
+      // because it has no settings, no async storage reads, and
+      // never participates in storage.onChanged refresh. The tab
+      // is rebuilt by refreshSettingsPanelLocale on language change,
+      // matching the other tabs' behavior.
+      container.appendChild(renderAboutTab());
       break;
   }
 }
