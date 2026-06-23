@@ -1,0 +1,107 @@
+/*
+ * Rose theme — soft pink with a deep crimson primary. Source:
+ *   https://tweakcn.com/r/themes/cmqqq6tnv000004jm0x1cbkmw
+ *
+ * Light: pale pink bg with a crimson primary + soft pink secondary
+ * Dark:  dark purple bg with a hot pink primary + muted rose accent
+ *
+ * The signature is the "Quicksand" font (a rounded, friendly
+ * sans-serif) and a hard 3px 3px rose-tinted drop shadow.
+ * radius=0.5rem. The dark variant has a magenta drop shadow for
+ * a "glowing" feel.
+ */
+:root[data-theme="rose"] {
+  /* Required 8 (validation gate for runtime imports). */
+  --background: oklch(0.9692 0.0192 343.9344);
+  --foreground: oklch(0.4426 0.1653 352.3762);
+  --primary: oklch(0.6002 0.2414 0.1348);
+  --primary-foreground: oklch(1.0000 0 0);
+  --muted: oklch(0.9429 0.0363 344.2604);
+  --muted-foreground: oklch(0.5740 0.1732 352.0544);
+  --border: oklch(0.8881 0.0747 344.3866);
+  --ring: oklch(0.6002 0.2414 0.1348);
+
+  /* Design tokens. radius=0.5rem, hard 3px 3px rose drop. */
+  --radius: 0.5rem;
+  --shadow-color: hsl(330 70% 30% / 0.12);
+  --shadow-opacity: 0.18;
+  --shadow-blur: 0px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 3px;
+  --shadow-2xs: 0px 3px 0px 0px hsl(330 70% 30% / 0.09);
+  --shadow-xs: 0px 3px 0px 0px hsl(330 70% 30% / 0.09);
+  --shadow-sm: 0px 3px 0px 0px hsl(330 70% 30% / 0.18), 0px 1px 2px -1px hsl(330 70% 30% / 0.18);
+  --shadow: 0px 3px 0px 0px hsl(330 70% 30% / 0.18), 0px 1px 2px -1px hsl(330 70% 30% / 0.18);
+  --shadow-md: 0px 3px 0px 0px hsl(330 70% 30% / 0.18), 0px 2px 4px -1px hsl(330 70% 30% / 0.18);
+  --shadow-lg: 0px 3px 0px 0px hsl(330 70% 30% / 0.18), 0px 4px 6px -1px hsl(330 70% 30% / 0.18);
+  --shadow-xl: 0px 3px 0px 0px hsl(330 70% 30% / 0.18), 0px 8px 10px -1px hsl(330 70% 30% / 0.18);
+  --shadow-2xl: 0px 3px 0px 0px hsl(330 70% 30% / 0.45);
+  --font-sans: Quicksand, sans-serif;
+  --font-mono: Space Mono, monospace;
+  --font-serif: Playfair Display, serif;
+  --letter-spacing: 0em;
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. */
+  --secondary: oklch(0.9230 0.0701 326.1273);
+  --secondary-foreground: oklch(0.4426 0.1653 352.3762);
+  --accent: oklch(0.8766 0.0828 344.8849);
+  --accent-foreground: oklch(0.4426 0.1653 352.3762);
+  --destructive: oklch(0.5831 0.1911 6.3410);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(0.9837 0.0107 339.3288);
+  --card-foreground: oklch(0.4426 0.1653 352.3762);
+  --popover: oklch(0.9837 0.0107 339.3288);
+  --popover-foreground: oklch(0.4426 0.1653 352.3762);
+  --input: oklch(0.9230 0.0701 326.1273);
+}
+
+:root[data-theme="rose-dark"] {
+  /* Required 8. */
+  --background: oklch(0.1808 0.0535 313.7159);
+  --foreground: oklch(0.8624 0.1307 326.6356);
+  --primary: oklch(0.7543 0.2319 332.0212);
+  --primary-foreground: oklch(0.1608 0.0493 327.5673);
+  --muted: oklch(0.2701 0.0770 312.3525);
+  --muted-foreground: oklch(0.7116 0.1623 327.1132);
+  --border: oklch(0.3280 0.1202 313.5393);
+  --ring: oklch(0.7543 0.2319 332.0212);
+
+  /* Design tokens. Hot magenta drop shadow. */
+  --radius: 0.5rem;
+  --shadow-color: hsl(300 80% 50% / 0.25);
+  --shadow-opacity: 0.18;
+  --shadow-blur: 0px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 3px;
+  --shadow-2xs: 0px 3px 0px 0px hsl(300 80% 50% / 0.09);
+  --shadow-xs: 0px 3px 0px 0px hsl(300 80% 50% / 0.09);
+  --shadow-sm: 0px 3px 0px 0px hsl(300 80% 50% / 0.18), 0px 1px 2px -1px hsl(300 80% 50% / 0.18);
+  --shadow: 0px 3px 0px 0px hsl(300 80% 50% / 0.18), 0px 1px 2px -1px hsl(300 80% 50% / 0.18);
+  --shadow-md: 0px 3px 0px 0px hsl(300 80% 50% / 0.18), 0px 2px 4px -1px hsl(300 80% 50% / 0.18);
+  --shadow-lg: 0px 3px 0px 0px hsl(300 80% 50% / 0.18), 0px 4px 6px -1px hsl(300 80% 50% / 0.18);
+  --shadow-xl: 0px 3px 0px 0px hsl(300 80% 50% / 0.18), 0px 8px 10px -1px hsl(300 80% 50% / 0.18);
+  --shadow-2xl: 0px 3px 0px 0px hsl(300 80% 50% / 0.45);
+  --font-sans: Quicksand, sans-serif;
+  --font-mono: Space Mono, monospace;
+  --font-serif: Playfair Display, serif;
+  --letter-spacing: 0em;
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. */
+  --secondary: oklch(0.3184 0.0915 319.6465);
+  --secondary-foreground: oklch(0.8624 0.1307 326.6356);
+  --accent: oklch(0.3558 0.1201 325.7655);
+  --accent-foreground: oklch(0.8624 0.1307 326.6356);
+  --destructive: oklch(0.6539 0.2441 7.1740);
+  --destructive-foreground: oklch(0.9821 0 0);
+  --card: oklch(0.2398 0.0661 313.2337);
+  --card-foreground: oklch(0.8624 0.1307 326.6356);
+  --popover: oklch(0.2398 0.0661 313.2337);
+  --popover-foreground: oklch(0.8624 0.1307 326.6356);
+  --input: oklch(0.3184 0.0915 319.6465);
+}

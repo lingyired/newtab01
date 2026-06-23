@@ -5,6 +5,33 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-06-23
+
+### Changed
+- **重新梳理初始自带主题**：以 `docs/theme.md` 列出的 12 个 tweakcn 主题作为默认主题，取代原 4 个内置主题。
+  - 移除：`default` / `default-dark` / `mx-brutalist` / `cyberpunk` / `astrovista`（共 4 套），相关 css 文件删除
+  - 替换为（按 `docs/theme.md` 顺序）：
+    1. `astrovista` (overwrite) — Outfit, 橙红 primary, 柔和冷静
+    2. `mx-brutalist` (overwrite) — Montserrat, 绿 primary, 硬 4px 4px 黑色 drop
+    3. `remedys-control` — Montserrat, 纯黑 primary, 中性灰 bg
+    4. `magic-2` — Roboto, 紫 primary, 暖米色 bg
+    5. `astra` — Basic, 粉/品红 primary, 浅粉 bg
+    6. `mimi` — Poppins, 玫瑰 primary, 浅粉 bg
+    7. `manga-vibe` — Architects Daughter, 纯黑白手绘风, 0 圆角
+    8. `win86` — Courier New, 青/蓝绿色 primary, 复古 Windows
+    9. `random-02` — Homenaje, 绿 primary, 橄榄绿
+    10. `rose` — Quicksand, 玫瑰/粉 primary
+    11. `kawi-green` — Inter, 莱姆绿 + 红色, brutalist
+    12. `optimus` — Orbitron, 红 primary, sci-fi
+  - 每个主题带 8 个核心 shadcn var + 11 个 surface var + 完整设计 token（radius / font-sans/mono/serif / shadow 系统 / letter-spacing / tracking / spacing）
+  - 每个主题同时声明 light + dark 两套 `:root[data-theme="<id>-dark"]` 块
+- **默认主题改为 `astrovista`**。`Settings.theme` 默认值更新；新装用户初次打开即看到 AstroVista。
+- **i18n 主题 key 重写**。`MessageKey` 联合中 8 个旧 key 移除（`theme.default` / `theme.default-dark` / `theme.cyberpunk` / `theme.cyberpunk-dark`），新增 24 个 key（12 base + 12 dark）。10 个 catalog（en / zh / es / ar / hi / fr / pt / de / ja / ru）同步更新。
+- **设置面板 theme picker label map**（`buildThemeLabels()`）扩展为 24 项。
+
+### Migration
+- 旧用户无需手动迁移 —— `Settings.theme` 的 fallback 行为由 `resolveTheme()` 处理；不存在的 theme id 会被 `applyTheme()` 兜底为 globals.css 的默认（cool white）。但设置面板里不再出现 `default` / `cyberpunk` 选项 —— 用户需要从「自定义主题」tab 重新导入。
+
 ## [1.0.0] - 2026-07-15
 
 First Chrome Web Store release.

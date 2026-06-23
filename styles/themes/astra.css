@@ -1,0 +1,111 @@
+/*
+ * Astra theme — pink magenta on a soft pink-tinted background. Source:
+ *   https://tweakcn.com/r/themes/cmofr223i000504la0dez6cfb
+ *
+ * Light: pale-pink bg with a hot magenta primary + violet secondary
+ * Dark:  deep magenta bg with a brighter magenta primary
+ *
+ * The whole palette sits in the pink→magenta family; accent is a
+ * complementary teal that gives the link hover a clear "different
+ * color" feel. "Basic" is the signature font family, with a
+ * relatively large radius (0.5rem) and a pink-tinted drop shadow.
+ */
+:root[data-theme="astra"] {
+  /* Required 8 (validation gate for runtime imports). */
+  --background: oklch(0.9714 0.0141 343.1982);
+  --foreground: oklch(0.2827 0.1351 291.0894);
+  --primary: oklch(0.5916 0.2180 0.5844);
+  --primary-foreground: oklch(1.0000 0 0);
+  --muted: oklch(0.9464 0.0327 307.1745);
+  --muted-foreground: oklch(0.4383 0.1983 303.7241);
+  --border: oklch(0.9024 0.0604 306.7030);
+  --ring: oklch(0.5916 0.2180 0.5844);
+
+  /* Design tokens. radius=0.5rem (slightly larger for a softer feel),
+   * 4px 10px pink-tinted drop. */
+  --radius: 0.5rem;
+  --shadow-color: #db2777;
+  --shadow-opacity: 0.1;
+  --shadow-blur: 10px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 4px;
+  --shadow-2xs: 0px 4px 10px 0px hsl(333.3333 71.4286% 50.5882% / 0.05);
+  --shadow-xs: 0px 4px 10px 0px hsl(333.3333 71.4286% 50.5882% / 0.05);
+  --shadow-sm: 0px 4px 10px 0px hsl(333.3333 71.4286% 50.5882% / 0.10), 0px 1px 2px -1px hsl(333.3333 71.4286% 50.5882% / 0.10);
+  --shadow: 0px 4px 10px 0px hsl(333.3333 71.4286% 50.5882% / 0.10), 0px 1px 2px -1px hsl(333.3333 71.4286% 50.5882% / 0.10);
+  --shadow-md: 0px 4px 10px 0px hsl(333.3333 71.4286% 50.5882% / 0.10), 0px 2px 4px -1px hsl(333.3333 71.4286% 50.5882% / 0.10);
+  --shadow-lg: 0px 4px 10px 0px hsl(333.3333 71.4286% 50.5882% / 0.10), 0px 4px 6px -1px hsl(333.3333 71.4286% 50.5882% / 0.10);
+  --shadow-xl: 0px 4px 10px 0px hsl(333.3333 71.4286% 50.5882% / 0.10), 0px 8px 10px -1px hsl(333.3333 71.4286% 50.5882% / 0.10);
+  --shadow-2xl: 0px 4px 10px 0px hsl(333.3333 71.4286% 50.5882% / 0.25);
+  --font-sans: Basic, ui-sans-serif, sans-serif, system-ui;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-serif: 'Georgia', serif;
+  --letter-spacing: 0.025em;
+  --tracking-normal: 0.05em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. accent = teal that gives the link-hover
+   * a clean color contrast. */
+  --secondary: oklch(0.5413 0.2466 293.0090);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --accent: oklch(0.7148 0.1257 215.2209);
+  --accent-foreground: oklch(1.0000 0 0);
+  --destructive: oklch(0.6368 0.2078 25.3313);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0.2827 0.1351 291.0894);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.2827 0.1351 291.0894);
+  --input: oklch(0.9024 0.0604 306.7030);
+}
+
+:root[data-theme="astra-dark"] {
+  /* Required 8. */
+  --background: oklch(0.1418 0.0662 295.8049);
+  --foreground: oklch(0.9714 0.0141 343.1982);
+  --primary: oklch(0.7017 0.3225 328.3634);
+  --primary-foreground: oklch(1.0000 0 0);
+  --muted: oklch(0.2511 0.1142 301.6663);
+  --muted-foreground: oklch(0.7217 0.1767 305.5038);
+  --border: oklch(0.3796 0.1783 293.7446);
+  --ring: oklch(0.7017 0.3225 328.3634);
+
+  /* Design tokens. radius drops to 0.5rem (slightly smaller on dark).
+   * A neon pink drop shadow (0 0 15px 1px @ 0.50) gives the dark
+   * variant a "glowing" look. */
+  --radius: 0.5rem;
+  --shadow-color: #ff00ff;
+  --shadow-opacity: 0.5;
+  --shadow-blur: 15px;
+  --shadow-spread: 1px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 0px;
+  --shadow-2xs: 0px 0px 15px 1px hsl(300 100% 50% / 0.25);
+  --shadow-xs: 0px 0px 15px 1px hsl(300 100% 50% / 0.25);
+  --shadow-sm: 0px 0px 15px 1px hsl(300 100% 50% / 0.50), 0px 1px 2px 0px hsl(300 100% 50% / 0.50);
+  --shadow: 0px 0px 15px 1px hsl(300 100% 50% / 0.50), 0px 1px 2px 0px hsl(300 100% 50% / 0.50);
+  --shadow-md: 0px 0px 15px 1px hsl(300 100% 50% / 0.50), 0px 2px 4px 0px hsl(300 100% 50% / 0.50);
+  --shadow-lg: 0px 0px 15px 1px hsl(300 100% 50% / 0.50), 0px 4px 6px 0px hsl(300 100% 50% / 0.50);
+  --shadow-xl: 0px 0px 15px 1px hsl(300 100% 50% / 0.50), 0px 8px 10px 0px hsl(300 100% 50% / 0.50);
+  --shadow-2xl: 0px 0px 15px 1px hsl(300 100% 50% / 1.25);
+  --font-sans: Basic, ui-sans-serif, sans-serif, system-ui;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-serif: 'Georgia', serif;
+  --letter-spacing: 0.05em;
+  --tracking-normal: 0.05em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. */
+  --secondary: oklch(0.5136 0.2930 288.6666);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --accent: oklch(0.9054 0.1546 194.7689);
+  --accent-foreground: oklch(0.1418 0.0662 295.8049);
+  --destructive: oklch(0.6528 0.2381 13.7745);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(0.1947 0.0674 299.8714);
+  --card-foreground: oklch(0.9714 0.0141 343.1982);
+  --popover: oklch(0.1947 0.0674 299.8714);
+  --popover-foreground: oklch(0.9714 0.0141 343.1982);
+  --input: oklch(0.3796 0.1783 293.7446);
+}

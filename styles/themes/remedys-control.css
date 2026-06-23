@@ -1,0 +1,109 @@
+/*
+ * Remedy's Control theme — high-contrast black/white with a single
+ * orange accent. Source:
+ *   https://tweakcn.com/r/themes/cmmszbekf000104i37xyy4irf
+ *
+ * Light: mid-gray bg with near-black text and a black primary
+ * Dark:  pure black bg with white text and a white primary
+ *
+ * The design is intentionally stark — the whole UI feels like a
+ * printout, with a single orange secondary used for emphasis
+ * (destructive / warning states). The radius is small (0.4rem)
+ * and the shadow stack is the default subtle 1px 3px drop.
+ */
+:root[data-theme="remedys-control"] {
+  /* Required 8 (validation gate for runtime imports). */
+  --background: oklch(0.8610 0 0);
+  --foreground: oklch(0.3899 0 0);
+  --primary: oklch(0 0 0);
+  --primary-foreground: oklch(1.0000 0 0);
+  --muted: oklch(0.7570 0 0);
+  --muted-foreground: oklch(0.4278 0 0);
+  --border: oklch(0.6239 0 0);
+  --ring: oklch(0.2156 0 0);
+
+  /* Design tokens. radius=0.4rem, subtle 1px 3px drop. */
+  --radius: 0.4rem;
+  --shadow-color: hsl(0, 0%, 10%);
+  --shadow-opacity: 0.1;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 1px;
+  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 10% / 0.05);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 10% / 0.05);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 10% / 0.10), 0 1px 2px -1px hsl(0 0% 10% / 0.10);
+  --shadow: 0 1px 3px 0px hsl(0 0% 10% / 0.10), 0 1px 2px -1px hsl(0 0% 10% / 0.10);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 10% / 0.10), 0 2px 4px -1px hsl(0 0% 10% / 0.10);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 10% / 0.10), 0 4px 6px -1px hsl(0 0% 10% / 0.10);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 10% / 0.10), 0 8px 10px -1px hsl(0 0% 10% / 0.10);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 10% / 0.25);
+  --font-sans: Montserrat, ui-sans-serif, sans-serif, system-ui;
+  --font-mono: JetBrains Mono, ui-monospace, monospace;
+  --font-serif: Merriweather, ui-serif, serif;
+  --letter-spacing: 0em;
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. accent = teal. secondary = orange (used
+   * for the destructive / warning states). */
+  --secondary: oklch(0.6272 0.1785 45.2628);
+  --secondary-foreground: oklch(0.9696 0 0);
+  --accent: oklch(0.8114 0.0653 186.8658);
+  --accent-foreground: oklch(0.2156 0 0);
+  --destructive: oklch(0.5899 0.2415 28.4505);
+  --destructive-foreground: oklch(0.9696 0 0);
+  --card: oklch(0.8294 0 0);
+  --card-foreground: oklch(0.2156 0 0);
+  --popover: oklch(0.2156 0 0);
+  --popover-foreground: oklch(0.7570 0 0);
+  --input: oklch(0.6272 0.1785 45.2628);
+}
+
+:root[data-theme="remedys-control-dark"] {
+  /* Required 8. */
+  --background: oklch(0 0 0);
+  --foreground: oklch(1.0000 0 0);
+  --primary: oklch(1.0000 0 0);
+  --primary-foreground: oklch(0 0 0);
+  --muted: oklch(0.2156 0 0);
+  --muted-foreground: oklch(0.4741 0 0);
+  --border: oklch(0.2156 0 0);
+  --ring: oklch(1.0000 0 0);
+
+  /* Design tokens. */
+  --radius: 0.4rem;
+  --shadow-color: oklch(0 0 0);
+  --shadow-opacity: 0.1;
+  --shadow-blur: 3px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 1px;
+  --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.10), 0 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
+  --font-sans: Montserrat, ui-sans-serif, sans-serif, system-ui;
+  --font-mono: JetBrains Mono, ui-monospace, monospace;
+  --font-serif: Merriweather, ui-serif, serif;
+  --letter-spacing: 0em;
+  --tracking-normal: 0em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. Dark accent = darker teal. */
+  --secondary: oklch(0.5899 0.2415 28.4505);
+  --secondary-foreground: oklch(0.2156 0 0);
+  --accent: oklch(0.2410 0.0269 185.8851);
+  --accent-foreground: oklch(0.9696 0 0);
+  --destructive: oklch(0.5899 0.2415 28.4505);
+  --destructive-foreground: oklch(0 0 0);
+  --card: oklch(0 0 0);
+  --card-foreground: oklch(1.0000 0 0);
+  --popover: oklch(0.2156 0 0);
+  --popover-foreground: oklch(1.0000 0 0);
+  --input: oklch(0.2156 0 0);
+}

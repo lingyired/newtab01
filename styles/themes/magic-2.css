@@ -1,0 +1,108 @@
+/*
+ * Magic 2 theme — soft beige with a deep purple primary and a warm
+ * orange secondary. Source:
+ *   https://tweakcn.com/r/themes/cmmsyjdm2000004jy9hdw16bg
+ *
+ * Light: warm beige bg with a purple primary + orange secondary
+ * Dark:  deep purple bg with a warm yellow primary
+ *
+ * The palette is more "designed" than default — both the warm
+ * background and the saturated primary work together to give the
+ * page a strong identity. Roboto is the signature font family.
+ */
+:root[data-theme="magic-2"] {
+  /* Required 8 (validation gate for runtime imports). */
+  --background: oklch(0.9437 0.0702 89.4796);
+  --foreground: oklch(0.2226 0.0099 88.7963);
+  --primary: oklch(0.3182 0.1423 316.3261);
+  --primary-foreground: oklch(1.0000 0 0);
+  --muted: oklch(0.8762 0.0071 124.4612);
+  --muted-foreground: oklch(0.5111 0.0148 86.8755);
+  --border: oklch(0.8348 0.0071 67.7281);
+  --ring: oklch(0.3182 0.1423 316.3261);
+
+  /* Design tokens. radius=0.4rem, subtle 2px 4px drop. */
+  --radius: 0.4rem;
+  --shadow-color: #000000;
+  --shadow-opacity: 0.1;
+  --shadow-blur: 4px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 2px;
+  --shadow-2xs: 0px 2px 4px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0px 2px 4px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0px 2px 4px 0px hsl(0 0% 0% / 0.10), 0px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0px 2px 4px 0px hsl(0 0% 0% / 0.10), 0px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0px 2px 4px 0px hsl(0 0% 0% / 0.10), 0px 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0px 2px 4px 0px hsl(0 0% 0% / 0.10), 0px 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0px 2px 4px 0px hsl(0 0% 0% / 0.10), 0px 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0px 2px 4px 0px hsl(0 0% 0% / 0.25);
+  --font-sans: Roboto, ui-sans-serif, sans-serif, system-ui;
+  --font-mono: Roboto Mono, ui-monospace, monospace;
+  --font-serif: Merriweather, ui-serif, serif;
+  --letter-spacing: 0rem;
+  --tracking-normal: 0rem;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. accent = soft pink-purple. secondary =
+   * orange. */
+  --secondary: oklch(0.7637 0.1751 61.8828);
+  --secondary-foreground: oklch(0 0 0);
+  --accent: oklch(0.8218 0.1122 305.4536);
+  --accent-foreground: oklch(0.3182 0.1423 316.3261);
+  --destructive: oklch(0.6761 0.2167 38.1565);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(1.0000 0 0);
+  --card-foreground: oklch(0.2226 0.0099 88.7963);
+  --popover: oklch(1.0000 0 0);
+  --popover-foreground: oklch(0.2226 0.0099 88.7963);
+  --input: oklch(0.8862 0.0456 85.8608);
+}
+
+:root[data-theme="magic-2-dark"] {
+  /* Required 8. */
+  --background: oklch(0.1730 0.0560 322.6284);
+  --foreground: oklch(0.8871 0.0100 125.6938);
+  --primary: oklch(0.7739 0.1717 64.4001);
+  --primary-foreground: oklch(0.2020 0.0642 309.1834);
+  --muted: oklch(0.2126 0.0613 317.4175);
+  --muted-foreground: oklch(0.6577 0.0170 86.4498);
+  --border: oklch(0.3033 0.0796 316.3267);
+  --ring: oklch(0.5940 0.2844 306.1490);
+
+  /* Design tokens. Slightly heavier shadow at 0.20 opacity on dark. */
+  --radius: 0.4rem;
+  --shadow-color: #000000;
+  --shadow-opacity: 0.2;
+  --shadow-blur: 4px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 2px;
+  --shadow-2xs: 0px 2px 4px 0px hsl(0 0% 0% / 0.10);
+  --shadow-xs: 0px 2px 4px 0px hsl(0 0% 0% / 0.10);
+  --shadow-sm: 0px 2px 4px 0px hsl(0 0% 0% / 0.20), 0px 1px 2px -1px hsl(0 0% 0% / 0.20);
+  --shadow: 0px 2px 4px 0px hsl(0 0% 0% / 0.20), 0px 1px 2px -1px hsl(0 0% 0% / 0.20);
+  --shadow-md: 0px 2px 4px 0px hsl(0 0% 0% / 0.20), 0px 2px 4px -1px hsl(0 0% 0% / 0.20);
+  --shadow-lg: 0px 2px 4px 0px hsl(0 0% 0% / 0.20), 0px 4px 6px -1px hsl(0 0% 0% / 0.20);
+  --shadow-xl: 0px 2px 4px 0px hsl(0 0% 0% / 0.20), 0px 8px 10px -1px hsl(0 0% 0% / 0.20);
+  --shadow-2xl: 0px 2px 4px 0px hsl(0 0% 0% / 0.50);
+  --font-sans: Roboto, ui-sans-serif, sans-serif, system-ui;
+  --font-mono: Roboto Mono, ui-monospace, monospace;
+  --font-serif: Merriweather, ui-serif, serif;
+  --letter-spacing: 0rem;
+  --tracking-normal: 0rem;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. */
+  --secondary: oklch(0.6994 0.1991 8.6164);
+  --secondary-foreground: oklch(0.1398 0.0546 318.6633);
+  --accent: oklch(0.3568 0.0904 317.1823);
+  --accent-foreground: oklch(0.8871 0.0100 125.6938);
+  --destructive: oklch(0.5953 0.1899 38.3044);
+  --destructive-foreground: oklch(0.8871 0.0100 125.6938);
+  --card: oklch(0.2082 0.0661 315.3837);
+  --card-foreground: oklch(0.8871 0.0100 125.6938);
+  --popover: oklch(0.2329 0.0694 316.2964);
+  --popover-foreground: oklch(0.8871 0.0100 125.6938);
+  --input: oklch(0.3033 0.0796 316.3267);
+}

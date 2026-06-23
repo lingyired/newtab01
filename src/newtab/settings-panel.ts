@@ -48,23 +48,39 @@ function themeLabel(id: string): string {
   return localized === key ? id : localized;
 }
 
-/** Build a label map for the built-in themes (4 base + 4 dark
+/** Build a label map for the built-in themes (12 base + 12 dark
  *  variants). The dark variants' labels are also translated
- *  (`theme.default-dark` = "Default · Dark" in en, "默认·暗" in
+ *  (`theme.<id>-dark` = "<Name> · Dark" in en, "<名称>·暗" in
  *  zh). Used by `listAllThemesWithLabels` which expects a map
  *  rather than a function. Re-built on every tab render so a
  *  language change takes effect on the next tab switch / panel
  *  re-open. */
 function buildThemeLabels(): Record<string, string> {
   return {
-    default: themeLabel('default'),
-    'default-dark': themeLabel('default-dark'),
-    'mx-brutalist': themeLabel('mx-brutalist'),
-    'mx-brutalist-dark': themeLabel('mx-brutalist-dark'),
-    cyberpunk: themeLabel('cyberpunk'),
-    'cyberpunk-dark': themeLabel('cyberpunk-dark'),
     astrovista: themeLabel('astrovista'),
     'astrovista-dark': themeLabel('astrovista-dark'),
+    'mx-brutalist': themeLabel('mx-brutalist'),
+    'mx-brutalist-dark': themeLabel('mx-brutalist-dark'),
+    'remedys-control': themeLabel('remedys-control'),
+    'remedys-control-dark': themeLabel('remedys-control-dark'),
+    'magic-2': themeLabel('magic-2'),
+    'magic-2-dark': themeLabel('magic-2-dark'),
+    astra: themeLabel('astra'),
+    'astra-dark': themeLabel('astra-dark'),
+    mimi: themeLabel('mimi'),
+    'mimi-dark': themeLabel('mimi-dark'),
+    'manga-vibe': themeLabel('manga-vibe'),
+    'manga-vibe-dark': themeLabel('manga-vibe-dark'),
+    win86: themeLabel('win86'),
+    'win86-dark': themeLabel('win86-dark'),
+    'random-02': themeLabel('random-02'),
+    'random-02-dark': themeLabel('random-02-dark'),
+    rose: themeLabel('rose'),
+    'rose-dark': themeLabel('rose-dark'),
+    'kawi-green': themeLabel('kawi-green'),
+    'kawi-green-dark': themeLabel('kawi-green-dark'),
+    optimus: themeLabel('optimus'),
+    'optimus-dark': themeLabel('optimus-dark'),
   };
 }
 

@@ -46,10 +46,18 @@ import { rebuildDynamicStyles } from '../settings/apply';
  * docs/superpowers/specs/2026-06-17-runtime-theme-import-design.md.
  */
 const THEMES = [
-  'default',
-  'mx-brutalist',
-  'cyberpunk',
   'astrovista',
+  'mx-brutalist',
+  'remedys-control',
+  'magic-2',
+  'astra',
+  'mimi',
+  'manga-vibe',
+  'win86',
+  'random-02',
+  'rose',
+  'kawi-green',
+  'optimus',
 ] as const;
 
 export type ThemeId = (typeof THEMES)[number];

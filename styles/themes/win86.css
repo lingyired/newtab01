@@ -1,0 +1,110 @@
+/*
+ * win86 theme — retro Windows 9x / "MS Sans Serif" aesthetic.
+ * Source: https://tweakcn.com/r/themes/cmp0djokg000004jl1o96fo18
+ *
+ * Light: teal-cyan bg (classic Windows 9x teal) with black text and
+ *        a hot cyan primary
+ * Dark:  near-black bg with white text and a hot cyan primary
+ *
+ * The signature is the "Courier New" monospace font on a
+ * pixelated teal background — meant to evoke Windows 95/98
+ * era dialogs. radius=0 (sharp corners) and a 3px 3px hard
+ * black drop on light. The dark variant upgrades to a glowing
+ * cyan drop shadow (12px blur) for a more modern "neon retro"
+ * feel.
+ */
+:root[data-theme="win86"] {
+  /* Required 8 (validation gate for runtime imports). */
+  --background: oklch(0.5431 0.0927 194.7689);
+  --foreground: oklch(0 0 0);
+  --primary: oklch(0.9054 0.1546 194.7689);
+  --primary-foreground: oklch(0 0 0);
+  --muted: oklch(0.8699 0 0);
+  --muted-foreground: oklch(0.2178 0 0);
+  --border: oklch(0 0 0);
+  --ring: oklch(0.9054 0.1546 194.7689);
+
+  /* Design tokens. radius=0, 3px 3px hard black drop. */
+  --radius: 0rem;
+  --shadow-color: #000000;
+  --shadow-opacity: 0.5;
+  --shadow-blur: 0px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 3px;
+  --shadow-offset-y: 3px;
+  --shadow-2xs: 3px 3px 0px 0px hsl(0 0% 0% / 0.25);
+  --shadow-xs: 3px 3px 0px 0px hsl(0 0% 0% / 0.25);
+  --shadow-sm: 3px 3px 0px 0px hsl(0 0% 0% / 0.50), 3px 1px 2px -1px hsl(0 0% 0% / 0.50);
+  --shadow: 3px 3px 0px 0px hsl(0 0% 0% / 0.50), 3px 1px 2px -1px hsl(0 0% 0% / 0.50);
+  --shadow-md: 3px 3px 0px 0px hsl(0 0% 0% / 0.50), 3px 2px 4px -1px hsl(0 0% 0% / 0.50);
+  --shadow-lg: 3px 3px 0px 0px hsl(0 0% 0% / 0.50), 3px 4px 6px -1px hsl(0 0% 0% / 0.50);
+  --shadow-xl: 3px 3px 0px 0px hsl(0 0% 0% / 0.50), 3px 8px 10px -1px hsl(0 0% 0% / 0.50);
+  --shadow-2xl: 3px 3px 0px 0px hsl(0 0% 0% / 1.25);
+  --font-sans: "Courier New", monospace;
+  --font-mono: "Courier New", monospace;
+  --font-serif: Georgia, serif;
+  --letter-spacing: 0.02em;
+  --tracking-normal: 0.05em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. accent = same cyan as primary. */
+  --secondary: oklch(0.7017 0.3225 328.3634);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --accent: oklch(0.9054 0.1546 194.7689);
+  --accent-foreground: oklch(0 0 0);
+  --destructive: oklch(0.3767 0.1546 29.2339);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(0.8078 0 0);
+  --card-foreground: oklch(0 0 0);
+  --popover: oklch(0.8078 0 0);
+  --popover-foreground: oklch(0 0 0);
+  --input: oklch(1.0000 0 0);
+}
+
+:root[data-theme="win86-dark"] {
+  /* Required 8. */
+  --background: oklch(0.1149 0 0);
+  --foreground: oklch(1.0000 0 0);
+  --primary: oklch(0.8771 0.1492 201.1870);
+  --primary-foreground: oklch(0 0 0);
+  --muted: oklch(0.2350 0 0);
+  --muted-foreground: oklch(0.8452 0 0);
+  --border: oklch(0.3211 0 0);
+  --ring: oklch(0.8771 0.1492 201.1870);
+
+  /* Design tokens. Glowing cyan drop shadow. */
+  --radius: 0rem;
+  --shadow-color: #00f3ff;
+  --shadow-opacity: 0.4;
+  --shadow-blur: 12px;
+  --shadow-spread: 0px;
+  --shadow-offset-x: 0px;
+  --shadow-offset-y: 0px;
+  --shadow-2xs: 0px 0px 12px 0px hsl(182.8235 100% 50% / 0.20);
+  --shadow-xs: 0px 0px 12px 0px hsl(182.8235 100% 50% / 0.20);
+  --shadow-sm: 0px 0px 12px 0px hsl(182.8235 100% 50% / 0.40), 0px 1px 2px -1px hsl(182.8235 100% 50% / 0.40);
+  --shadow: 0px 0px 12px 0px hsl(182.8235 100% 50% / 0.40), 0px 1px 2px -1px hsl(182.8235 100% 50% / 0.40);
+  --shadow-md: 0px 0px 12px 0px hsl(182.8235 100% 50% / 0.40), 0px 2px 4px -1px hsl(182.8235 100% 50% / 0.40);
+  --shadow-lg: 0px 0px 12px 0px hsl(182.8235 100% 50% / 0.40), 0px 4px 6px -1px hsl(182.8235 100% 50% / 0.40);
+  --shadow-xl: 0px 0px 12px 0px hsl(182.8235 100% 50% / 0.40), 0px 8px 10px -1px hsl(182.8235 100% 50% / 0.40);
+  --shadow-2xl: 0px 0px 12px 0px hsl(182.8235 100% 50% / 1.00);
+  --font-sans: "Courier New", monospace;
+  --font-mono: "Courier New", monospace;
+  --font-serif: Georgia, serif;
+  --letter-spacing: 0.05em;
+  --tracking-normal: 0.05em;
+  --spacing: 0.25rem;
+
+  /* Shadcn surface tokens. */
+  --secondary: oklch(0.7017 0.3225 328.3634);
+  --secondary-foreground: oklch(1.0000 0 0);
+  --accent: oklch(0.3542 0.0612 209.6421);
+  --accent-foreground: oklch(0.8771 0.1492 201.1870);
+  --destructive: oklch(0.6280 0.2577 29.2339);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --card: oklch(0.1822 0 0);
+  --card-foreground: oklch(1.0000 0 0);
+  --popover: oklch(0.1448 0 0);
+  --popover-foreground: oklch(1.0000 0 0);
+  --input: oklch(0 0 0);
+}

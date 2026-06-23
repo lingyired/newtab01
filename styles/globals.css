@@ -1,8 +1,15 @@
-@import './themes/default.css';
-@import './themes/default-dark.css';
-@import './themes/mx-brutalist.css';
-@import './themes/cyberpunk.css';
 @import './themes/astrovista.css';
+@import './themes/mx-brutalist.css';
+@import './themes/remedys-control.css';
+@import './themes/magic-2.css';
+@import './themes/astra.css';
+@import './themes/mimi.css';
+@import './themes/manga-vibe.css';
+@import './themes/win86.css';
+@import './themes/random-02.css';
+@import './themes/rose.css';
+@import './themes/kawi-green.css';
+@import './themes/optimus.css';
 
 /*
  * Base CSS variables live in :where(:root) so their specificity is 0.
