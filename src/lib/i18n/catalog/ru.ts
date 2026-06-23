@@ -41,6 +41,7 @@ const messages = {
   'themePicker.previewAriaLabel': 'Список предпросмотра тем. Нажмите на тему, чтобы применить её.',
   'settings.field.darkMode': 'Тёмный режим',
   'settings.field.darkModeDesc': 'Использует ли тема светлый или тёмный вариант. «Следовать системе» отслеживает оформление ОС.',
+  'settings.field.darkModeNote': 'Некоторые темы могут не иметь светлого режима; их светлые и тёмные варианты могут немного различаться.',
   'settings.darkMode.light': 'Светлая',
   'settings.darkMode.system': 'Следовать системе',
   'settings.darkMode.dark': 'Тёмная',

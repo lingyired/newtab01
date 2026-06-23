@@ -1466,7 +1466,7 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
       t('settings.field.darkMode'),
       createDarkModeSelectInput(),
       'darkMode',
-      t('settings.field.darkModeDesc'),
+      t('settings.field.darkModeDesc') + ' ' + t('settings.field.darkModeNote'),
     ),
   );
   // width / hPos are global (v0.2.97 per user decision) and
@@ -1633,7 +1633,7 @@ async function buildThemeSelectorSection(): Promise<HTMLElement> {
       t('settings.field.darkMode'),
       createDarkModeSelectInput(),
       'darkMode',
-      t('settings.field.darkModeDesc'),
+      t('settings.field.darkModeDesc') + ' ' + t('settings.field.darkModeNote'),
     ),
   );
 

@@ -45,6 +45,7 @@ const messages = {
   'themePicker.previewAriaLabel': 'Lista de vista previa de temas. Haz clic en un tema para aplicarlo.',
   'settings.field.darkMode': 'Modo oscuro',
   'settings.field.darkModeDesc': 'Si el tema usa la variante clara u oscura. "Seguir al sistema" sigue la apariencia del sistema operativo.',
+  'settings.field.darkModeNote': 'Algunos temas pueden no tener un modo claro; sus variantes clara y oscura pueden diferir ligeramente.',
   'settings.darkMode.light': 'Claro',
   'settings.darkMode.system': 'Seguir al sistema',
   'settings.darkMode.dark': 'Oscuro',

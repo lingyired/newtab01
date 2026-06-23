@@ -41,6 +41,7 @@ const messages = {
   'themePicker.previewAriaLabel': 'Liste d\'aperçu des thèmes. Cliquez sur un thème pour l\'appliquer.',
   'settings.field.darkMode': 'Mode sombre',
   'settings.field.darkModeDesc': 'Si le thème utilise la variante claire ou sombre. « Suivre le système » suit l\'apparence du système d\'exploitation.',
+  'settings.field.darkModeNote': 'Certains thèmes peuvent ne pas avoir de mode clair ; leurs variantes claire et sombre peuvent différer légèrement.',
   'settings.darkMode.light': 'Clair',
   'settings.darkMode.system': 'Suivre le système',
   'settings.darkMode.dark': 'Sombre',

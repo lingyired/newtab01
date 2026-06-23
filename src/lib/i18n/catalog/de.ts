@@ -41,6 +41,7 @@ const messages = {
   'themePicker.previewAriaLabel': 'Design-Vorschauliste. Klicke auf ein Design, um es anzuwenden.',
   'settings.field.darkMode': 'Dunkler Modus',
   'settings.field.darkModeDesc': 'Ob das Design die helle oder dunkle Variante verwendet. „System folgen" folgt dem Erscheinungsbild des Betriebssystems.',
+  'settings.field.darkModeNote': 'Einige Designs haben möglicherweise keinen hellen Modus; ihre hellen und dunklen Varianten können sich leicht unterscheiden.',
   'settings.darkMode.light': 'Hell',
   'settings.darkMode.system': 'System folgen',
   'settings.darkMode.dark': 'Dunkel',

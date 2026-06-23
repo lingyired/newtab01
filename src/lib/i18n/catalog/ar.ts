@@ -44,6 +44,7 @@ const messages = {
   'themePicker.previewAriaLabel': 'قائمة معاينة السمات. انقر على سمة لتطبيقها.',
   'settings.field.darkMode': 'الوضع الداكن',
   'settings.field.darkModeDesc': 'هل تستخدم السمة المتغير الفاتح أم الداكن. "متابعة النظام" تتبع إعداد مظهر نظام التشغيل.',
+  'settings.field.darkModeNote': 'قد لا تحتوي بعض السمات على وضع فاتح؛ قد تختلف متغيراتها الفاتحة والداكنة قليلاً.',
   'settings.darkMode.light': 'فاتح',
   'settings.darkMode.system': 'متابعة النظام',
   'settings.darkMode.dark': 'داكن',

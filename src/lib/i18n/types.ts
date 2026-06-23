@@ -83,6 +83,7 @@ export type MessageKey =
   | 'themePicker.previewAriaLabel'
   | 'settings.field.darkMode'
   | 'settings.field.darkModeDesc'
+  | 'settings.field.darkModeNote'
   | 'settings.darkMode.light'
   | 'settings.darkMode.system'
   | 'settings.darkMode.dark'

@@ -50,6 +50,7 @@ const messages = {
   'themePicker.previewAriaLabel': '主题预览列表。点击任意主题即可应用。',
   'settings.field.darkMode': '暗色模式',
   'settings.field.darkModeDesc': '决定主题使用浅色还是深色变体。选「跟随系统」会随 macOS / Windows 的外观设置自动切换。',
+  'settings.field.darkModeNote': '部分主题可能没有浅色模式，它的浅色和暗色模式会有小许差异。',
   'settings.darkMode.light': '浅色',
   'settings.darkMode.system': '跟随系统',
   'settings.darkMode.dark': '深色',

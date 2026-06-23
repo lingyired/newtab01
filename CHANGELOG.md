@@ -5,7 +5,12 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.3] - 2026-06-23
+## [1.0.4] - 2026-06-23
+
+### Added
+- **暗色模式描述追加 note**。设置面板「暗色模式」选项的描述后追加一条提示：「部分主题可能没有浅色模式，它的浅色和暗色模式会有小许差异。」 10 个 locale 全部覆盖。位于「外观」tab 和「自定义主题」tab 的「主题」section。
+
+## [1.0.2] - 2026-06-23
 
 ### Added
 - **关于 tab 新增「作者的其他扩展」section**。v1.0.0 加入的 About tab 有 4 个 section（版本 / 灵感 / 主题来源 / 仓库），本版本追加第 5 个 section：在 v1.0.3 收录了作者的另一个 Chrome 扩展 `No lazyload 禁用图片懒加载`（`https://chromewebstore.google.com/detail/no-lazyload-disable-image/gdaoomgmekonglmdeaoengblkjeopall`）。list 设计为可扩展——`src/newtab/about-tab.ts` 的 `OTHER_EXTENSIONS: ReadonlyArray<{ url, nameKey }>` 数组加一行 `{ url, nameKey }` 即可，未来再加扩展不需要改任何渲染逻辑。

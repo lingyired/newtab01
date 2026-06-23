@@ -41,6 +41,7 @@ const messages = {
   'themePicker.previewAriaLabel': 'テーマのプレビューリスト。テーマをクリックして適用します。',
   'settings.field.darkMode': 'ダークモード',
   'settings.field.darkModeDesc': 'テーマがライトかダークのどちらのバリアントを使用するか。「システムに従う」は OS の外観設定に従います。',
+  'settings.field.darkModeNote': '一部のテーマにはライトモードがない場合があり、ライトとダークのバリアントは若干異なる場合があります。',
   'settings.darkMode.light': 'ライト',
   'settings.darkMode.system': 'システムに従う',
   'settings.darkMode.dark': 'ダーク',

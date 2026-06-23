@@ -49,6 +49,7 @@ const messages = {
   'themePicker.previewAriaLabel': 'Theme preview list. Click a theme to apply it.',
   'settings.field.darkMode': 'Dark mode',
   'settings.field.darkModeDesc': 'Whether the theme uses the light or dark variant. "Follow system" tracks the OS appearance setting.',
+  'settings.field.darkModeNote': 'Some themes may not have a light mode; their light and dark variants can differ slightly.',
   'settings.darkMode.light': 'Light',
   'settings.darkMode.system': 'Follow system',
   'settings.darkMode.dark': 'Dark',

@@ -41,6 +41,7 @@ const messages = {
   'themePicker.previewAriaLabel': 'थीम पूर्वावलोकन सूची। थीम लागू करने के लिए किसी एक पर क्लिक करें।',
   'settings.field.darkMode': 'डार्क मोड',
   'settings.field.darkModeDesc': 'क्या थीम लाइट या डार्क वेरिएंट का उपयोग करती है। "सिस्टम का पालन करें" OS के रूप सेटिंग का पालन करता है।',
+  'settings.field.darkModeNote': 'कुछ थीम में लाइट मोड नहीं हो सकता है; उनके लाइट और डार्क वेरिएंट में थोड़ा अंतर हो सकता है।',
   'settings.darkMode.light': 'लाइट',
   'settings.darkMode.system': 'सिस्टम का पालन करें',
   'settings.darkMode.dark': 'डार्क',
