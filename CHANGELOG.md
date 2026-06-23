@@ -5,6 +5,17 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2026-06-23
+
+### Added
+- **关于 tab 新增「作者的其他扩展」section**。v1.0.0 加入的 About tab 有 4 个 section（版本 / 灵感 / 主题来源 / 仓库），本版本追加第 5 个 section：在 v1.0.3 收录了作者的另一个 Chrome 扩展 `No lazyload 禁用图片懒加载`（`https://chromewebstore.google.com/detail/no-lazyload-disable-image/gdaoomgmekonglmdeaoengblkjeopall`）。list 设计为可扩展——`src/newtab/about-tab.ts` 的 `OTHER_EXTENSIONS: ReadonlyArray<{ url, nameKey }>` 数组加一行 `{ url, nameKey }` 即可，未来再加扩展不需要改任何渲染逻辑。
+- **新增 2 个 MessageKey**：
+  - `about.moreExtensionsTitle`：section 标题（「More from this author」/「作者的其他扩展」等，10 个 locale 全译）
+  - `about.extension.noLazyload`：扩展名称本地化（en: "No LazyLoad — Disable image lazy loading"；zh: "No lazyload 禁用图片懒加载"——保留用户给的中英双语原文；其它 8 个 locale 走英文译本）
+
+### Changed
+- **设置面板 About tab 由 4 个 section 扩为 5 个**。`renderAboutTab()` 末尾追加 `buildMoreExtensionsSection()` + 一个 `<hr>` 分隔线。视觉上多 1 个 section（"More from this author" 在最底下），但 section 之间的 1px hairline 风格保持不变。
+
 ## [1.0.2] - 2026-06-23
 
 ### Changed

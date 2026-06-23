@@ -1762,6 +1762,40 @@
   background: var(--primary);
 }
 
+/* "More from this author" extension list (v1.0.3). Same flat
+ * list pattern as .sp-about-features but NO bullet — the link
+ * text itself is the visual content. Slightly tighter gap and
+ * larger font than the features list because the link text
+ * IS the item, not a meta-description. RTL-aware via plain
+ * flex (no inset-inline-start needed). */
+.sp-about-extensions {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.sp-about-extensions li {
+  font-size: 1.2rem;
+  line-height: 1.5;
+}
+.sp-about-extensions a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.1s;
+}
+.sp-about-extensions a:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+.sp-about-extensions a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .sp-about-paragraph {
   margin: 0;
   font-size: 1.2rem;

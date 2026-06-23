@@ -234,6 +234,8 @@ const messages = {
   'about.themesLink': 'tweakcn',
   'about.repoIntro': '开源项目地址：{link}',
   'about.repoLink': 'github.com/lingyired/newtab01',
+  'about.moreExtensionsTitle': '作者的其他扩展',
+  'about.extension.noLazyload': 'No lazyload 禁用图片懒加载',
 } as const satisfies LocaleMessages;
 
 export const zh: LocaleBundle = {

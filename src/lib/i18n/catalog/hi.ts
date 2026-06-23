@@ -210,6 +210,8 @@ const messages = {
   'about.themesLink': 'tweakcn',
   'about.repoIntro': 'GitHub पर ओपन सोर्स: {link}',
   'about.repoLink': 'github.com/lingyired/newtab01',
+  'about.moreExtensionsTitle': 'इस लेखक की ओर से और',
+  'about.extension.noLazyload': 'No LazyLoad — छवि आलसी लोडिंग अक्षम करें',
 } as const satisfies LocaleMessages;
 
 export const hi: LocaleBundle = {

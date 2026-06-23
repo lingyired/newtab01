@@ -266,7 +266,9 @@ export type MessageKey =
   | 'about.themesIntro'
   | 'about.themesLink'
   | 'about.repoIntro'
-  | 'about.repoLink';
+  | 'about.repoLink'
+  | 'about.moreExtensionsTitle'
+  | 'about.extension.noLazyload';
 
 export type LocaleMessages = Record<MessageKey, string>;
 
