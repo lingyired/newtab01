@@ -78,6 +78,8 @@ export type MessageKey =
   // Settings panel — appearance tab
   | 'settings.field.theme'
   | 'settings.field.themeDesc'
+  | 'settings.field.activeSuffix'
+  | 'themePicker.previewAriaLabel'
   | 'settings.field.darkMode'
   | 'settings.field.darkModeDesc'
   | 'settings.darkMode.light'

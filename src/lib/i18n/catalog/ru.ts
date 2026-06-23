@@ -36,6 +36,8 @@ const messages = {
   'settings.field.lockDesc': 'Запрещает пользователю изменять порядок закладок перетаскиванием.',
   'settings.field.theme': 'Тема',
   'settings.field.themeDesc': 'Активная цветовая тема. Управляйте пользовательскими темами (URL / вставка CSS) на вкладке «Пользовательские темы».',
+  'settings.field.activeSuffix': '({name})',
+  'themePicker.previewAriaLabel': 'Список предпросмотра тем. Нажмите на тему, чтобы применить её.',
   'settings.field.darkMode': 'Тёмный режим',
   'settings.field.darkModeDesc': 'Использует ли тема светлый или тёмный вариант. «Следовать системе» отслеживает оформление ОС.',
   'settings.darkMode.light': 'Светлая',

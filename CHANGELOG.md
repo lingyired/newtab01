@@ -5,6 +5,77 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.135] - 2026-07-14
+
+### Changed
+- **主题 picker 默认无 border，选中态有 dotted border**。v0.2.130~v0.2.134 的主题预览列表里，每行外层 `<li>` 默认都带 1px `solid var(--border)` 边（主题自带的中性灰），active 状态叠加 `outline: 2px dotted; outline-offset: -2px` 在内侧画虚线。视觉上"双层边框"比较重，且 outline + border 混在一起，dotted 边既不在外也不在里、概念不清晰。
+- 改为：
+  - 默认 `.sp-theme-preview-item`：`border: 2px solid transparent`（占位、不可见）。
+  - active `.sp-theme-preview-item--active`：`border: 2px dotted var(--ring, var(--primary))`（dotted 边直接落在 box 边缘）。
+  - 删掉 outline 声明。
+- 两个状态间 `border-width` 都是 2px，仅 `border-style`（solid → dotted）+ `border-color`（transparent → var(--ring)）切换，配合 `box-sizing: border-box`，box 宽高完全一致 —— 选中态切换没有 2px layout shift。
+- 影响范围：仅 settings panel 内"主题"行的视觉态切换；不影响 newtab 主页 / 主题应用本身。
+
+
+
+## [0.2.134] - 2026-07-13
+
+### Fixed
+- **主题 picker 跟随暗色模式实时更新**。v0.2.130 ~ v0.2.133 引入的主题预览列表里，每个预览项的外层 `<li>` 通过 inline `style="--background: ...; --card: ...; ..."` 注入主题的 19 个 CSS 变量，用于在 picker 关闭时模拟"如果切到这个主题会是什么样"的视觉。`buildThemePicker`（build 路径）会调用 `stampThemeVars` 把当前 `darkMode` 解析后的 light/dark 变体写上去，但 `refreshThemePicker`（storage.onChanged 走 refresh 路径）此前只切换 `--active` class，不重写 inline vars —— 导致：
+  1. 用户在 topbar / 设置面板里切换 `darkMode`，picker 列表里所有预览的"页面背景 + 链接样式"都还停留在上一个 darkMode 的调色板，要关闭再打开面板才更新。
+  2. `darkMode === 'system'` 时 OS 切深浅色，storage.onChanged 根本不会触发，picker 完全静止。
+- 修复实现：
+  1. `theme-picker.ts` 把"读取 + 注入 inline vars"提取成 `stampThemeVars(li, themeId, darkMode)` helper，`buildOnePreview` 和 `refreshThemePicker` 都走它，build / refresh 路径共用同一份 stamp 逻辑。
+  2. `refreshThemePicker` 签名加第 3 个参数 `darkMode: 'system' | 'light' | 'dark' = 'system'`，每次 refresh 都重新读 `<html data-theme="...">` 上的 resolved 变体的 CSS vars 重写 inline style。
+  3. `refreshInputsFromSettings`（settings-panel.ts）在调 `refreshThemePicker` 时传入当前 `getSetting('darkMode')`，storage 变化走的就是这个路径。
+  4. 新增 `installOsThemeListener` / `uninstallOsThemeListener`（settings-panel.ts），订阅 `(prefers-color-scheme: dark)` 的 `change` 事件。当且仅当 `darkMode === 'system'` 时调 `refreshInputsFromSettings()` 重 stamp。listener 跟随 `openSettingsPanel` / `closeSettingsPanel` 的生命周期装/拆，关闭面板后立即释放。
+- 影响范围：仅 settings panel 内"主题"行；newtab 主页 / 实时页面已经在 `applySettingsToDOM` 里走 `applyTheme()` 重算 `data-theme`，不受影响。性能：每次 refresh 对 N 个主题做 N 次 sync data-theme swap + N 次 getComputedStyle 读 + N 次 inline style 写入，4-15 个主题下总和 < 20ms（仅在 storage / OS 变化时触发，不是常态操作）。
+
+
+
+## [0.2.133] - 2026-07-12
+
+### Changed
+- **主题行 label 后面追加当前主题名后缀**。外观 tab 和自定义主题 tab 的"主题"行 label 之后，会自动加上 ` (当前主题名)` 形式的后缀（中文为全角 `（当前主题名）`），例如：
+  - 英文：`Theme (MX-Brutalist)`
+  - 中文：`主题（MX 粗野）`
+- 实现细节：
+  - `createRow()` 新增第 7 个可选参数 `activeLabel?: () => string | null`，接受一个返回当前激活值文本的 getter。getter 在 build 时调用一次写初始文本。
+  - 后缀渲染为 `<span class="sp-label-active" data-active-source="theme">` 嵌在 `<label>` 内部，点击 label 仍然触发 `for=sp-theme` 焦点跳转。
+  - `refreshInputsFromSettings()` 监听 `chrome.storage.onChanged` 事件时，遍历所有 `.sp-label-active[data-active-source]`，对 source='theme' 重新调用 `themeLabel(getSetting('theme'))` 并刷新文本。跨标签页同步 / 切语言都会立即反映。
+  - 新增 1 个 MessageKey `settings.field.activeSuffix = '({name})'`（10 个 catalog 同步；中文用全角括号）。
+  - `.sp-label-active` CSS：muted 颜色（`var(--muted-foreground)`）+ 400 字重 + 0.25em 左 margin。
+- **自定义主题 tab 的主题行同步升级**。v0.2.132 漏了 `buildThemeSelectorSection()`（自定义主题 tab 顶部的"选择主题"section），现在补上 `layout: 'vertical'` + `columns: 2` + active label suffix，三处保持一致。
+
+## [0.2.132] - 2026-07-11
+
+### Changed
+- **主题行改用垂直 layout + 2 列网格**。`createRow()` 新增第 6 个可选参数 `layout: 'horizontal' | 'vertical'`，默认 `'horizontal'` 保持所有现有调用行为不变。垂直 layout 时：
+  - label 改为顶部、占满整行（覆盖默认 110px 固定宽度）
+  - input 占满整行
+  - 描述文案自然落到 input 下方
+- **主题 picker 容器支持 2 列网格**。`buildThemePicker()` 新增第 6 个可选参数 `columns: 1 | 2`，默认 1（保持现有调用兼容）。`columns=2` 时容器加 `sp-theme-picker--2col` class，CSS 用 `grid-template-columns: 1fr 1fr` 排版。4 个内置主题从 4 行变成 2 行，更紧凑。
+- **选中态的点线 outline 移到外层 `<li>`**。v0.2.130 把 outline 加在内层 `<a>` 上，用户反馈"作用在背景色这个边框上"更直观。改为：选中态时外层 `<li>` 加 `outline: 2px dotted var(--ring); outline-offset: -2px;`，虚线紧贴 1px 边框内侧、压在最外层 2px padding 上，形成"双层边框"高亮效果（与项目里 `#main a.selected` / `.column.selected` 视觉一致）。`createThemePicker` 模块对外 API 行为不变。
+- 涉及调用方：外观 tab + 自定义主题 tab 的主题行（`renderAppearanceTab` + `buildThemeSelectorSection`）都改用 `layout: 'vertical'` + `columns: 2`，两 tab 视觉一致。
+
+## [0.2.131] - 2026-07-10
+
+### Changed
+- **主题预览行高紧凑化 + 整行可点击**。v0.2.130 引入的 picker 列表里，每行的"页面背景"层（外层 `<li>`）原来固定 `min-height: 60px` + `padding: 14px 16px`，显得过高。改为：
+  - 去掉 `min-height: 60px`，让行高由内层链接自然撑起（通常 ~40px）
+  - 外层 padding 改成等宽 `12px`（去掉 14px / 16px 的非对称值）
+  - 加 `cursor: pointer` 给整行视觉提示
+- **整行点击切主题**。原本只有内层 `<a>` 接受点击；现在外层 `<li>` 也加 click handler，点击 padding 区域（链接外的留白）也能切换主题。实现是给 `<li>` 加 `if (e.target === li) onSelect(value)` 的守卫，链接自身的 click handler 不受影响、不会双触发。
+
+## [0.2.130] - 2026-07-09
+
+### Changed
+- **设置面板的主题选择器从下拉框改为可视化预览列表**。「外观」tab 和「自定义主题」tab 的主题选择行现在是垂直排列的预览列表，每行展示该主题的**页面背景色 + 链接卡片样式**（两层叠加），在选中之前即可预览切换效果。当前主题用 2px dotted outline 标记。点击即切换主题（走原有 `saveThemeChange()` 路径）。
+  - 新增 [`src/features/themes/theme-picker.ts`](src/features/themes/theme-picker.ts)：预览列表渲染模块，实现「临时切换 `<html data-theme>` → 读取 computed CSS vars → 注入 inline CSS vars 到 wrapper」的方案，绕开 `:root[data-theme="x"]` 只在 `<html>` 上生效的限制
+  - 替换外观 tab 主题行（[settings-panel.ts](src/newtab/settings-panel.ts) L1327）+ 自定义主题 tab 顶部的「选择主题」section（[settings-panel.ts](src/newtab/settings-panel.ts) L1504）
+  - `createRow()` 对非表单控件输入（如新 picker 容器）跳过 ↩ revert 按钮；`refreshInputsFromSettings` 增加 `refreshThemePicker()` 调用处理跨标签页同步
+  - 新增 1 个 MessageKey：`themePicker.previewAriaLabel`（aria-label，10 个 catalog 同步）
+
 ## [0.2.129] - 2026-07-05
 
 ### Fixed

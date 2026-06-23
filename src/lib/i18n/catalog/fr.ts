@@ -36,6 +36,8 @@ const messages = {
   'settings.field.lockDesc': 'Empêche l\'utilisateur de réorganiser les éléments des favoris par glisser-déposer.',
   'settings.field.theme': 'Thème',
   'settings.field.themeDesc': 'Thème de couleur actif. Gérez les thèmes personnalisés (URL / collage CSS) dans l\'onglet « Thèmes personnalisés ».',
+  'settings.field.activeSuffix': '({name})',
+  'themePicker.previewAriaLabel': 'Liste d\'aperçu des thèmes. Cliquez sur un thème pour l\'appliquer.',
   'settings.field.darkMode': 'Mode sombre',
   'settings.field.darkModeDesc': 'Si le thème utilise la variante claire ou sombre. « Suivre le système » suit l\'apparence du système d\'exploitation.',
   'settings.darkMode.light': 'Clair',

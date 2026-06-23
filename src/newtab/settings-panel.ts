@@ -11,6 +11,10 @@ import {
   removeCustomTheme,
   validateThemeJson,
 } from '../features/themes/custom-themes';
+import {
+  buildThemePicker,
+  refreshThemePicker,
+} from '../features/themes/theme-picker';
 import { detectInputFormat, parseCssTheme } from '../features/themes/css-import';
 import { detectTweakcnUrl, toTweakcnJsonUrl } from '../features/themes/url-import';
 import { sendMessage } from '../lib/chrome/messages';
@@ -136,6 +140,40 @@ function currentMode(): 'light' | 'dark' {
     && window.matchMedia?.('(prefers-color-scheme: dark)').matches
     ? 'dark'
     : 'light';
+}
+
+/** v0.2.130: build the theme picker preview list inside the given
+ *  container. Returns the container for chaining. The container
+ *  gets `id="sp-theme"` so the parent `<label for="sp-theme">`
+ *  binding set up by `createRow` still resolves (a11y + visual
+ *  click target). The class `sp-theme-picker` is the marker
+ *  `refreshInputsFromSettings` and `refreshThemePicker` both
+ *  check for before calling into the picker module.
+ *
+ *  Dark mode is passed raw ('system' | 'light' | 'dark') because
+ *  the picker calls `resolveTheme(baseTheme, darkMode)` from the
+ *  switcher module, which expects the un-resolved value (it does
+ *  its own matchMedia lookup for 'system'). The current theme id
+ *  is read straight from storage — also un-resolved (no `-dark`
+ *  suffix), which is the same key the picker stores in
+ *  `data-theme-value` for the active-state match.
+ *
+ *  `onSelect` is invoked with the base theme id when the user
+ *  clicks any preview. The caller is expected to run
+ *  `saveThemeChange(themeId)` to commit the switch (this is the
+ *  same path the old `<select>`'s change handler took). */
+function buildThemePickerRow(
+  container: HTMLElement,
+  entries: ReadonlyArray<{ value: string; label: string; isCustom: boolean }>,
+  onSelect: (themeId: string) => void,
+  columns: 1 | 2 = 1,
+): void {
+  const darkMode = String(getSetting('darkMode') ?? 'system') as
+    | 'system'
+    | 'light'
+    | 'dark';
+  const activeTheme = String(getSetting('theme') ?? 'default');
+  buildThemePicker(container, entries, darkMode, activeTheme, onSelect, columns);
 }
 
 /** Read a per-theme per-mode value with global fallback.
@@ -341,6 +379,11 @@ export function openSettingsPanel(): void {
   // from `saveThemeChange`) update the color inputs and theme dropdown
   // in place — see `refreshInputsFromSettings`. Removed on close.
   installStorageListener();
+  // v0.2.134: also subscribe to OS dark/light mode changes. When the
+  //  user has `darkMode === 'system'`, the OS theme decides the
+  //  resolved variant and we need to re-stamp the picker inline
+  //  vars live (storage.onChanged doesn't fire on OS theme change).
+  installOsThemeListener();
 
   // Trigger animation
   requestAnimationFrame(() => {
@@ -352,6 +395,9 @@ export function openSettingsPanel(): void {
 /** Close the floating settings panel */
 export function closeSettingsPanel(): void {
   uninstallStorageListener();
+  // v0.2.134: tear down the OS theme listener in lockstep — see
+  //  installOsThemeListener in openSettingsPanel.
+  uninstallOsThemeListener();
   if (overlayEl) overlayEl.classList.remove('sp-overlay--visible');
   if (panelEl) panelEl.classList.remove('sp-panel--open');
 
@@ -457,16 +503,57 @@ function refreshInputsFromSettings(): void {
   // `sp-theme` and `sp-darkMode` select with the same id; only one tab
   // is in the DOM at a time so getElementById resolves to whichever is
   // currently rendered.
-  const themeSelect = document.getElementById('sp-theme') as HTMLSelectElement | null;
-  if (themeSelect) {
-    const next = String(getSetting('theme') ?? '');
-    if (themeSelect.value !== next) themeSelect.value = next;
+  //
+  // v0.2.130: `sp-theme` is no longer a `<select>` — it's a click-to-
+  //  apply preview list rendered by features/themes/theme-picker.ts.
+  //  The DOM element with `id="sp-theme"` is now a `<ul class="sp-theme-picker">`.
+  //  We guard on the class name so the old select path stays untouched
+  //  if anyone re-introduces a fallback; for the picker we delegate to
+  //  `refreshThemePicker` which toggles the `.sp-theme-preview-item--active`
+  //  class without rebuilding the list (cross-tab sync should be cheap).
+  //  The list itself is rebuilt by `renderAppearanceTab` /
+  //  `renderCustomThemesTab` on a tab re-render (e.g. language change),
+  //  not by storage sync.
+  const themeEl = document.getElementById('sp-theme');
+  if (themeEl) {
+    if (themeEl.classList.contains('sp-theme-picker')) {
+      // v0.2.134: pass current darkMode so refreshThemePicker re-stamps
+      //  the inline CSS vars for the resolved variant (light/dark) on
+      //  every storage change. Without this, toggling darkMode from the
+      //  topbar would leave the previews painted with the previous
+      //  darkMode's palette until the user closed & re-opened the panel.
+      const currentDarkMode = String(getSetting('darkMode') ?? 'system') as
+        | 'system' | 'light' | 'dark';
+      refreshThemePicker(
+        themeEl as HTMLElement,
+        String(getSetting('theme') ?? ''),
+        currentDarkMode,
+      );
+    } else if (themeEl instanceof HTMLSelectElement) {
+      const next = String(getSetting('theme') ?? '');
+      if (themeEl.value !== next) themeEl.value = next;
+    }
   }
   const darkModeSelect = document.getElementById('sp-darkMode') as HTMLSelectElement | null;
   if (darkModeSelect) {
     const next = String(getSetting('darkMode') ?? 'system');
     if (darkModeSelect.value !== next) darkModeSelect.value = next;
   }
+
+  // v0.2.133: live-update the active-value label suffix (e.g.
+  //  "Theme (MX-Brutalist)") on every storage change. The suffix
+  //  is rendered as `<span class="sp-label-active" data-active-source="theme">`
+  //  inside `<label class="sp-label">`. We dispatch by source key —
+  //  for now only 'theme' is implemented, but the data-attribute
+  //  pattern lets future rows (per-theme override, etc.) plug in
+  //  by just reading their key.
+  document.querySelectorAll<HTMLElement>('.sp-label-active[data-active-source]').forEach((activeEl) => {
+    const source = activeEl.dataset.activeSource;
+    if (source === 'theme') {
+      const next = themeLabel(String(getSetting('theme') ?? 'default'));
+      activeEl.textContent = ' ' + t('settings.field.activeSuffix', { name: next });
+    }
+  });
 
   // v0.2.97 per-theme per-mode inputs: a storage.onChanged (typically
   //  cross-tab sync) may have updated either `theme`, `darkMode`, or
@@ -563,6 +650,45 @@ function uninstallStorageListener(): void {
   if (typeof chrome === 'undefined' || !chrome.storage?.onChanged) return;
   chrome.storage.onChanged.removeListener(onSettingsStorageChanged);
   storageListenerInstalled = false;
+}
+
+/** v0.2.134: when `darkMode === 'system'`, the OS theme decides the
+ *  resolved variant. Toggling the OS dark/light mode does NOT fire
+ *  `chrome.storage.onChanged` (the user's `darkMode` setting didn't
+ *  change), so `onSettingsStorageChanged` won't be called. We wire
+ *  a separate matchMedia listener that, on OS theme change, re-stamps
+ *  the picker inline vars (and updates the per-theme override summary
+ *  text) so the preview list follows the OS in real time. Storage
+ *  changes to `darkMode` itself are still handled by
+ *  `onSettingsStorageChanged` — this listener is a complement, not
+ *  a replacement. */
+let osThemeListenerInstalled = false;
+function onOsThemeChanged(): void {
+  if (String(getSetting('darkMode') ?? 'system') !== 'system') return;
+  // refreshInputsFromSettings re-reads currentDarkMode and calls
+  // refreshThemePicker(..., currentDarkMode) which re-stamps vars.
+  // It also re-computes the per-theme override <summary> text via
+  // currentMode() (which uses the same matchMedia lookup) — both
+  // depend on the OS signal so this single call covers them.
+  refreshInputsFromSettings();
+}
+function installOsThemeListener(): void {
+  if (osThemeListenerInstalled) return;
+  if (typeof window === 'undefined' || !window.matchMedia) return;
+  const mql = window.matchMedia('(prefers-color-scheme: dark)');
+  // Chrome < 78 uses `addListener`; modern Chrome supports both
+  // `addEventListener` and the legacy form. Use the modern form
+  // (matches the rest of the codebase — see features/themes/switcher.ts).
+  mql.addEventListener('change', onOsThemeChanged);
+  osThemeListenerInstalled = true;
+}
+
+function uninstallOsThemeListener(): void {
+  if (!osThemeListenerInstalled) return;
+  if (typeof window === 'undefined' || !window.matchMedia) return;
+  const mql = window.matchMedia('(prefers-color-scheme: dark)');
+  mql.removeEventListener('change', onOsThemeChanged);
+  osThemeListenerInstalled = false;
 }
 
 // --- Helpers ---
@@ -695,8 +821,15 @@ function createRow(
   key: keyof Settings,
   description?: string | HTMLElement,
   scope: InputScope = 'global',
+  layout: 'horizontal' | 'vertical' = 'horizontal',
+  activeLabel?: () => string | null,
 ): HTMLElement {
   const row = el('div', 'sp-row');
+  // v0.2.132: vertical layout (label on top, input below). Used by
+  //  the theme picker where the input is a preview grid that needs
+  //  full width — a horizontal 110px label + narrow input column
+  //  would force the previews into a 1-column overflow strip.
+  if (layout === 'vertical') row.classList.add('sp-row--vertical');
   if (description) row.classList.add('sp-row--with-desc');
   if (scope === 'perTheme') row.classList.add('sp-row--per-theme');
 
@@ -704,70 +837,108 @@ function createRow(
   labelEl.textContent = label;
   labelEl.setAttribute('for', inputId(key, scope));
 
+  // v0.2.133: optional "(active value)" suffix after the label —
+  //  e.g. "Theme (MX-Brutalist)". The getter is called once at build
+  //  time to seed the initial text, and `refreshInputsFromSettings`
+  //  re-calls it on every storage.onChanged event so the suffix
+  //  stays in sync with the current value. `data-active-source`
+  //  carries the Settings key the refresh uses to dispatch.
+  if (activeLabel) {
+    const initial = activeLabel();
+    if (initial) {
+      const activeEl = el('span', 'sp-label-active');
+      activeEl.dataset.activeSource = String(key);
+      activeEl.textContent = ' ' + t('settings.field.activeSuffix', { name: initial });
+      labelEl.appendChild(activeEl);
+    }
+  }
+
   const inputWrap = el('div', 'sp-input');
 
-  const revertBtn = el('button', 'sp-revert') as HTMLButtonElement;
-  revertBtn.type = 'button';
-  revertBtn.title = scope === 'perTheme' && hasPerThemeOverride(key as PerThemeKey)
-    ? t('settings.revert.clearPerTheme')
-    : t('settings.revert.toDefault');
-  revertBtn.textContent = '↩';
-  revertBtn.addEventListener('click', () => {
-    if (scope === 'perTheme' && hasPerThemeOverride(key as PerThemeKey)) {
-      // v0.2.97 per-theme revert: clear the override for the
-      //  current theme+mode, then re-render the input value
-      //  to reflect the global fallback. Distinct from the
-      //  global revert (↩) below, which sets the underlying
-      //  Settings[key] to its hardcoded default.
-      const k = key as PerThemeKey;
-      clearPerThemeValue(k);
-      const next = readPerThemeValue(k);
-      if (input instanceof HTMLInputElement) {
-        if (input.type === 'color') {
-          input.value = resolveCssColor(String(next ?? ''));
-        } else {
+  // v0.2.130: only attach the ↩ revert button when the input is a
+  // form control the handler knows how to mutate (HTMLInputElement /
+  // HTMLSelectElement / HTMLTextAreaElement). The theme picker
+  // passes a plain <ul> container — the ↩ button has no meaning
+  // for a click-to-apply preview list (you can't "reset a list to
+  // its default" the way you can clear a stored color), and the
+  // handler would otherwise fall through to `saveSetting`, which
+  // would crash on a missing `.value` and silently corrupt the
+  // stored theme id.
+  const isFormControl =
+    input instanceof HTMLInputElement ||
+    input instanceof HTMLSelectElement ||
+    input instanceof HTMLTextAreaElement;
+
+  if (isFormControl) {
+    const revertBtn = el('button', 'sp-revert') as HTMLButtonElement;
+    revertBtn.type = 'button';
+    revertBtn.title = scope === 'perTheme' && hasPerThemeOverride(key as PerThemeKey)
+      ? t('settings.revert.clearPerTheme')
+      : t('settings.revert.toDefault');
+    revertBtn.textContent = '↩';
+    revertBtn.addEventListener('click', () => {
+      if (scope === 'perTheme' && hasPerThemeOverride(key as PerThemeKey)) {
+        // v0.2.97 per-theme revert: clear the override for the
+        //  current theme+mode, then re-render the input value
+        //  to reflect the global fallback. Distinct from the
+        //  global revert (↩) below, which sets the underlying
+        //  Settings[key] to its hardcoded default.
+        const k = key as PerThemeKey;
+        clearPerThemeValue(k);
+        const next = readPerThemeValue(k);
+        if (input instanceof HTMLInputElement) {
+          if (input.type === 'color') {
+            input.value = resolveCssColor(String(next ?? ''));
+          } else {
+            input.value = String(next);
+          }
+        } else if (input instanceof HTMLSelectElement) {
           input.value = String(next);
         }
-      } else if (input instanceof HTMLSelectElement) {
-        input.value = String(next);
+        // `clearPerThemeValue` wrote a new themeOverrides object
+        //  to storage, which fires chrome.storage.onChanged and
+        //  runs applySettingsToDOM through the apply.ts listener.
+        //  No further DOM work needed here.
+        return;
       }
-      // `clearPerThemeValue` wrote a new themeOverrides object
-      //  to storage, which fires chrome.storage.onChanged and
-      //  runs applySettingsToDOM through the apply.ts listener.
-      //  No further DOM work needed here.
-      return;
-    }
-    const defaults = getDefaults();
-    const defaultVal = defaults[key];
-    // v0.2.99: color inputs default to '' which <input type="color">
-    //  rejects. Save '' directly to storage (clears the override) and
-    //  paint the rendered theme color into the picker synchronously,
-    //  instead of going through `saveSetting` (which would re-read
-    //  input.value as a valid hex and persist the wrong value).
-    // v0.2.100: shadowColor is no longer mirrored to highlightColor,
-    //  so no special branch is needed — the normal `updateSetting`
-    //  path handles the storage clear.
-    if (input instanceof HTMLInputElement && input.type === 'color') {
-      void updateSetting(key, '' as Settings[typeof key]);
-      input.value = resolveColorForInput(key, '');
-      return;
-    }
-    if (input instanceof HTMLInputElement) {
-      if (input.type === 'checkbox') {
-        input.checked = Number(defaultVal) !== 0;
-      } else {
+      const defaults = getDefaults();
+      const defaultVal = defaults[key];
+      // v0.2.99: color inputs default to '' which <input type="color">
+      //  rejects. Save '' directly to storage (clears the override) and
+      //  paint the rendered theme color into the picker synchronously,
+      //  instead of going through `saveSetting` (which would re-read
+      //  input.value as a valid hex and persist the wrong value).
+      // v0.2.100: shadowColor is no longer mirrored to highlightColor,
+      //  so no special branch is needed — the normal `updateSetting`
+      //  path handles the storage clear.
+      if (input instanceof HTMLInputElement && input.type === 'color') {
+        void updateSetting(key, '' as Settings[typeof key]);
+        input.value = resolveColorForInput(key, '');
+        return;
+      }
+      if (input instanceof HTMLInputElement) {
+        if (input.type === 'checkbox') {
+          input.checked = Number(defaultVal) !== 0;
+        } else {
+          input.value = String(defaultVal);
+        }
+      } else if (input instanceof HTMLSelectElement) {
+        input.value = String(defaultVal);
+      } else if (input instanceof HTMLTextAreaElement) {
         input.value = String(defaultVal);
       }
-    } else if (input instanceof HTMLSelectElement) {
-      input.value = String(defaultVal);
-    } else if (input instanceof HTMLTextAreaElement) {
-      input.value = String(defaultVal);
-    }
-    saveSetting(key, scope);
-  });
+      saveSetting(key, scope);
+    });
 
-  inputWrap.appendChild(input);
-  inputWrap.appendChild(revertBtn);
+    inputWrap.appendChild(input);
+    inputWrap.appendChild(revertBtn);
+  } else {
+    // v0.2.130: non-form-control input (theme picker container). The
+    // ↩ button has no meaning here; the picker manages its own state
+    // (theme is single-source-of-truth via `saveThemeChange`), and
+    // reset semantics don't apply to a "click to apply" list.
+    inputWrap.appendChild(input);
+  }
 
   row.appendChild(labelEl);
   row.appendChild(inputWrap);
@@ -1260,11 +1431,40 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   const container = el('div', 'sp-tab-content');
 
   const allThemes = await listAllThemesWithLabels(buildThemeLabels());
-  const themeOptions = allThemes.map((t) => ({ value: t.value, label: t.label }));
   // 自定义主题的导入 / 删除迁到了独立的「自定义主题」tab。这里只把
   // 跳转入口塞在主题行自己的 description 里，避免在「外观」tab 底部
   // 再堆一个独立的 section。
-  container.appendChild(createRow(t('settings.field.theme'), createSelectInput('theme', themeOptions), 'theme', buildThemeRowDescription()));
+  //
+  // v0.2.130: theme is no longer a `<select>` — it's a click-to-apply
+  // preview list. The container is a plain `<ul>` with the
+  // `sp-theme-picker` class; createRow's revert-button skip logic
+  // (added v0.2.130) detects the non-form-control input and omits
+  // the ↩ button. The container keeps `id="sp-theme"` so the parent
+  // `<label for="sp-theme">` binding set up by createRow still
+  // resolves — accessibility tree + click target on the label.
+  const themeList = document.createElement('ul');
+  themeList.id = 'sp-theme';
+  themeList.className = 'sp-theme-picker';
+  // v0.2.132: 2-column grid + vertical row layout (label on top,
+  //  picker below). 4 built-in themes fit in 2 rows; custom themes
+  //  extend the grid.
+  buildThemePickerRow(themeList, allThemes, async (themeId) => {
+    await saveThemeChange(themeId);
+  }, 2);
+  // v0.2.133: pass the current-theme-name getter so the label
+  //  suffix shows "(MX-Brutalist)" etc. and refreshes on storage
+  //  sync / theme switch.
+  container.appendChild(
+    createRow(
+      t('settings.field.theme'),
+      themeList,
+      'theme',
+      buildThemeRowDescription(),
+      'global',
+      'vertical',
+      () => themeLabel(String(getSetting('theme') ?? 'default')),
+    ),
+  );
   // v0.2.75: dark mode is a separate setting, independent of theme.
   // The dropdown shows each base theme once; the variant (light/dark)
   // is decided by this setting. 'system' follows the OS preference.
@@ -1407,13 +1607,32 @@ async function buildThemeSelectorSection(): Promise<HTMLElement> {
   section.appendChild(heading);
 
   const allThemes = await listAllThemesWithLabels(buildThemeLabels());
-  const themeOptions = allThemes.map((t) => ({ value: t.value, label: t.label }));
+  // v0.2.130: same click-to-apply preview list as the appearance tab
+  // (see renderAppearanceTab above for the rationale). Sharing the
+  // exact same picker instance is intentional — two different UIs
+  // for the same Settings.theme field would be confusing.
+  //
+  // v0.2.132: 2-column grid + vertical row layout — same as the
+  //  appearance tab, for cross-tab consistency.
+  //
+  // v0.2.133: same active-theme-name suffix on the label as the
+  //  appearance tab, so the user sees "(MX-Brutalist)" etc. in
+  //  both tabs.
+  const themeList = document.createElement('ul');
+  themeList.id = 'sp-theme';
+  themeList.className = 'sp-theme-picker';
+  buildThemePickerRow(themeList, allThemes, async (themeId) => {
+    await saveThemeChange(themeId);
+  }, 2);
   section.appendChild(
     createRow(
       t('settings.field.theme'),
-      createSelectInput('theme', themeOptions),
+      themeList,
       'theme',
       t('settings.field.themeDesc'),
+      'global',
+      'vertical',
+      () => themeLabel(String(getSetting('theme') ?? 'default')),
     ),
   );
   section.appendChild(

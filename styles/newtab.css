@@ -936,6 +936,24 @@
   padding: 4px 0;
 }
 
+/* v0.2.132: vertical row layout — label stacks on top of input
+ *  instead of side-by-side. Used by options whose input is a
+ *  preview grid (theme picker) where horizontal label would
+ *  force the grid into a tiny column. */
+.sp-row--vertical {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px 0;
+}
+.sp-row--vertical > .sp-label {
+  /* Override the default fixed-width horizontal label
+   *  (110px / flex-shrink: 0) so the label stretches to
+   *  full width and wraps if needed. */
+  width: auto;
+  flex-shrink: 1;
+}
+
 .sp-row--with-desc {
   flex-wrap: wrap;
   padding: 8px 0;
@@ -970,6 +988,16 @@
   line-height: 1.3;
   word-break: break-word;
   hyphens: auto;
+}
+
+/* v0.2.133: optional "(active value)" suffix shown after the label,
+ *  e.g. "Theme (MX-Brutalist)". Muted color so the main label
+ *  stays visually primary; the suffix is informational, not
+ *  interactive. */
+.sp-label-active {
+  color: var(--muted-foreground);
+  font-weight: 400;
+  margin-left: 0.25em;
 }
 
 .sp-input {
@@ -1089,6 +1117,132 @@
 }
 .sp-row--per-theme .sp-label {
   color: var(--muted-foreground);
+}
+
+/* v0.2.130: theme picker — replaces the theme <select> dropdown
+ *  with a click-to-apply preview list. Each row is a two-layer
+ *  preview: the outer <li> shows the theme's page background
+ *  (the user sees what color the newtab page will be); the inner
+ *  <a> shows the theme's link-card styling (background, text,
+ *  shadow, radius). All visual values come from inline CSS
+ *  variables stamped onto the wrapper by theme-picker.ts — this
+ *  stylesheet only defines layout / sizing, not colors.
+ *
+ *  The `:where()` wrappers around var() fallbacks make sure the
+ *  empty inline value (a theme that didn't define e.g. --accent)
+ *  falls back to the panel's own (current) theme rather than
+ *  collapsing to the bare :where(:root) shadcn baseline. */
+
+/* 容器：垂直列表，去除默认 <ul> 样式 */
+.sp-theme-picker {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 100%;
+}
+
+/* v0.2.132: 2-column grid variant — used when the picker is
+ *  laid out vertically (label on top, options below). Two
+ *  previews per row keeps the picker compact: 4 built-in
+ *  themes fit in 2 rows; N custom themes add ceil(N/2) rows.
+ *  Defined AFTER .sp-theme-picker so its `display: grid`
+ *  wins over the base's `display: flex; flex-direction: column`
+ *  at equal specificity (both single-class selectors). */
+.sp-theme-picker--2col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+/* 外层 = 主题的"页面背景"预览。
+ * 通过 inline style 注入的 --background / --border 等变量生效。
+ * v0.2.131: 移除 min-height: 60px —— 行高由内层链接自然撑起，
+ * 外层只保留等宽 12px 内边距让内层链接有呼吸空间。同时加
+ * cursor: pointer 提示整行可点击（点击 padding 区域也能切换主题，
+ * 行为由 theme-picker.ts 的 <li> click handler 实现）。
+ *
+ * v0.2.135: 默认无可见 border —— 2px solid transparent 占位仅是为
+ * 了和 `.sp-theme-preview-item--active` 的 2px dotted border 保持
+ * 同样的 box width / height（border-width 不变，只是 style + color
+ * 在两个状态间切换）。这样选中态切换不会有 2px 的 layout shift。
+ * 之前用 `outline` 实现 dotted 效果，但 outline 是叠加的、且视觉上
+ * 和 border 混在一起不直观；现在改成纯 border 模型，dotted 边直接
+ * 落在 box 边缘上，更清晰。 */
+.sp-theme-preview-item {
+  background-color: var(--background);
+  border: 2px solid transparent;
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+}
+
+/* v0.2.130: small visual hint for custom (user-installed) themes.
+ *  Built-in themes already have recognizable labels; custom ones
+ *  are unranked and benefit from a tiny badge so the user can
+ *  spot them at a glance when scanning the list. The badge is
+ *  rendered as a ::before on the inner <a> by the picker module,
+ *  but the styling lives here. */
+.sp-theme-preview-item[data-theme-custom="1"] > .sp-theme-preview-link::before {
+  content: '★';
+  margin-right: 0.5em;
+  font-size: 0.85em;
+  opacity: 0.6;
+  /* Inherits color from the link's own text color, which itself
+   *  reads from the wrapper's --card-foreground — so the badge
+   *  always matches the theme's link text, no extra variable needed. */
+}
+
+/* 内层 = 主题的"链接样式"预览。
+ * 通过 CSS cascade 从 .sp-theme-preview-item 继承 19 个 CSS vars。
+ * 这里只定义"链接长什么样"的 layout / sizing，色彩完全由 inline vars 提供。 */
+.sp-theme-preview-link {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 1.4rem;
+  line-height: 1.4;
+  text-decoration: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  font-family: var(--font-sans, inherit);
+  background-color: var(--card, var(--background));
+  color: var(--card-foreground, var(--foreground));
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius, 0.5rem) - 2px);
+  box-shadow: var(--shadow-xs, none);
+  transition: color 200ms, background-color 200ms, border-color 200ms, box-shadow 200ms;
+}
+
+.sp-theme-preview-link:hover {
+  background-color: var(--accent, var(--muted));
+  color: var(--accent-foreground, var(--foreground));
+}
+
+.sp-theme-preview-link:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.sp-theme-preview-item--active {
+  /* v0.2.132: 把点线效果从内层 <a> 移到外层 <li> —— "作用在
+   * 背景色这个边框上"。原来用 `outline: 2px dotted; outline-offset: -2px`
+   * 把虚线画在 box 内侧 2px 处，但 outline 是叠加的、且默认状态
+   * 还残留 1px var(--border) 边，视觉上"双层边框"比较重。
+   *
+   * v0.2.135: 改为 border 模型。默认 `.sp-theme-preview-item`
+   * 是 2px solid transparent（占位、不占额外 layout 空间 —— 配合
+   * box-sizing: border-box），active 状态把同一 2px border 切到
+   * 2px dotted var(--ring, var(--primary))。box 宽高在两个状态
+   * 间完全一致，dotted 边直接落在 box 边缘。 */
+  border: 2px dotted var(--ring, var(--primary));
 }
 
 /* Textarea */
