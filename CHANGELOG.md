@@ -5,6 +5,15 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2] - 2026-06-23
+
+### Changed
+- **主题名称不再走 i18n**。12 个内置主题的显示名（`AstroVista` / `MX-Brutalist` / `Remedy's Control` / `Magic 2` / `Astra` / `Mimi` / `Manga Vibe` / `win86` / `Random Theme 02` / `Rose` / `Kawi Green` / `Optimus` + 各 `*-dark` 变体）移出 i18n catalog，作为 tweakcn 专有名词直接以代码常量 `BUILT_IN_THEME_LABELS`（`src/features/themes/switcher.ts`）形式提供。`MessageKey` 联合移除 24 个 `theme.*` key，10 个 catalog（en / zh / es / ar / hi / fr / pt / de / ja / ru）同步清空该区段。
+- **设置面板 `themeLabel()` 重写**。从 `t(\`theme.${id}\`)` 切换到 `BUILT_IN_THEME_LABELS[id] ?? id`，`buildThemeLabels()` 简化为 `() => ({ ...BUILT_IN_THEME_LABELS })`。
+
+### Rationale
+- `theme id` 属于 CLAUDE.md §6.5 列出的「内部标识」，不应进入 catalog；tweakcn 主题名是品牌/专有名词，翻译后反而不像品牌。
+
 ## [1.0.1] - 2026-06-23
 
 ### Changed

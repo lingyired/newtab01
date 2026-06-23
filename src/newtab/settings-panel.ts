@@ -2,7 +2,7 @@
 
 import { getSettings, getSetting, updateSetting, updateSettings } from '../lib/storage/settings';
 import type { Settings, ThemeModeOverrides } from '../features/bookmarks/types';
-import { applyTheme, listAllThemesWithLabels, resolveCssColor } from '../features/themes/switcher';
+import { applyTheme, BUILT_IN_THEME_LABELS, listAllThemesWithLabels, resolveCssColor } from '../features/themes/switcher';
 import {
   buildCustomThemesStyle,
   injectCustomThemesStyle,
@@ -33,55 +33,21 @@ import { captureSnapshot, pushSnapshot } from '../features/drag-drop/history';
 import { t, listLocales, type LocaleCode } from '../lib/i18n';
 import { renderAboutTab } from './about-tab';
 
-/** Theme id → display label. The label is now localized via
- *  `t(\`theme.${id}\`)` (see `LocaleMessages`) — `theme.default`,
- *  `theme.default-dark`, etc. Built-in ids in en.ts / zh.ts cover
- *  the 4 base themes × 2 variants. User-installed custom themes
- *  fall through to the id itself (the theme name is shown
- *  directly in the dropdown). */
+/** Theme id → display label. Built-in theme names come from
+ *  `BUILT_IN_THEME_LABELS` in switcher.ts — tweakcn proper nouns
+ *  are not localized (see CLAUDE.md §6.5: internal identifiers
+ *  like theme ids do not belong in i18n catalogs). User-installed
+ *  custom themes fall through to the id itself. */
 function themeLabel(id: string): string {
-  const key = `theme.${id}` as Parameters<typeof t>[0];
-  const localized = t(key);
-  // `t()` returns the key when no entry exists; that signals a
-  //  custom theme id (or an un-registered future id). Fall back
-  //  to the id itself for custom themes.
-  return localized === key ? id : localized;
+  return (BUILT_IN_THEME_LABELS as Record<string, string>)[id] ?? id;
 }
 
 /** Build a label map for the built-in themes (12 base + 12 dark
- *  variants). The dark variants' labels are also translated
- *  (`theme.<id>-dark` = "<Name> · Dark" in en, "<名称>·暗" in
- *  zh). Used by `listAllThemesWithLabels` which expects a map
- *  rather than a function. Re-built on every tab render so a
- *  language change takes effect on the next tab switch / panel
- *  re-open. */
+ *  variants). Used by `listAllThemesWithLabels` which expects a
+ *  map rather than a function. Re-built on every tab render so a
+ *  newly added built-in theme (rare) shows up without a reload. */
 function buildThemeLabels(): Record<string, string> {
-  return {
-    astrovista: themeLabel('astrovista'),
-    'astrovista-dark': themeLabel('astrovista-dark'),
-    'mx-brutalist': themeLabel('mx-brutalist'),
-    'mx-brutalist-dark': themeLabel('mx-brutalist-dark'),
-    'remedys-control': themeLabel('remedys-control'),
-    'remedys-control-dark': themeLabel('remedys-control-dark'),
-    'magic-2': themeLabel('magic-2'),
-    'magic-2-dark': themeLabel('magic-2-dark'),
-    astra: themeLabel('astra'),
-    'astra-dark': themeLabel('astra-dark'),
-    mimi: themeLabel('mimi'),
-    'mimi-dark': themeLabel('mimi-dark'),
-    'manga-vibe': themeLabel('manga-vibe'),
-    'manga-vibe-dark': themeLabel('manga-vibe-dark'),
-    win86: themeLabel('win86'),
-    'win86-dark': themeLabel('win86-dark'),
-    'random-02': themeLabel('random-02'),
-    'random-02-dark': themeLabel('random-02-dark'),
-    rose: themeLabel('rose'),
-    'rose-dark': themeLabel('rose-dark'),
-    'kawi-green': themeLabel('kawi-green'),
-    'kawi-green-dark': themeLabel('kawi-green-dark'),
-    optimus: themeLabel('optimus'),
-    'optimus-dark': themeLabel('optimus-dark'),
-  };
+  return { ...BUILT_IN_THEME_LABELS };
 }
 
 type SettingsTab = 'layout' | 'appearance' | 'custom-themes' | 'features' | 'advanced' | 'about';

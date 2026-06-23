@@ -62,6 +62,56 @@ const THEMES = [
 
 export type ThemeId = (typeof THEMES)[number];
 
+/**
+ * Display labels for built-in themes. Theme names come from tweakcn
+ * and are proper nouns / brand names — they're NOT localized via the
+ * i18n catalogs (see CLAUDE.md §6.5: "内部标识：theme id、storage
+ * key、错误代码、enum 值" should not live in catalogs). The dark
+ * variant appends " Dark" to the base name.
+ *
+ * The key set is the union of `ThemeId` (12 base themes) and
+ * `${ThemeId}-dark` (12 dark variants) — covers every
+ * `data-theme` value the built-in theme system can resolve to.
+ * Custom themes (chrome.storage.local.customThemes) are NOT in this
+ * map; the settings panel falls through to the theme id for them.
+ *
+ * Adding a new built-in theme:
+ *   1. Append its id to THEMES above.
+ *   2. Add `:root[data-theme="<id>"]` (+ optional `<id>-dark`) block
+ *      to a new file under styles/themes/.
+ *   3. Add the file to the @import list in styles/globals.css.
+ *   4. Add the `id` and `id-dark` entries to BUILT_IN_THEME_LABELS
+ *      below (display label is the tweakcn English original).
+ */
+export const BUILT_IN_THEME_LABELS: Readonly<
+  Record<ThemeId | `${ThemeId}-dark`, string>
+> = {
+  astrovista: 'AstroVista',
+  'astrovista-dark': 'AstroVista Dark',
+  'mx-brutalist': 'MX-Brutalist',
+  'mx-brutalist-dark': 'MX-Brutalist Dark',
+  'remedys-control': "Remedy's Control",
+  'remedys-control-dark': "Remedy's Control Dark",
+  'magic-2': 'Magic 2',
+  'magic-2-dark': 'Magic 2 Dark',
+  astra: 'Astra',
+  'astra-dark': 'Astra Dark',
+  mimi: 'Mimi',
+  'mimi-dark': 'Mimi Dark',
+  'manga-vibe': 'Manga Vibe',
+  'manga-vibe-dark': 'Manga Vibe Dark',
+  win86: 'win86',
+  'win86-dark': 'win86 Dark',
+  'random-02': 'Random Theme 02',
+  'random-02-dark': 'Random Theme 02 Dark',
+  rose: 'Rose',
+  'rose-dark': 'Rose Dark',
+  'kawi-green': 'Kawi Green',
+  'kawi-green-dark': 'Kawi Green Dark',
+  optimus: 'Optimus',
+  'optimus-dark': 'Optimus Dark',
+};
+
 /** Built-in dark variant existence. All 4 built-in base themes have
  *  a `-dark` CSS rule in styles/themes/*.css, so the `xxx-dark`
  *  suffix is always available as a `data-theme` value. The user
