@@ -9,6 +9,7 @@ const messages = {
   'settings.tab.customThemes': 'Benutzerdefinierte Designs',
   'settings.tab.features': 'Funktionen',
   'settings.tab.advanced': 'Erweitert',
+  'settings.tab.about': 'Über',
   'settings.revert.toDefault': 'Auf Standard zurücksetzen',
   'settings.revert.clearPerTheme': 'Überschreibung für das aktuelle Design + Modus löschen (auf globalen Wert zurückfallen)',
   'settings.section.themeOverridesSummary': 'Aktuelles Design-Erscheinungsbild ({theme} · {mode})',
@@ -204,6 +205,19 @@ const messages = {
   'newtab.loading': 'Wird geladen…',
   'newtab.error.loadFailed': 'Lesezeichen konnten nicht geladen werden. Bitte aktualisiere die Seite.',
   'newtab.split.invalidUrl': 'Ungültige Split-View-URL: #urls / #layout Parameter fehlen oder sind fehlerhaft',
+  // About tab (v1.0.0) — credits, inspiration, theme source, repo link
+  'about.versionPrefix': 'v{version}',
+  'about.authorByline': 'von {author}',
+  'about.builtWith': 'Erstellt mit {tools}',
+  'about.inspiredBy': 'Inspiriert von Humble New Tab Page, newtab01 erweitert es um:',
+  'about.feature.theming': 'Theming',
+  'about.feature.splitView': 'Geteilte Ansicht',
+  'about.feature.tabGroups': 'Tab-Gruppen',
+  'about.feature.bookmarkSearch': 'Lesezeichen-Suche',
+  'about.themesIntro': 'Das Theming basiert auf {link}. Durchstöbere die Community-Galerie, um ein Design zu kopieren und zu importieren.',
+  'about.themesLink': 'tweakcn',
+  'about.repoIntro': 'Open Source auf GitHub: {link}',
+  'about.repoLink': 'github.com/lingyired/newtab01',
 } as const satisfies LocaleMessages;
 
 export const de: LocaleBundle = {

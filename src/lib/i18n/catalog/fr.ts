@@ -9,6 +9,7 @@ const messages = {
   'settings.tab.customThemes': 'Thèmes personnalisés',
   'settings.tab.features': 'Fonctions',
   'settings.tab.advanced': 'Avancé',
+  'settings.tab.about': 'À propos',
   'settings.revert.toDefault': 'Restaurer par défaut',
   'settings.revert.clearPerTheme': 'Effacer la substitution pour le thème + mode actuel (revenir à la valeur globale)',
   'settings.section.themeOverridesSummary': 'Apparence du thème actuel ({theme} · {mode})',
@@ -204,6 +205,19 @@ const messages = {
   'newtab.loading': 'Chargement…',
   'newtab.error.loadFailed': 'Échec du chargement des favoris. Veuillez actualiser la page.',
   'newtab.split.invalidUrl': 'URL de vue partagée non valide : paramètres #urls / #layout manquants ou mal formés',
+  // About tab (v1.0.0) — credits, inspiration, theme source, repo link
+  'about.versionPrefix': 'v{version}',
+  'about.authorByline': 'par {author}',
+  'about.builtWith': 'Conçu avec {tools}',
+  'about.inspiredBy': 'Inspiré par Humble New Tab Page, newtab01 l\'étend avec :',
+  'about.feature.theming': 'Thèmes',
+  'about.feature.splitView': 'Vue partagée',
+  'about.feature.tabGroups': 'Groupes d\'onglets',
+  'about.feature.bookmarkSearch': 'Recherche de favoris',
+  'about.themesIntro': 'Les thèmes sont propulsés par {link}. Parcourez la galerie communautaire pour copier et importer un thème.',
+  'about.themesLink': 'tweakcn',
+  'about.repoIntro': 'Open source sur GitHub : {link}',
+  'about.repoLink': 'github.com/lingyired/newtab01',
 } as const satisfies LocaleMessages;
 
 export const fr: LocaleBundle = {

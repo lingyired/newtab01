@@ -9,6 +9,7 @@ const messages = {
   'settings.tab.customThemes': 'カスタムテーマ',
   'settings.tab.features': '機能',
   'settings.tab.advanced': '詳細',
+  'settings.tab.about': 'について',
   'settings.revert.toDefault': '既定に戻す',
   'settings.revert.clearPerTheme': '現在のテーマ + モードのオーバーライドを解除（グローバル値にフォールバック）',
   'settings.section.themeOverridesSummary': '現在のテーマの外観（{theme} · {mode}）',
@@ -204,6 +205,19 @@ const messages = {
   'newtab.loading': '読み込み中…',
   'newtab.error.loadFailed': 'ブックマークを読み込めませんでした。ページを更新してください。',
   'newtab.split.invalidUrl': '無効な分割ビュー URL：#urls / #layout パラメータが欠落しているか不正です',
+  // About tab (v1.0.0) — credits, inspiration, theme source, repo link
+  'about.versionPrefix': 'v{version}',
+  'about.authorByline': '作者：{author}',
+  'about.builtWith': 'ビルド：{tools}',
+  'about.inspiredBy': 'Humble New Tab Page をベースに、newtab01 は次のような機能を追加しています：',
+  'about.feature.theming': 'テーマ',
+  'about.feature.splitView': '分割画面',
+  'about.feature.tabGroups': 'タブグループ',
+  'about.feature.bookmarkSearch': 'ブックマーク検索',
+  'about.themesIntro': 'テーマは {link} を使用しています。コミュニティギャラリーからテーマをコピーしてインポートできます。',
+  'about.themesLink': 'tweakcn',
+  'about.repoIntro': 'GitHub でオープンソースを公開中：{link}',
+  'about.repoLink': 'github.com/lingyired/newtab01',
 } as const satisfies LocaleMessages;
 
 export const ja: LocaleBundle = {

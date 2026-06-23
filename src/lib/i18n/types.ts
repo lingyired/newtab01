@@ -48,6 +48,7 @@ export type MessageKey =
   | 'settings.tab.customThemes'
   | 'settings.tab.features'
   | 'settings.tab.advanced'
+  | 'settings.tab.about'
   | 'settings.revert.toDefault'
   | 'settings.revert.clearPerTheme'
   | 'settings.section.themeOverridesSummary'
@@ -261,7 +262,20 @@ export type MessageKey =
   // Newtab
   | 'newtab.loading'
   | 'newtab.error.loadFailed'
-  | 'newtab.split.invalidUrl';
+  | 'newtab.split.invalidUrl'
+  // About tab (v1.0.0) — credits, inspiration, theme source, repo link
+  | 'about.versionPrefix'
+  | 'about.authorByline'
+  | 'about.builtWith'
+  | 'about.inspiredBy'
+  | 'about.feature.theming'
+  | 'about.feature.splitView'
+  | 'about.feature.tabGroups'
+  | 'about.feature.bookmarkSearch'
+  | 'about.themesIntro'
+  | 'about.themesLink'
+  | 'about.repoIntro'
+  | 'about.repoLink';
 
 export type LocaleMessages = Record<MessageKey, string>;
 

@@ -1670,6 +1670,130 @@
   min-height: 200px;
 }
 
+/* ─── About tab (v1.0.0) ───
+ * Read-only credits / inspiration / theme source / repo link page.
+ * Follows the project's "no Card by default" UI principle
+ * (CLAUDE.md §4): four sections separated by 1px hairlines, each
+ * is a small group of styled text. No thick borders, no decorative
+ * gradients, no card mosaics. The version line uses muted
+ * foreground + larger size to anchor the page; the section
+ * paragraphs use the standard body size; the feature list is a
+ * flat `<ul>` with 1-line items. All colors come from semantic
+ * CSS variables so every theme paints it correctly. */
+.sp-about {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sp-about-version {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 500;
+  color: var(--foreground);
+  line-height: 1.5;
+  /* Allow the link inside to wrap on narrow viewports; the line
+   * breaks on the · separator or whitespace, whichever comes
+   * first. Long enough that the whole line fits on >=360px. */
+  word-break: break-word;
+}
+
+.sp-about-version a {
+  /* Inline link inside the version line uses the same shadcn
+   * primary color as .sp-link. We don't reuse the .sp-link class
+   * here to keep the typography tied to .sp-about-version
+   * (1.4rem / weight 500) instead of inheriting .sp-link's
+   * defaults. */
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.1s;
+}
+.sp-about-version a:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+.sp-about-version a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+.sp-about-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sp-about-lede {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--foreground);
+  line-height: 1.5;
+}
+
+.sp-about-features {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.sp-about-features li {
+  position: relative;
+  padding-inline-start: 18px;
+  font-size: 1.15rem;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+/* Tiny dot bullet — the .sp-about-features list is a flat
+ * summary of what newtab01 extends, not a deep hierarchy. A
+ * colored dot reads cleaner than the default disc and matches
+ * the project's "minimal chrome" tone. */
+.sp-about-features li::before {
+  content: '';
+  position: absolute;
+  inset-inline-start: 4px;
+  top: 0.7em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--primary);
+}
+
+.sp-about-paragraph {
+  margin: 0;
+  font-size: 1.2rem;
+  color: var(--foreground);
+  line-height: 1.5;
+}
+.sp-about-paragraph a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+  transition: opacity 0.1s;
+}
+.sp-about-paragraph a:hover {
+  text-decoration: underline;
+  opacity: 0.85;
+}
+.sp-about-paragraph a:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Hairline divider between About-tab sections. The default <hr>
+ * has weird default margins + thick border; we override to a
+ * single 1px line that matches --border and respects the
+ * panel's content width. */
+.sp-about > hr {
+  margin: 0;
+  border: 0;
+  border-top: 1px solid var(--border);
+}
+
 /* ─── Split-view link picker (folder action: openSplit) ───
  * Triggered when a folder has > SPLIT_VIEW_MAX (4) direct link
  * children. Centered modal — not a side drawer like the settings

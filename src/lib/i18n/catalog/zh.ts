@@ -15,6 +15,7 @@ const messages = {
   'settings.tab.customThemes': '自定义主题',
   'settings.tab.features': '功能',
   'settings.tab.advanced': '高级',
+  'settings.tab.about': '关于',
   'settings.revert.toDefault': '恢复默认',
   'settings.revert.clearPerTheme': '清除当前主题+模式的覆盖（恢复为全局值）',
   'settings.section.themeOverridesSummary': '当前主题外观（{theme} · {mode}）',
@@ -229,6 +230,19 @@ const messages = {
   'newtab.loading': '加载中…',
   'newtab.error.loadFailed': '加载书签失败，请刷新页面。',
   'newtab.split.invalidUrl': '分屏 URL 无效：缺少或格式错误的 #urls / #layout 参数',
+  // About tab (v1.0.0) — credits, inspiration, theme source, repo link
+  'about.versionPrefix': 'v{version}',
+  'about.authorByline': '作者 {author}',
+  'about.builtWith': '使用 {tools} 构建',
+  'about.inspiredBy': '本项目灵感来源于 Humble New Tab Page，并在此基础上扩充了以下功能：',
+  'about.feature.theming': '主题化',
+  'about.feature.splitView': '分屏页面',
+  'about.feature.tabGroups': '标签分组',
+  'about.feature.bookmarkSearch': '书签搜索',
+  'about.themesIntro': '主题化基于 {link}，可前往其社区主题库浏览并导入主题。',
+  'about.themesLink': 'tweakcn',
+  'about.repoIntro': '开源项目地址：{link}',
+  'about.repoLink': 'github.com/lingyired/newtab01',
 } as const satisfies LocaleMessages;
 
 export const zh: LocaleBundle = {
