@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "package": "rm -rf dist build && tsc && vite build && mkdir -p build && (cd dist && zip -r ../build/newtab01-$(node -p \"require('../package.json').version\").zip . -x '*.DS_Store')",
+    "package": "rm -rf dist && tsc && vite build && mkdir -p build && (cd dist && zip -r ../build/newtab01-$(node -p \"require('../package.json').version\").zip . -x '*.DS_Store')",
     "preview": "vite preview"
   },
   "devDependencies": {
