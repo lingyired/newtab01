@@ -26,10 +26,14 @@ const stripSourceExt = (id: string | undefined): string => {
 // extension the user actually loads also shows the warning.
 //
 // PUBLIC_DESCRIPTION is bounded by Chrome Web Store's 132-char manifest
-// description limit. The previous English copy (138 chars) tripped
-// validation; the current copy is 42 chars and within budget.
+// description limit. v1.0.11 used a 42-char Chinese copy as an emergency
+// stop-gap (the previous 138-char English copy tripped validation);
+// v1.0.12 is a 122-char English copy that translates the original idea
+// ("bookmark-driven new tab, open folders as tab groups or in split
+// view") and additionally surfaces the 12 built-in tweakcn themes and
+// unlimited custom-theme import.
 const PUBLIC_NAME = 'newtab01';
-const PUBLIC_DESCRIPTION = '是基于书签的新标签页，支持以 group 和 split view 形式打开标签目录';
+const PUBLIC_DESCRIPTION = 'Bookmark-driven new tab. Open folders as Chrome tab groups or in split view. 12 built-in themes + unlimited custom themes.';
 
 function fixupDistManifest(): Plugin {
   return {

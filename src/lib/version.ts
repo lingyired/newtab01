@@ -61,5 +61,22 @@
 //            source manifest's "DO NOT LOAD" description warning
 //            is unchanged; the public value is injected by
 //            fixupDistManifest() at the end of `pnpm build`.
+// v1.0.12: store submission metadata — redesign manifest description.
+//          - vite.config.ts PUBLIC_DESCRIPTION rewritten in English
+//            (122 chars) so the listing copy is readable for the
+//            Chrome Web Store reviewers and English-language store
+//            users. v1.0.11's 42-char Chinese stop-gap ("是基于书签
+//            的新标签页...") passed the 132-char validation but
+//            showed up as garbled CJK on the store listing for
+//            non-Chinese-locale visitors.
+//          - New copy: "Bookmark-driven new tab. Open folders as
+//            Chrome tab groups or in split view. 12 built-in
+//            themes + unlimited custom themes."
+//          - The 12 built-in tweakcn themes are the same list as
+//            v1.0.5 (AstroVista, MX-Brutalist, Remedy's Control,
+//            Magic 2, Astra, Mimi, Manga Vibe, win86, Random Theme
+//            02, Rose, Kawi Green, Optimus). "Unlimited custom
+//            themes" refers to the runtime tweakcn URL / CSS-paste
+//            importer in the Custom Themes tab.
 
-export const VERSION = '1.0.11';
+export const VERSION = '1.0.12';
