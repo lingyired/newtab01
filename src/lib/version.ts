@@ -78,5 +78,15 @@
 //            02, Rose, Kawi Green, Optimus). "Unlimited custom
 //            themes" refers to the runtime tweakcn URL / CSS-paste
 //            importer in the Custom Themes tab.
+// v1.0.13: store submission metadata — drop "Chrome" brand for Edge.
+//          - vite.config.ts PUBLIC_DESCRIPTION: "Chrome tab groups"
+//            → "tab groups" (and a 7-char shorter total). New copy
+//            (115 chars): "Bookmark-driven new tab. Open folders as
+//            tab groups or in split view. 12 built-in themes +
+//            unlimited custom themes."
+//          - The same chrome.tabGroups API is exposed by both
+//            Chromium and Edge under that name, so dropping the
+//            "Chrome" qualifier keeps the copy accurate for the
+//            Edge Add-ons store without changing behavior.
 
-export const VERSION = '1.0.12';
+export const VERSION = '1.0.13';
