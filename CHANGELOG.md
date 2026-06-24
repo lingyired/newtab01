@@ -5,6 +5,18 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.12] - 2026-06-24
+
+### Changed
+- **`vite.config.ts` `PUBLIC_DESCRIPTION`** —— dist/manifest.json 的 `description` 字段从 42 字符（中文 stop-gap）改为 122 字符（英文）。Chrome Web Store 校验上限 132 字符，新文案留 10 字符安全余量。新文案：`Bookmark-driven new tab. Open folders as Chrome tab groups or in split view. 12 built-in themes + unlimited custom themes.`。把 v1.0.11 中文 stop-gap 替换成可读性更好的英文，并在长度允许的前提下加上了主题能力宣传（12 内置 + 无限自定义）。
+
+### Notes
+- **manifest 字段变更**（按 CLAUDE.md §11.1 反例清单），**bump patch** v1.0.11 → v1.0.12。
+- `pnpm package` 跑完后 `dist/manifest.json` 的 description 字段会写入新文案，可以直接上传 Chrome Web Store。
+- 源 manifest.json 的 description 仍是 "Source manifest..." 警告文案（给 dev 看的，build 时由 `fixupDistManifest()` 覆盖成 PUBLIC_NAME / PUBLIC_DESCRIPTION）。
+- 三处版本号同步：`manifest.json` / `package.json` / `src/lib/version.ts` 全部为 `1.0.12`。
+- **未发 GitHub Release** —— v1.0.9 仍为 store 提交周期锚点。store 上架前手动 `gh release create v1.0.12` 即可。
+
 ## [1.0.11] - 2026-06-24
 
 ### Fixed
