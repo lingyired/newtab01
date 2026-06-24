@@ -24,9 +24,12 @@ const stripSourceExt = (id: string | undefined): string => {
 // service-worker path, so we have to scrub the warning fields back to
 // their public-facing values in a post-build hook — otherwise the
 // extension the user actually loads also shows the warning.
+//
+// PUBLIC_DESCRIPTION is bounded by Chrome Web Store's 132-char manifest
+// description limit. The previous English copy (138 chars) tripped
+// validation; the current copy is 42 chars and within budget.
 const PUBLIC_NAME = 'newtab01';
-const PUBLIC_DESCRIPTION =
-  'Redesigned new tab page featuring your bookmarks, apps, most visited, and recently closed in a custom layout with split screen and search.';
+const PUBLIC_DESCRIPTION = '是基于书签的新标签页，支持以 group 和 split view 形式打开标签目录';
 
 function fixupDistManifest(): Plugin {
   return {
