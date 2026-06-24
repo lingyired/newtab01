@@ -5,6 +5,18 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.13] - 2026-06-24
+
+### Changed
+- **`vite.config.ts` `PUBLIC_DESCRIPTION`** —— 把 v1.0.12 的 "Chrome tab groups" 去掉 Chrome 品牌，便于同时上架到 Edge Add-ons（两店共用同一份 manifest description）。新文案（115 字符，比 v1.0.12 短 7 字符，安全余量更足）：`Bookmark-driven new tab. Open folders as tab groups or in split view. 12 built-in themes + unlimited custom themes.`。`chrome.tabGroups` API 在 Edge 上同名同行为，文案去掉品牌限定后仍然准确。
+
+### Notes
+- **manifest 字段变更**（按 CLAUDE.md §11.1 反例清单），**bump patch** v1.0.12 → v1.0.13。
+- `pnpm package` 跑完后 `dist/manifest.json` 的 description 字段会写入新文案。
+- 源 manifest.json 的 description 仍是 "Source manifest..." 警告文案（给 dev 看的，build 时由 `fixupDistManifest()` 覆盖成 PUBLIC_NAME / PUBLIC_DESCRIPTION）。
+- 三处版本号同步：`manifest.json` / `package.json` / `src/lib/version.ts` 全部为 `1.0.13`。
+- **未发 GitHub Release** —— v1.0.9 仍为 store 提交周期锚点。Chrome Web Store 与 Edge Add-ons 上架前手动 `gh release create v1.0.13` 即可。
+
 ## [1.0.12] - 2026-06-24
 
 ### Changed

@@ -28,12 +28,13 @@ const stripSourceExt = (id: string | undefined): string => {
 // PUBLIC_DESCRIPTION is bounded by Chrome Web Store's 132-char manifest
 // description limit. v1.0.11 used a 42-char Chinese copy as an emergency
 // stop-gap (the previous 138-char English copy tripped validation);
-// v1.0.12 is a 122-char English copy that translates the original idea
-// ("bookmark-driven new tab, open folders as tab groups or in split
-// view") and additionally surfaces the 12 built-in tweakcn themes and
-// unlimited custom-theme import.
+// v1.0.12 was a 122-char English copy that named "Chrome tab groups"
+// specifically; v1.0.13 drops the Chrome brand so the same copy is
+// accurate on the Edge Add-ons store as well. The phrasing still works
+// on both stores because both Chrome and Edge expose the same
+// chrome.tabGroups API under that name.
 const PUBLIC_NAME = 'newtab01';
-const PUBLIC_DESCRIPTION = 'Bookmark-driven new tab. Open folders as Chrome tab groups or in split view. 12 built-in themes + unlimited custom themes.';
+const PUBLIC_DESCRIPTION = 'Bookmark-driven new tab. Open folders as tab groups or in split view. 12 built-in themes + unlimited custom themes.';
 
 function fixupDistManifest(): Plugin {
   return {
