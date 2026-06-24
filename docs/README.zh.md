@@ -23,6 +23,8 @@
 - **10 种语言** —— 切语言时 UI in-place 刷新
 - **per-theme per-mode 外观覆盖** + 用户 CSS
 
+![多列书签板 —— 新标签页概览](extension-previews/newtab.png)
+
 整套新标签页 bundle 不到 30 KB gzipped。
 
 ---
@@ -30,13 +32,21 @@
 ## 功能
 
 ### 1. 文件夹批量操作
+
 一个有 30 个链接的文件夹不应该需要点 30 下。每个文件夹 header 都有三个动作：
 
 - **批量打开** —— 把所有链接铺到新标签页
 - **Group 打开** —— 包进一个 Chrome 原生标签组
 - **分屏打开** —— 把整个文件夹丢进 2x / 3 / 4 宫格的分屏视图
 
+![把文件夹打开为 Chrome 标签组](extension-previews/open%20as%20tab%20group.png)
+
+![把文件夹丢进分屏视图](extension-previews/open%20in%20split%20view.png)
+
+![文件夹上的右键菜单](extension-previews/right%20click.png)
+
 ### 2. 拖拽布局
+
 你的新标签页，你的排版。
 
 - 文件夹在列内、跨列自由拖拽
@@ -45,21 +55,43 @@
 - 空列自动消失，至少保留一列
 - 特殊文件夹（书签栏、Top Sites、最近关闭、Apps）可任意安插位置
 
+![把文件夹拖到另一列](extension-previews/drag%20to%20move.png)
+
+![拖到列边缘自动开新列](extension-previews/drag%20to%20create%20new%20column.png)
+
 ### 3. 书签快速搜索（`⌘` / `Ctrl + K`）
+
 按快捷键、输入、回车。模糊匹配书签标题和 URL（权重 0.7 / 0.3，阈值 0.4），上下方向键导航。没选中结果就回车，会把 query 转给浏览器默认搜索引擎。
 
+![通过 ⌘/Ctrl + K 模糊搜索书签](extension-previews/search.png)
+
 ### 4. Popup 分屏
+
 工具栏图标点开是两个 Tab 的小弹窗：**Bookmarks** / **Open Tabs**。选 2–4 个 URL，挑一个布局（`2h` / `2v` / `3H` / `4grid`），点 **Open Split** —— 新标签页里这几个 URL 就在真 iframe 里并排显示了。和文件夹「分屏打开」共用一套引擎。
 
+![从工具栏图标点开 Popup 选 URL](extension-previews/open%20split%20by%20click%20icon.png)
+
+![分屏视图实际效果 —— 4 个 URL 2×2 宫格](extension-previews/split%20view.png)
+
 ### 5. 主题与个性化
+
 - **12 套内置主题** 全部来自 [tweakcn](https://tweakcn.com)（AstroVista、MX-Brutalist、Remedy's Control、Magic 2、Astra、Mimi、Manga Vibe、win86、Random Theme 02、Rose、Kawi Green、Optimus）
 - **无限运行时导入** —— 把 tweakcn 主题 URL 或 `:root { ... }` CSS 块粘到「自定义主题」tab，扩展会自动校验并一键安装
 - **独立的 dark mode 设置**（`system` / `light` / `dark`）—— 每个主题在选择器里只出现一次，dark variant 由 dark mode 自动套用
 - **per-theme 外观覆盖** —— 字体、字号、字重、5 个颜色、阴影模糊、链接圆角都可以按 `(主题, 浅色/深色)` 对独立覆盖
-- **10 种语言** —— `en` / `zh` / `es` / `ar` / `hi` / `fr` / `pt` / `de` / `ja` / `ru`，切语言时 UI in-place 刷新（不刷页）
+- **10 种语言** —— 切语言时 UI in-place 刷新
 - **per-theme per-mode 用户 CSS** —— 可以为某一对 `(主题, 浅色/深色)` 写一段 CSS 覆盖
 
+![在外观设置里切换主题](extension-previews/change%20theme.png)
+
+![暗色模式预览](extension-previews/dark%20mode.png)
+
+![从 tweakcn URL 安装自定义主题](extension-previews/install%20theme.png)
+
+![主题选择器 —— 新主题已激活](extension-previews/install%20theme%202.png)
+
 ### 6. 隐私
+
 - 无埋点、无遥测、无第三方 SDK
 - 无 content script、无远程代码
 - 所有设置存本地 / `chrome.storage.sync`，**不上传任何服务器**
@@ -135,7 +167,7 @@ pnpm build
 
 `pnpm build` 完成后，在 `chrome://extensions/` 打开「开发者模式」，加载 `dist/` 目录作为「未打包的扩展程序」即可使用。
 
-完整的工程约束见 [CLAUDE.md](../CLAUDE.md)；i18n 工作流见 [docs/i18n.md](i18n.md)。
+完整的工程约束见 [CLAUDE.md](../CLAUDE.md)。
 
 ---
 
