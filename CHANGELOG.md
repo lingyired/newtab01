@@ -5,6 +5,28 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2026-06-24
+
+### Added
+- **`docs/permissions.md`** —— 完整的 Chrome Web Store 审核权限说明文档：12 个 permissions 每一个的依赖功能 + `<all_urls>` host permission 的三处用例 + privacy practices 总结 + 与早期版本相比的权限变更（`management` 已移除）。直接复制粘贴可用。
+- **`docs/README.zh.md`** —— 中文版 README。结构与英文版完全一致，顶部 `[English](../README.md) · [中文](README.zh.md)` 跳转。`README.md` 顶部同步加跳转链接。
+- **`docs/github-description.md`** —— GitHub 仓库 "About" 区的复制粘贴文案：description (英文 + 简短变体 + 中文) / topics (20 个) / 1.0.5 release 草稿。
+
+### Changed
+- **`README.md` 重写**：
+  - **去掉**「重构自 Humble New Tab Page」的措辞
+  - **改为**「灵感来源于 Humble New Tab Page」，作者标注为 [ibillingsley](https://github.com/ibillingsley)
+  - 默认英文；顶部加 `English / 中文` 跳转链接
+  - 主题数量 4 → **12**（同步 v1.0.1 已替换的 tweakcn 主题列表）
+  - 顶部 *Overview* 改为减百的功能列表（多列书签板 / 文件夹批量操作 / 模糊搜索 / Popup 分屏 / 12 套主题 / 10 种语言 / per-theme 外观覆盖），去掉任何叙事性场景描述
+  - 「4 大 / 5 大新增能力」重写为平铺的 6 个 feature section（含新增的 *Privacy* section）
+  - 移除 *Development* 末尾的 `i18n 工作流见 docs/i18n.md` 链接
+- **`docs/github-description.md`** —— Description 同步更新：英文长版（≤ 160 字符）+ 短版（≤ 80 字符）+ 中文版，均从 *Overview* 的功能列表提取。
+
+### Notes
+- **无功能改动** —— bundle size、行为、API 全部与 v1.0.4 一致。提交一次（patch bump）以反映文档/品牌刷新。
+- 三处版本号同步：`manifest.json` / `package.json` / `src/lib/version.ts` 全部为 `1.0.5`（CLAUDE.md §11 规则）。
+
 ## [1.0.4] - 2026-06-23
 
 ### Added

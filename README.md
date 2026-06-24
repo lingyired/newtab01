@@ -1,150 +1,193 @@
 # newtab01
 
-> 一个克制、高性能、可分屏的 Chrome 新标签页扩展。
 > A minimal, performant, split-screen capable New Tab Page extension for Chrome.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE_MIT.txt)
 [![Manifest V3](https://img.shields.io/badge/manifest-MV3-4285F4.svg)](manifest.json)
-[![Built with Vanilla JS](https://img.shields.io/badge/stack-Vanilla%20JS%20%2B%20Vite-f7df1e.svg)](#技术栈)
-[![Co-authored by TRAE.AI](https://img.shields.io/badge/co--author-TRAE.AI-7c3aed.svg)](#致谢)
+[![Built with Vanilla JS](https://img.shields.io/badge/stack-Vanilla%20JS%20%2B%20Vite-f7df1e.svg)](#tech-stack)
+[![Co-authored by TRAE.AI](https://img.shields.io/badge/co--author-TRAE.AI-7c3aed.svg)](#credits)
+
+[English](README.md) · [中文](docs/README.zh.md)
 
 ---
 
-## 简介
+## Overview
 
-**newtab01** 是在 [Humble New Tab Page](https://github.com/ibillingsley/HumbleNewTabPage) (MIT) 基础上重构而来的 Chrome 新标签页扩展。
+**newtab01** is a Chrome New Tab Page extension that replaces the
+default new tab with a multi-column bookmark board.
 
-它完整保留了原项目的核心能力（apps、topSites、recent、closed、devices、背景图、字体、动画、自定义 CSS），并在其之上叠加 **5 项核心新能力**：文件夹批量操作、拖拽布局、书签快速搜索、Popup 分屏、主题与个性化。
+- **Multi-column bookmark board** with drag-to-reorder and special folders (Bookmarks Bar / Top Sites / Recently Closed / Apps)
+- **Folder batch actions** — open all, open as a Chrome tab group, or open the whole folder in a split view
+- **Fuzzy bookmark search** via `⌘` / `Ctrl + K` (fuse.js, title + URL, weights 0.7 / 0.3)
+- **Popup split view** — pick 2–4 URLs from bookmarks or open tabs and pin them into a real iframe split view (`2h` / `2v` / `3H` / `4grid`)
+- **12 built-in themes** sourced from [tweakcn](https://tweakcn.com), plus **unlimited runtime imports** (paste a tweakcn URL or CSS block)
+- **10 languages** with live in-place UI refresh
+- **Per-theme, per-mode appearance overrides** and user CSS
 
-设计风格沿袭 Linear 风的克制美学：calm surface hierarchy、强 typography 与 spacing、少色、密集但可读、minimal chrome。
-
----
-
-## ✨ 五大新增能力
-
-### 1. 文件夹批量操作
-攒了一堆书签的文件夹不用一个一个点——批量打开到新标签页、按 Chrome 标签组归类，或一键丢进分屏视图一起浏览。
-
-- **批量打开**：新标签页铺开所有 URL
-- **Group 打开**：按 Chrome 原生标签组归类
-- **分屏打开**：直接进入分屏视图一起看
-
-### 2. 拖拽布局
-文件夹在列内、跨列自由拖拽；拖到列边缘自动开新列。你的新标签页，你的排版。
-
-- 同一文件夹只在一列出现
-- 空列自动消失，至少保留一列
-- 特殊文件夹（书签栏、Top Sites 等）可任意安插位置
-
-### 3. 书签快速搜索（⌘/Ctrl + K）
-按一个快捷键，所有书签随手可查。模糊匹配标题和 URL，键盘上下选、回车直达。
-
-- 顶栏搜索框，激活即显示
-- 无选中时回车走当前浏览器默认搜索引擎
-
-### 4. Popup 分屏
-工具栏图标一点，分屏立开——从书签或已打开的标签里选 URL，挑个布局，立刻开始。
-
-- Bookmarks / Open Tabs 双数据源
-- 2-4 个 URL，4 种布局（横分 / 竖分 / 三栏 / 四栏）
-
-### 5. 主题与个性化
-4 套内置主题（Codex / MX-Brutalist / Cyberpunk / AstroVista）基于 [tweakcn](https://tweakcn.com) 调色板；想换风格直接去 tweakcn 找喜欢的主题，URL 一粘贴到扩展就装好。
-
-- **4 套内置主题** + **无限运行时自定义**（tweakcn URL 或 CSS paste 到「自定义主题」tab）
-- **dark mode** 独立的 `darkMode` 设置（`跟随系统 / 亮 / 暗`），每个主题只出现一次，dark variant 由 dark mode 控制
-- **自定义 CSS** 仍保留 HNTP 能力（Advanced Tab 文本域），最高 cascade 优先级
+The whole new-tab bundle ships under 30 KB gzipped.
 
 ---
 
-## 🛠 技术栈
+## Features
 
-| 维度 | 选型 | 理由 |
-|------|------|------|
-| 构建 | Vite + `@crxjs/vite-plugin` | 模块化打包、扩展专用 HMR |
-| UI | 手写 HTML/CSS | 轻量、高性能、无依赖 |
-| 状态 | 简单 JS 模块 + `chrome.storage` | 无框架开销 |
-| 搜索 | `fuse.js` | 7KB、零依赖 |
-| 拖拽 | 原生 HTML5 Drag & Drop | 零依赖 |
-| 动效 | CSS transitions/animations | 零依赖 |
-| 持久化 | `chrome.storage.sync`（设置） + `chrome.storage.local`（布局缓存） | 跨设备同步、本地大对象 |
+### 1. Folder batch actions
+A folder with 30 links shouldn't take 30 clicks. Every folder header
+exposes three actions:
+
+- **Open all** — spread every link into new tabs
+- **Open as group** — wrap them in a Chrome native tab group
+- **Open in split view** — drop the whole folder into a 2x / 3 / 4-grid split view
+
+### 2. Drag-and-drop layout
+Your new tab, your layout.
+
+- Drag folders within a column or across columns
+- Drop at a column edge to create a new one
+- A folder lives in exactly one column — no duplicates
+- Empty columns auto-disappear (one is always kept)
+- Special folders (Bookmarks Bar, Top Sites, Recently Closed, Apps) can sit anywhere, not just at the end
+
+### 3. Bookmark search (`⌘` / `Ctrl + K`)
+Press a shortcut, type, hit enter. Fuzzy-matched against bookmark
+titles and URLs (weights 0.7 / 0.3, threshold 0.4) with up/down arrow
+navigation. No selection? Enter forwards the query to your default
+search engine.
+
+### 4. Popup split view
+Click the toolbar icon to open a small dialog with two tabs:
+**Bookmarks** and **Open Tabs**. Pick 2–4 URLs, pick a layout
+(`2h` / `2v` / `3H` / `4grid`), hit **Open Split** — a new tab
+opens with the URLs side-by-side in real iframes. Same engine is used
+by the folder "open in split" action.
+
+### 5. Themes & personalization
+- **12 built-in themes** sourced from [tweakcn](https://tweakcn.com)
+  (AstroVista, MX-Brutalist, Remedy's Control, Magic 2, Astra, Mimi,
+  Manga Vibe, win86, Random Theme 02, Rose, Kawi Green, Optimus)
+- **Unlimited runtime imports** — paste a tweakcn URL or `:root { ... }`
+  CSS block into the "Custom Themes" tab; the extension validates
+  it and installs it in one click
+- **Independent dark mode setting** (`system` / `light` / `dark`) —
+  every theme only appears once in the picker; the dark variant is
+  selected automatically
+- **Per-theme appearance overrides** — font, font size, font weight,
+  five colors, shadow blur, and link corner radius can be overridden
+  per `(theme, light/dark)` pair
+- **10 languages** — `en` / `zh` / `es` / `ar` / `hi` / `fr` / `pt` /
+  `de` / `ja` / `ru`, with live in-place UI refresh on language switch
+- **Per-theme, per-mode user CSS** — drop in a snippet to override
+  the theme for a specific (theme, light/dark) combination
+
+### 6. Privacy
+- No analytics, no telemetry, no third-party SDKs
+- No content scripts, no remote code
+- All settings stored locally / in `chrome.storage.sync` — never
+  uploaded to any server
+- See [docs/permissions.md](docs/permissions.md) for the full
+  Chrome Web Store permissions justification
 
 ---
 
-## 📦 架构
+## Tech stack
 
-| 上下文 | 入口文件 | 职责 |
-|--------|---------|------|
-| Service Worker | `src/background.ts` | 消息路由、tabGroups、alarms、storage 写入聚合、declarativeNetRequest 动态规则 |
-| New Tab | `newtab.html` | 书签树渲染、搜索、拖拽、分屏视图（`?split=1`） |
-| Options | `options.html` | 设置（原生表单 + chrome.storage） |
-| Popup | `popup.html` | 选 URL 触发分屏 |
+| Layer | Choice | Why |
+|-------|--------|-----|
+| Build | Vite + `@crxjs/vite-plugin` | Modular bundling, extension-aware HMR |
+| UI | Hand-written HTML / CSS | Lightweight, no framework runtime |
+| State | Plain JS modules + `chrome.storage` | No framework overhead |
+| Search | `fuse.js` | 7 KB, zero deps |
+| Drag & drop | Native HTML5 Drag & Drop | No dependency, full control over the event lifecycle |
+| Animation | CSS transitions / animations | No dependency |
+| Persistence | `chrome.storage.sync` (settings) + `chrome.storage.local` (layout) | Cross-device sync, room for larger local objects |
+
+---
+
+## Architecture
+
+| Context | Entry | Responsibility |
+|---------|-------|----------------|
+| Service Worker | `src/background.ts` | Message routing, `tabGroups`, `alarms`, context menu, theme JSON fetch |
+| New Tab | `newtab.html` | Bookmark tree, search, drag, split view (`?split=1`) |
+| Options | `options.html` | Settings UI (native form + `chrome.storage`) |
+| Popup | `popup.html` | URL picker that triggers split view |
 
 ```
 src/
-├── background.ts             # Service Worker：消息路由 + alarms
+├── background.ts             # Service Worker
 ├── lib/
-│   ├── chrome/               # chrome.* API 类型化封装
-│   ├── storage/              # chrome.storage 统一访问
-│   └── settings.ts
-├── newtab/                   # 新标签页入口
-├── options/                  # 选项页入口
-├── popup/                    # 工具栏弹窗入口
+│   ├── chrome/               # chrome.* API typed wrappers
+│   ├── storage/              # chrome.storage unified access
+│   ├── i18n/                 # 10-locale catalog + t()
+│   └── platform.ts
+├── newtab/                   # NTP entry
+├── popup/                    # Toolbar popup entry
 └── features/
-    ├── bookmarks/            # 书签树渲染、列、文件夹、拖拽目标
-    ├── drag-drop/            # 原生 HTML5 DnD
-    ├── search/               # fuse.js 搜索 + overlay
-    ├── split/                # 分屏引擎抽象 + iframe 引擎
-    └── themes/               # 主题切换
+    ├── bookmarks/            # Tree, columns, folders, drag targets
+    ├── drag-drop/            # Native HTML5 DnD
+    ├── search/               # fuse.js search + overlay
+    ├── split/                # Split engine abstraction + iframe engine
+    ├── settings/             # Apply pipeline
+    └── themes/               # Switcher, custom themes, tweakcn import
 ```
+
+### Performance budget
+
+| Metric | Budget | Strategy |
+|--------|--------|----------|
+| New Tab first-load JS | ≤ 80 KB gzipped | Vite chunk split by route |
+| New Tab FCP | < 200 ms | Bookmark data from `chrome.storage.local` cache, skeleton on first paint |
+| Service Worker | < 10 KB | Routing + alarms only, no heavy deps |
+| Drag & drop | 60 fps | Native DnD, no per-frame re-render |
 
 ---
 
-## 🚀 开发
+## Development
 
 ```bash
-# 安装依赖
+# Install dependencies
 pnpm install
 
-# 开发模式（带 HMR）
+# Dev mode (with HMR)
 pnpm dev
 
-# 构建生产包（产物在 dist/）
+# Production build (output in dist/)
 pnpm build
 ```
 
-构建完成后在 Chrome 中加载 `dist/` 目录作为「未打包的扩展程序」即可使用。
+After `pnpm build`, load `dist/` as an "unpacked extension" in
+`chrome://extensions/` (Developer mode on).
 
-### 性能预算
-
-| 指标 | 预算 | 策略 |
-|------|------|------|
-| 新标签页首屏 JS | ≤ 80KB gzipped | Vite 分 chunk：dnd / search / split 按路由懒加载 |
-| 新标签页 FCP | < 200ms | 书签数据走 `chrome.storage.local` 缓存；首屏用 Skeleton |
-| Service Worker | < 10KB | 纯路由 + alarms，不引重型库 |
-| 拖拽 | 60fps | 原生 DnD + 不在拖拽期间重渲染列 |
+See [CLAUDE.md](CLAUDE.md) for the full engineering conventions and
+[docs/i18n.md](docs/i18n.md) for the internationalization workflow.
 
 ---
 
-## 📄 License
+## License
 
-本项目基于 MIT 协议开源，详见 [LICENSE_MIT.txt](LICENSE_MIT.txt)。
+MIT — see [LICENSE_MIT.txt](LICENSE_MIT.txt).
 
-### 出处与致谢
+---
 
-本项目在 [Humble New Tab Page](https://github.com/ibillingsley/HumbleNewTabPage) (MIT) 基础上重构而来。原始版权属 [ibillingsley](https://github.com/ibillingsley) 与贡献者所有，遵循 MIT 协议发布。
+## Credits
 
-主要维护 / 重构：**[@lingyired](https://github.com/lingyired)**
-AI 协作者：**TRAE.AI**
+Maintained by [@lingyired](https://github.com/lingyired).
+AI co-author: **TRAE.AI**.
 
 > "Built with humans and AI, in the open."
 
 ---
 
-## 🗺 Roadmap
+## Inspiration
 
-- [ ] 书签编辑 / 新增 / 删除（v1 仅只读 + 拖拽布局）
-- [ ] 历史记录搜索（v1 搜索范围仅书签）
-- [ ] NativeSplitEngine：基于 Chrome Window Placing API
-- [ ] 千级书签的列表虚拟化（`@tanstack/react-virtual` 或同类）
-- [ ] Firefox 支持（v1 不支持）
+Inspired by [Humble New Tab Page](https://github.com/ibillingsley/HumbleNewTabPage)
+by [ibillingsley](https://github.com/ibillingsley) and contributors (MIT).
+
+---
+
+## Roadmap
+
+- Bookmark editing (currently read-only + drag-to-reorder)
+- History search (currently bookmarks only)
+- `NativeSplitEngine` based on the Chrome Window Placing API
+- Virtualized list rendering for thousands of bookmarks
+- Firefox support
