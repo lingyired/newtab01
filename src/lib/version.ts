@@ -49,5 +49,17 @@
 //          - docs/github-description.md Topics section synced to the
 //            8-topic trimmed set actually on the GitHub About box.
 //          - No code changes; no behavior change.
+// v1.0.11: store submission metadata fix.
+//          - vite.config.ts PUBLIC_DESCRIPTION shortened from 138
+//            chars (English) to 42 chars (Chinese) so the built
+//            dist/manifest.json description field passes Chrome
+//            Web Store's 132-char validation. The English copy
+//            "Redesigned new tab page featuring your bookmarks..."
+//            was 6 chars over budget.
+//          - dist/manifest.json description is what chrome://
+//            extensions and the Chrome Web Store display. The
+//            source manifest's "DO NOT LOAD" description warning
+//            is unchanged; the public value is injected by
+//            fixupDistManifest() at the end of `pnpm build`.
 
-export const VERSION = '1.0.10';
+export const VERSION = '1.0.11';
