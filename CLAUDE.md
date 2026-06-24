@@ -390,3 +390,20 @@ splitManager.register(new IframeSplitEngine());
 - bump 与代码改动放在**同一个 commit**，commit message 注明。
 - Major / minor 升级仍然按功能里程碑手动决定（不随每次 commit 涨）。
 - bump 时同步更新 `CHANGELOG.md` 的 Unreleased / 新版本小节。
+
+### 11.1 不需要 bump 的例外
+
+以下改动**不**影响 `pnpm package` 的 dist/ 输出或 user-visible 行为，**不需要** bump patch：
+
+- **纯文档**：`CLAUDE.md` / `docs/**` / `README.md` 内容修改；i18n catalog 单 key 校对；`docs/store-description.md` / `docs/permissions.md` / `docs/github-description.md` 修订
+- **构建脚本**：`package.json` 的 `scripts` 段新增 / 修改（如新增 `pnpm package`、调整 build 顺序）
+- **构建配置**：`vite.config.ts` 的 plugin 配置、rollup output 格式、chunk split 规则（不影响产物行为的纯配置调整）
+- **仓库配置**：`.gitignore` / `.editorconfig` / `.prettierrc` / `.github/` workflows
+- **lockfile 唯一变更**：`pnpm-lock.yaml` 仅因 `scripts` 调整而变动
+- **内部 refactor**：仅重命名内部变量 / 拆函数 / 改注释 / 改 type-only 字段，不改任何外部行为
+
+**判断标准**：跑 `pnpm package` 后 dist/ 输出**是否产生 user-visible 行为变化**？是 → bump；否 → 不 bump。
+
+**仍然需要 bump 的**（上述判断的反例）：任何权限调整、`Settings` schema 变化、UI 字符串新增 / 修改、feature 增删、bug 修复、theme 新增、行为变更、`dependencies` 变化（影响 bundle）、manifest 字段（除 `version`）修改、`vite.config.ts` 的 `build.rollupOptions.input` 增删（影响产物入口）。
+
+> 存疑时按"会改变 dist/ 字节或行为" 走 —— 宁可多 bump，不要让用户错过重要更新。
