@@ -14,5 +14,13 @@
 //          (new MessageKey settings.field.darkModeNote; all 10
 //          locales updated). Shown in both the Appearance tab and
 //          the Custom themes tab "Theme" section.
+// v1.0.5: Chrome Web Store submission prep. No functional changes.
+//          - docs/permissions.md added (full permissions justification
+//            for store review).
+//          - README.md rewritten in English (default) + docs/README.zh.md
+//            Chinese version added; HNTP refactor claim removed in favor
+//            of an "Inspiration" note at the bottom of the README.
+//          - docs/github-description.md added (copy for the GitHub repo's
+//            About box: description, topics, release notes).
 
-export const VERSION = '1.0.4';
+export const VERSION = '1.0.5';
