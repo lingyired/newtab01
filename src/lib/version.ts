@@ -29,5 +29,16 @@
 //          PNG was unreadable on them) are now visible. No behavior
 //          change — same 16x16 size, same closed/open morph on
 //          expand/collapse.
+// v1.0.7: search results footer / empty-state text now refreshes on
+//          locale switch (updateSearchStrings path).
+// v1.0.8: search results footer bug fix — buildFooter() had a side
+//          effect that overwrote the module-level footerEl reference
+//          with a detached node, making replaceWith a self-no-op and
+//          leaving the old footer in the DOM. Replaced with a pure
+//          buildFooter() + container.querySelector-based lookup.
+// v1.0.9: store submission prep — 14 extension preview screenshots
+//          added under extension-previews/ and inserted into README.md
+//          (English) and docs/README.zh.md (Chinese) at the matching
+//          feature sections. No functional changes; no new MessageKey.
 
-export const VERSION = '1.0.8';
+export const VERSION = '1.0.9';

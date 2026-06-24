@@ -5,6 +5,25 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2026-06-24
+
+### Added
+- **`extension-previews/`** —— 14 张扩展截图（4.8 MB），对应 README 的各个 feature section：
+  - `newtab.png` — 多列书签板总览（Overview）
+  - § 1 文件夹批量操作：`open as tab group.png` / `open in split view.png` / `right click.png`
+  - § 2 拖拽布局：`drag to move.png` / `drag to create new column.png`
+  - § 3 书签搜索：`search.png`
+  - § 4 Popup 分屏：`open split by click icon.png` / `split view.png`
+  - § 5 主题：`change theme.png` / `dark mode.png` / `install theme.png` / `install theme 2.png`
+
+### Changed
+- **`README.md` + `docs/README.zh.md`** —— 在 6 个 feature section 旁插入对应截图，每张图带简短 alt text。13 张图引用无空格文件名；`install theme 2.png` 等含空格的路径走 URL 编码（`%20`）。
+
+### Notes
+- **无功能改动** —— 行为、bundle size、API 与 v1.0.8 一致。
+- 三处版本号同步：`manifest.json` / `package.json` / `src/lib/version.ts` 全部为 `1.0.9`（CLAUDE.md §11 规则）。
+- 重复文件 `extension-previews/open as tab group .png`（末尾带空格）与 `extension-previews/open as tab group.png` 实际是同一张截图的两份拷贝；本次只引用无空格那份作为权威，**未删除**带空格那份（CLAUDE.md §2.3 "发现无关的死代码 → 提到但不删除"）。
+
 ## [1.0.8] - 2026-07-15
 
 ### Fixed

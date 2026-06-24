@@ -24,6 +24,8 @@ default new tab with a multi-column bookmark board.
 - **10 languages** with live in-place UI refresh
 - **Per-theme, per-mode appearance overrides** and user CSS
 
+![Multi-column bookmark board — the new tab overview](extension-previews/newtab.png)
+
 The whole new-tab bundle ships under 30 KB gzipped.
 
 ---
@@ -31,6 +33,7 @@ The whole new-tab bundle ships under 30 KB gzipped.
 ## Features
 
 ### 1. Folder batch actions
+
 A folder with 30 links shouldn't take 30 clicks. Every folder header
 exposes three actions:
 
@@ -38,7 +41,14 @@ exposes three actions:
 - **Open as group** — wrap them in a Chrome native tab group
 - **Open in split view** — drop the whole folder into a 2x / 3 / 4-grid split view
 
+![Open folder as Chrome tab group](extension-previews/open%20as%20tab%20group.png)
+
+![Open folder in split view](extension-previews/open%20in%20split%20view.png)
+
+![Right-click menu on a folder](extension-previews/right%20click.png)
+
 ### 2. Drag-and-drop layout
+
 Your new tab, your layout.
 
 - Drag folders within a column or across columns
@@ -47,20 +57,33 @@ Your new tab, your layout.
 - Empty columns auto-disappear (one is always kept)
 - Special folders (Bookmarks Bar, Top Sites, Recently Closed, Apps) can sit anywhere, not just at the end
 
+![Drag a folder to another column](extension-previews/drag%20to%20move.png)
+
+![Drag to a column edge to create a new column](extension-previews/drag%20to%20create%20new%20column.png)
+
 ### 3. Bookmark search (`⌘` / `Ctrl + K`)
+
 Press a shortcut, type, hit enter. Fuzzy-matched against bookmark
 titles and URLs (weights 0.7 / 0.3, threshold 0.4) with up/down arrow
 navigation. No selection? Enter forwards the query to your default
 search engine.
 
+![Bookmark fuzzy search via ⌘/Ctrl + K](extension-previews/search.png)
+
 ### 4. Popup split view
+
 Click the toolbar icon to open a small dialog with two tabs:
 **Bookmarks** and **Open Tabs**. Pick 2–4 URLs, pick a layout
 (`2h` / `2v` / `3H` / `4grid`), hit **Open Split** — a new tab
 opens with the URLs side-by-side in real iframes. Same engine is used
 by the folder "open in split" action.
 
+![Popup: open a split view from the toolbar icon](extension-previews/open%20split%20by%20click%20icon.png)
+
+![Split view in action — 4 URLs in a 2×2 grid](extension-previews/split%20view.png)
+
 ### 5. Themes & personalization
+
 - **12 built-in themes** sourced from [tweakcn](https://tweakcn.com)
   (AstroVista, MX-Brutalist, Remedy's Control, Magic 2, Astra, Mimi,
   Manga Vibe, win86, Random Theme 02, Rose, Kawi Green, Optimus)
@@ -78,7 +101,16 @@ by the folder "open in split" action.
 - **Per-theme, per-mode user CSS** — drop in a snippet to override
   the theme for a specific (theme, light/dark) combination
 
+![Change theme in the Appearance settings](extension-previews/change%20theme.png)
+
+![Dark mode preview](extension-previews/dark%20mode.png)
+
+![Install a custom theme from a tweakcn URL](extension-previews/install%20theme.png)
+
+![Custom theme picker with the new theme active](extension-previews/install%20theme%202.png)
+
 ### 6. Privacy
+
 - No analytics, no telemetry, no third-party SDKs
 - No content scripts, no remote code
 - All settings stored locally / in `chrome.storage.sync` — never
