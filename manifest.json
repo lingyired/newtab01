@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "newtab01 [dev — DO NOT LOAD: load dist/ instead]",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "minimum_chrome_version": "111",
   "description": "Source manifest. The /src/*.ts entry points below are served by `pnpm dev` and have no MIME type when loaded directly from disk, which breaks module-script loading. Always build (`pnpm build`) and load the `dist/` directory. See README.md \"开发\" section.",
   "icons": {

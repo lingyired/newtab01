@@ -5,6 +5,17 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6] - 2026-06-24
+
+### Changed
+- **Folder header icon 从 PNG 改为内联 Lucide SVG**。[`src/features/bookmarks/folder.ts`](src/features/bookmarks/folder.ts) 新增 `createFolderIcon()` helper —— `<span class="icon folder-icon">` 内嵌两枚 SVG（closed `Folder` / open `FolderOpen`），`stroke="currentColor"` 让图标自动跟随 `color`。[`styles/newtab.css`](styles/newtab.css) 移除 `.folder .icon, .folder-icon` / `.open > .folder-icon` 的 PNG `background-image` 规则，改为给 `.folder-icon` 设置 `color: var(--card-foreground, var(--newtab-text))`，并加 4 条 `display` 规则让 CSS 在父 `<a class="folder">` 拿到 `.open` class 时切换 closed/open SVG。
+- **修复浅色主题下 folder 图标看不清的问题**。v1.0.5 用的 `icons/folder.png` / `icons/folder_open.png` 是黑色实底，对部分主题（浅色变体仍是深色 surface 的那些，比如 Optimus / Kawi Green 之类）会造成 link 背景黑 + 图标黑 → 图标完全看不见。改用继承 `currentColor` 的 SVG 后，图标和链接文字同色 —— 浅色主题里是深色图标 + 浅色背景、深色主题里是浅色图标 + 深色背景，永远有对比度。`icons/folder.png` / `folder@2x.png` / `folder_open.png` / `folder_open@2x.png` 这 4 个文件保留在仓库（也许未来用户能从 dist 里手动删），但代码里已不再引用。
+
+### Notes
+- 行为零变化：仍是 16×16、仍是展开/折叠时切换图标、folder action 按钮、拖拽、右键菜单、键盘交互全部不变。
+- 同样使用 PNG 的「特殊目录」图标（`.recent` / `.top` / `.closed` / `.window` / `.devices` / `.error`）未在本次改动范围内 —— 它们的可见性问题和 folder 主图标一样，理论上同样可以切到内联 SVG，但本次只动了用户明确指出的 `folder-icon`。如需一并切换再开一次任务。
+- 三处版本号同步：`manifest.json` / `package.json` / `src/lib/version.ts` 全部为 `1.0.6`（CLAUDE.md §11 规则）。
+
 ## [1.0.5] - 2026-06-24
 
 ### Added

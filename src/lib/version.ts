@@ -22,5 +22,12 @@
 //            of an "Inspiration" note at the bottom of the README.
 //          - docs/github-description.md added (copy for the GitHub repo's
 //            About box: description, topics, release notes).
+// v1.0.6: folder header icon switched from PNG to inline Lucide SVG.
+//          The icon now uses stroke="currentColor" and inherits
+//          --card-foreground / --newtab-text, so dark themes whose
+//          light variant still has a dark surface (the v1.0.5 black
+//          PNG was unreadable on them) are now visible. No behavior
+//          change — same 16x16 size, same closed/open morph on
+//          expand/collapse.
 
-export const VERSION = '1.0.5';
+export const VERSION = '1.0.6';

@@ -200,20 +200,35 @@
 }
 
 /* ─── Folder icons ─── */
+/* v1.0.6: switch from PNG to inline Lucide SVG (set up in
+ * folder.ts → createFolderIcon). `color: var(--card-foreground, …)`
+ * makes the icon inherit the link's text color via currentColor —
+ * a black PNG was unreadable on themes whose light variant still
+ * uses a dark surface. Two SVGs (closed / open) are stacked; CSS
+ * swaps which is visible based on the parent `<a class="folder">`'s
+ * `.open` class. */
 .folder .icon,
 .folder-icon {
-  background-image: -webkit-image-set(
-    url("/icons/folder.png") 1x,
-    url("/icons/folder@2x.png") 2x
-  );
+  background-image: none;
+  color: var(--card-foreground, var(--newtab-text));
 }
 
-.open .icon,
-.open > .folder-icon {
-  background-image: -webkit-image-set(
-    url("/icons/folder_open.png") 1x,
-    url("/icons/folder_open@2x.png") 2x
-  );
+.folder .icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
+}
+
+.folder .icon .folder-icon-open {
+  display: none;
+}
+
+.folder.open .icon .folder-icon-closed {
+  display: none;
+}
+
+.folder.open .icon .folder-icon-open {
+  display: block;
 }
 
 /* ─── Special folder icons ─── */

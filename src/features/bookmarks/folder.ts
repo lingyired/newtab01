@@ -1,7 +1,6 @@
 // Folder node rendering — folder with header, action icons, expand/collapse
 
 import type { BookmarkNode } from './types';
-import { createFavicon } from './favicon';
 import { createFolderActions } from './folder-actions';
 import { openAllLinks } from './folder-actions-handler';
 import { getChildren } from './special-folders';
@@ -13,6 +12,32 @@ import { getLocal, setLocal, removeLocal } from '../../lib/storage';
 import { getMovedOut, filterChildren } from './moved-out';
 import { t } from '../../lib/i18n';
 import * as debug from '../../lib/debug';
+
+/** Lucide folder icons (ISC-licensed). stroke=currentColor so the
+ *  icon inherits the link's text color (--card-foreground →
+ *  --newtab-text), fixing the v1.0.5 PNG issue: a black icon was
+ *  unreadable on themes whose light variant still uses a dark
+ *  surface. Two SVGs are stacked in the same container; CSS swaps
+ *  which is visible based on the parent `<a class="folder">`'s
+ *  `.open` class. */
+const FOLDER_ICON_CLOSED =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>';
+
+const FOLDER_ICON_OPEN =
+  '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6.14 11.28 1.49-2.97A2 2 0 0 1 9.39 7H20a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>';
+
+/** Create the folder header icon. Returns a span carrying both
+ *  closed and open SVGs; newtab.css toggles which is shown based
+ *  on the parent `<a class="folder">`'s `.open` class. */
+function createFolderIcon(): HTMLSpanElement {
+  const span = document.createElement('span');
+  span.classList.add('icon', 'folder-icon');
+  span.innerHTML = FOLDER_ICON_CLOSED + FOLDER_ICON_OPEN;
+  const svgs = span.querySelectorAll('svg');
+  svgs[0]?.classList.add('folder-icon-closed');
+  svgs[1]?.classList.add('folder-icon-open');
+  return span;
+}
 
 /** Track open folder state in storage */
 const OPEN_PREFIX = 'open.';
@@ -45,9 +70,9 @@ export function renderFolder(
   textWrap.textContent = node.title || '';
   header.appendChild(textWrap);
 
-  // Folder icon
-  const icon = createFavicon(undefined, undefined, undefined);
-  icon.classList.add('folder-icon');
+  // Folder icon — inline Lucide SVG, picks up the link's text color
+  // via currentColor (see newtab.css `.folder-icon` rules).
+  const icon = createFolderIcon();
   header.insertBefore(icon, header.firstChild);
 
   // Action icons — regular folders use children synchronously; special folders
