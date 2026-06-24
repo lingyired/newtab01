@@ -30,4 +30,4 @@
 //          change — same 16x16 size, same closed/open morph on
 //          expand/collapse.
 
-export const VERSION = '1.0.6';
+export const VERSION = '1.0.8';

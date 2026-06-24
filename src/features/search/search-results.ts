@@ -7,7 +7,6 @@ import { t } from '../../lib/i18n';
 
 let container: HTMLElement | null = null;
 let listEl: HTMLElement | null = null;
-let footerEl: HTMLElement | null = null;
 let selectedIndex = -1;
 let currentItems: SearchItem[] = [];
 let onSelectCallback: ((item: SearchItem) => void) | null = null;
@@ -40,6 +39,13 @@ export function attachResultsContainer(el: HTMLElement): void {
   listEl.className = 'search-results-list';
   container.appendChild(listEl);
 
+  // The footer is created once at attach-time and rebuilt in place
+  // by `updateSearchStrings()`. v1.0.7 used to keep a module-level
+  // `footerEl` reference here as a side effect of `buildFooter()`;
+  // v1.0.8 makes `buildFooter` pure (it no longer touches any
+  // module state) and locates the existing footer via
+  // `container.querySelector` at call time, so the reference no
+  // longer needs to be cached.
   container.appendChild(buildFooter());
 
   selectedIndex = -1;
@@ -49,7 +55,19 @@ export function attachResultsContainer(el: HTMLElement): void {
 /** Build the static footer with keyboard hints. v0.2.118: hint
  *  labels are read from t() at render time so that locale changes
  *  can repaint the footer without rebuilding the rest of the
- *  results panel. */
+ *  results panel.
+ *
+ *  v1.0.8: this function is now pure — it does NOT touch any
+ *  module-level state. The previous implementation did
+ *  `footerEl = footer` as a side effect, which made the rebuild
+ *  path in `updateSearchStrings()` a no-op: by the time
+ *  `updateSearchStrings` did `footerEl.replaceWith(newFooter)`,
+ *  `buildFooter` had already overwritten `footerEl` with
+ *  `newFooter` (a detached node), so `replaceWith` was effectively
+ *  `newFooter.replaceWith(newFooter)` — a self-no-op — and the
+ *  old footer remained in the DOM with its stale translations.
+ *  `updateSearchStrings` now locates the existing footer through
+ *  the container at call time, so no cached reference is needed. */
 function buildFooter(): HTMLElement {
   const footer = document.createElement('div');
   footer.className = 'search-results-footer';
@@ -81,9 +99,6 @@ function buildFooter(): HTMLElement {
   );
   footer.appendChild(fallback);
 
-  // Cache the footer for `updateSearchStrings()` to rebuild in-place on
-  // locale change.
-  footerEl = footer;
   return footer;
 }
 
@@ -92,15 +107,53 @@ function buildFooter(): HTMLElement {
  *  `applyLocaleToDom` (newtab/main.ts) on `setLocale()`. The list
  *  above the footer is untouched — it already shows whatever results
  *  the user previously searched for, and a stale list is preferable
- *  to clearing the user's results on a language switch. */
+ *  to clearing the user's results on a language switch.
+ *
+ *  v1.0.7: also repaint the empty-state text inside `listEl` so that
+ *  switching language while the panel is open in its empty state
+ *  (input focused, no query yet) updates immediately. Pre-v1.0.7 the
+ *  empty `<div class="search-results-empty">` was only populated by
+ *  `showResults([])` (called on input focus), so a locale change
+ *  between focus and the next focus would leave the user staring at
+ *  the old-language "Type to search…" until they blurred and
+ *  re-focused.
+ *
+ *  v1.0.8: the footer rebuild now uses `container.querySelector`
+ *  instead of the (now-removed) module-level `footerEl` reference.
+ *  v1.0.7 looked up the footer via `footerEl && footerEl.parentElement`,
+ *  but `buildFooter()` had a side effect of overwriting that
+ *  reference with the freshly-built (detached) node, so the
+ *  subsequent `footerEl.replaceWith(newFooter)` operated on the
+ *  new node itself and never replaced the visible footer. v1.0.8
+ *  makes `buildFooter` pure and locates the existing footer
+ *  through the container at call time, which is robust against
+ *  any future re-attach or container replacement. */
 export function updateSearchStrings(): void {
-  if (!container || !footerEl || !footerEl.parentElement) return;
-  // `buildFooter()` reads from t() at render time and writes to a
-  // fresh element. Replace the old footer in the same position so
-  // layout doesn't shift.
+  if (!container) return;
+  // 1. Footer (keyboard hints). Look up the live footer in the
+  //    container, then `replaceWith` a freshly-built one so the
+  //    right-aligned fallback span keeps its `margin-left: auto`
+  //    flexbox slot.
+  const existingFooter = container.querySelector('.search-results-footer');
   const newFooter = buildFooter();
-  footerEl.replaceWith(newFooter);
-  footerEl = newFooter;
+  if (existingFooter && existingFooter.parentElement) {
+    existingFooter.replaceWith(newFooter);
+  } else {
+    // Defensive: no footer in the container (shouldn't happen —
+    // attachResultsContainer always creates one — but if the
+    // container was somehow replaced or the footer was removed,
+    // append a fresh footer to restore the keyboard hints).
+    container.appendChild(newFooter);
+  }
+  // 2. Empty-state hint inside the list. Re-write textContent in
+  //    place — the surrounding element is preserved so layout
+  //    doesn't shift if the empty state happens to be visible.
+  if (listEl) {
+    const empty = listEl.querySelector('.search-results-empty');
+    if (empty) {
+      empty.textContent = t('searchResults.empty');
+    }
+  }
 }
 
 function getFaviconUrl(url: string): string {

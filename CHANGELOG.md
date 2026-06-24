@@ -5,6 +5,43 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.8] - 2026-07-15
+
+### Fixed
+- **v1.0.7 切语言 footer 仍不更新**。v1.0.7 的 `updateSearchStrings` 走 `if (footerEl && footerEl.parentElement) { buildFooter(); footerEl.replaceWith(newFooter); footerEl = newFooter; }` 路径，但实际上 `buildFooter()` 内部有个副作用 —— `footerEl = footer`，**无条件** 把模块级 `footerEl` 覆盖成新创建的（detached）footer。所以 `updateSearchStrings` 进入 if 后：
+  1. `buildFooter()` 创建新 footer B，**`footerEl = B`**（B 还没在 DOM 中）
+  2. `footerEl.replaceWith(newFooter)` 此时 `footerEl` 已经是 B，等价于 `B.replaceWith(B)` —— self-no-op
+  3. `footerEl = newFooter` 冗余
+  4. **旧 footer A 仍留在 DOM 中**，永远是旧 locale 的字符串
+- empty-state 看起来正常（v1.0.7 用 `listEl.querySelector` 找，没踩副作用），所以表象是"empty 文字会更新，footer 死活不变"——这正是用户报告的现象。
+- 修复：[`src/features/search/search-results.ts`](src/features/search/search-results.ts)
+  - `buildFooter()` 改为纯函数，**不再**修改模块级状态
+  - `attachResultsContainer()` 不再缓存 `footerEl` 引用
+  - `updateSearchStrings()` 改用 `container.querySelector('.search-results-footer')` 在 DOM 里找现存的 footer，replaceWith 新 footer；如果找不到（防御性，理论上不会发生），appendChild 到 container 末尾
+  - 顺手删除 v1.0.7 引入的模块级 `footerEl` 变量（除注释外其它地方没读它）
+
+### 影响范围
+- 仅搜索结果 panel 的 footer 文字；切语言路径从「no-op（看起来 footer 不变）」变成「正确替换」。
+- 性能：每次切语言多 1 次 `querySelector` 和 1 次 `replaceWith`，都是 O(1) 操作。
+- bundle：newtab 主 chunk 不变（仅删除 1 个 `let` 变量 + 1 个 `replaceWith` 路径里的两次 `footerEl` 写入）。
+
+## [1.0.7] - 2026-07-15
+
+### Fixed
+- **搜索框结果栏切语言不动态更新**。`updateSearchStrings()`（v0.2.118 引入）只重建 footer，没碰 listEl 里的 empty-state。流程：
+  1. 用户 focus 搜索框 → `showResults([])` → empty `<div class="search-results-empty">` 写入 "Type to search…"
+  2. 用户改语言 → `setLocale` → `applyLocaleToDom` → `updateSearchStrings` 只重建 footer，listEl 里的 empty 文字还是旧 locale
+  3. 用户没动搜索框、没重新 focus，empty 文字看起来"刷新才有"
+- 修复：`updateSearchStrings` 在 footer 重建后顺手查 `.search-results-empty` 并 `textContent = t('searchResults.empty')`，只改文字不重建元素（layout 不变）。同时把 guard 从 `!container || !footerEl || !footerEl.parentElement` 拆成两步 —— footer 重建和 empty-state 更新彼此独立，任一不存在都不影响另一个。
+
+### Changed
+- **缩短英文 footer fallback 提示**。`'with no selection, press Enter to web search'` → `'with no selection, press Enter to search'`。原句在 4 段 hint + `margin-left: auto` flexbox 下被 `flex-wrap: wrap` 换行；中文版本（"不选择直接回车 = 用搜索引擎搜索"）也偏长但字符窄不换行，英文去 "web" 后正好一排。其它 9 个 catalog 同步不变。
+
+### 影响范围
+- 仅搜索结果 panel 的 footer / empty-state 文字。
+- 性能：empty-state 是 `querySelector` 一次 + `textContent` 赋值，O(1)。
+- bundle：newtab 主 chunk 不变（无新增 MessageKey）。
+
 ## [1.0.6] - 2026-06-24
 
 ### Changed

@@ -173,7 +173,7 @@ const messages = {
   'searchResults.footer.navigate': 'navigate',
   'searchResults.footer.open': 'open',
   'searchResults.footer.close': 'close',
-  'searchResults.footer.websearch': 'with no selection, press Enter to web search',
+  'searchResults.footer.websearch': 'with no selection, press Enter to search',
   // Folder actions
   'folderAction.openAll': 'Open all links',
   'folderAction.openAsGroup': 'Open as tab group',
