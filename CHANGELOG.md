@@ -5,6 +5,18 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.10] - 2026-06-24
+
+### Fixed
+- **`docs/README.zh.md` 图片路径** —— 中文 README 在 `docs/` 子目录下，之前引用 `extension-previews/...` 解析到 `docs/extension-previews/...`（不存在），导致中文 README 上 14 张图全部显示为 broken image。全部路径补上 `../` 前缀，现在 14 张图在 GitHub 上正常显示。
+
+### Changed
+- **`docs/github-description.md`** —— Topics 段落从 20 个精简到 8 个（与 GitHub About 实际显示一致）：`chrome-extension` / `newtab` / `chrome` / `bookmarks` / `split-view` / `edge-extension` / `edge` / `browser-extension`。
+
+### Notes
+- **纯 docs 改动，0 代码变更**。按 CLAUDE.md §11 仍 bump patch（v1.0.9 → v1.0.10），但**不**发 GitHub Release —— v1.0.9 release 已覆盖此 store 提交周期的功能/资产集。后续 store 上架前手动 rebase / force-update tag 即可指向最新 commit。
+- 三处版本号同步：`manifest.json` / `package.json` / `src/lib/version.ts` 全部为 `1.0.10`。
+
 ## [1.0.9] - 2026-06-24
 
 ### Added

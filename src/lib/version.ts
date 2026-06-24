@@ -40,5 +40,14 @@
 //          added under extension-previews/ and inserted into README.md
 //          (English) and docs/README.zh.md (Chinese) at the matching
 //          feature sections. No functional changes; no new MessageKey.
+// v1.0.10: docs-only patch.
+//          - docs/README.zh.md image paths corrected — the Chinese
+//            README lives in docs/ so its `extension-previews/...`
+//            references resolved to docs/extension-previews/... and
+//            rendered as broken images. All 14 paths prefixed with
+//            `../`.
+//          - docs/github-description.md Topics section synced to the
+//            8-topic trimmed set actually on the GitHub About box.
+//          - No code changes; no behavior change.
 
-export const VERSION = '1.0.9';
+export const VERSION = '1.0.10';
