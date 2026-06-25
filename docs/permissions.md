@@ -36,7 +36,13 @@ newtab01 replaces the new tab page with a multi-column bookmark board and adds a
 
 ## host_permissions: <all_urls>
 
-Three independent features need access to all URLs; any one of them would justify the declaration on its own:
+`<all_urls>` is the broadest possible match pattern. It is required
+because the URLs the extension touches are entirely user-supplied at
+runtime — bookmarks are arbitrary, the split-view picker takes
+user-chosen URLs, and the theme importer takes user-pasted URLs.
+There is no fixed set of origins the extension could narrowly
+pre-declare. Three independent features need access to all URLs; any
+one of them would justify the declaration on its own:
 
 1. **Split-view iframe embedding.** The user picks 2–4 URLs from their bookmarks or open tabs, and the extension embeds them in iframes. The URLs are arbitrary user input — any site the user has bookmarked.
 2. **Favicon fetching.** The extension fetches a 16×16 icon for every bookmark URL so bookmarks display with their real site icon.
