@@ -14,7 +14,7 @@
 
 ## 安装
 
-[<img src="https://img.shields.io/badge/安装到%20Chrome-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white" height="40" alt="安装 newtab01 到 Chrome">](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj)
+[<img src="https://img.shields.io/badge/Chrome%20Web%20Store-Install-green?style=for-the-badge&logo=google-chrome&logoColor=white" height="40" alt="安装 newtab01 到 Chrome">](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj)
 
 扩展已发布到 Chrome Web Store。点击上方徽章（或用 [这个直链](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj)）安装最新发布版本。Edge Add-ons 上架进行中。
 
