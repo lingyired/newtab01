@@ -4,10 +4,25 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE_MIT.txt)
 [![Manifest V3](https://img.shields.io/badge/manifest-MV3-4285F4.svg)](manifest.json)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-v1.0.13-0f9d58.svg)](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj)
 [![Built with Vanilla JS](https://img.shields.io/badge/stack-Vanilla%20JS%20%2B%20Vite-f7df1e.svg)](#tech-stack)
 [![Co-authored by TRAE.AI](https://img.shields.io/badge/co--author-TRAE.AI-7c3aed.svg)](#credits)
 
 [English](README.md) · [中文](docs/README.zh.md)
+
+---
+
+## Install
+
+[<img src="https://img.shields.io/badge/Install%20for%20Chrome-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white" height="40" alt="Install newtab01 for Chrome">](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj)
+
+The extension is published on the Chrome Web Store. Click the badge
+above (or use [this direct link](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj))
+to install the latest published version. An Edge Add-ons listing is
+in progress.
+
+If you want to load an unpacked build for development instead, see
+[Development](#development) below.
 
 ---
 
