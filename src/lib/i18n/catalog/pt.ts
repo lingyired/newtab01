@@ -153,6 +153,7 @@ const messages = {
   'undo.label': 'Desfazer',
   'undo.title': 'Desfazer última ação',
   'undo.titleWithCount': 'Desfazer última ação ({count} passos)',
+  'undo.sessionHint': 'Só é possível desfazer nesta sessão; limpa ao atualizar',
   'searchResults.empty': 'Digite para pesquisar…',
   'searchResults.footer.navigate': 'navegar',
   'searchResults.footer.open': 'abrir',

@@ -678,29 +678,44 @@
  * Sits to the immediate right of .search-wrap, part of the topbar's
  * flex row. The whole (search + undo) pair is centered as a group.
  *
- * display: none by default; the undo-button module toggles it to
- * flex (with an inline style) when the history stack is non-empty.
+ * v0.2.143 (feat/undo-button-polish) rev 4: button is RESTORED to
+ * its original ~33px size (padding 7px 14px + font-size 1.2rem +
+ * line-height 1.4). The "session-only" hint lives OUTSIDE the
+ * button as an absolutely-positioned sibling — it "floats"
+ * beneath the button without affecting the topbar's vertical
+ * layout. Layout:
  *
- * Layout: text label `回退操作` + inline count badge. The badge
- * ALWAYS shows a number (1, 2, …) when the history is non-empty —
- * no empty-pill state. Earlier versions either hid the badge at
- * count=1 (felt inconsistent) or used only a SVG icon without a
- * label (less self-explanatory). This combination is the current
- * consensus per user feedback in CHANGELOG v0.2.61.
+ *      ┌──────────────┐
+ *      │  回退  1     │   ← #undo_button (original ~33px size)
+ *      └──────────────┘
+ *             ↓ 4px
+ *   仅本次会话可回退，刷新后清空   ← .undo-hint (absolute, floating)
+ *
+ * .undo-wrap is `position: relative` (anchor for the absolutely-
+ * positioned hint). The wrap's height = button height (the hint
+ * is out-of-flow so it doesn't contribute to the wrap's box).
  *
  * Style mirrors the settings panel button vocabulary
- * (.sp-btn in styles/newtab.css) for visual consistency, sized down
- * to the topbar scale so it doesn't compete with the search input.
- */
-#undo_button {
+ * (.sp-btn in styles/newtab.css) for visual consistency. */
+.undo-wrap {
   position: relative;
   flex: 0 0 auto;
   margin-left: 8px;
+}
+
+#undo_button {
+  position: relative;
   background: transparent;
   border: 1px solid var(--border);
   color: var(--newtab-text);
   cursor: pointer;
   opacity: 0.85;
+  /* v0.2.143 rev 4: original box-model restored. The earlier revs
+   *  grew the button to match the search input's ~46px height (font-
+   *  size 1.8em + padding 11px / 4px), but the user found the larger
+   *  button visually heavy next to the search input. The hint has
+   *  moved out of the topbar's flow (absolutely-positioned below),
+   *  so the button no longer needs to compensate for hint height. */
   padding: 7px 14px;
   font-size: 1.2rem;
   font-weight: 500;
@@ -722,7 +737,9 @@
 /* Inline count pill. Uses `--primary` background so it reads as the
  * accent in every theme (Codex / Brutalist / etc.). The pill is part
  * of the button's normal text flow (no absolute positioning) so its
- * baseline aligns with the label. */
+ * baseline aligns with the label. v0.2.143: kept at the original
+ * 11px / 18px-tall pill size — it sits as a compact accent inside
+ * the now-larger button without competing with the 1.8em label. */
 .undo-count {
   display: inline-flex;
   align-items: center;
@@ -738,6 +755,55 @@
   border-radius: 9px;
   pointer-events: none;
   font-variant-numeric: tabular-nums;
+}
+
+/* v0.2.143 (feat/undo-button-polish) rev 4: small explanatory
+ * hint that FLOATS beneath the undo button. Tells the user the
+ * undo stack is in-memory only — refreshing the page (or hitting
+ * a storage "apply" equivalent) clears it and the previous layout
+ * is committed to disk, after which the button can no longer help.
+ *
+ * Positioning: `position: absolute` with `top: calc(100% + 4px)`
+ * anchors the hint 4px below the bottom edge of its nearest
+ * positioned ancestor (.undo-wrap, which has `position: relative`).
+ * Since the wrap's height = button height (the hint is out-of-flow),
+ * `100%` of the wrap = button bottom edge. The hint sits centered
+ * horizontally via `left: 50%; transform: translateX(-50%)`.
+ *
+ * Because the hint is absolutely positioned, it does NOT contribute
+ * to the topbar's vertical layout — the search input and undo button
+ * align in the topbar's flex row without being pushed apart by the
+ * hint's height. The hint visually "hovers" beneath the button, like
+ * a label without a fixed slot.
+ *
+ * Sized small enough to read as a footnote (1.1rem ≈ 11px in
+ * this project's 10px root font-size) and tinted with the
+ * muted-foreground token so it sits clearly below the button in
+ * visual weight. `white-space: nowrap` keeps the hint on a single
+ * line (it's a short explanatory note; if a locale's translation
+ * is unusually long it can be revisited). `user-select: none`
+ * prevents accidental text selection when the user clicks nearby.
+ *
+ * The wrap is hidden alongside the button when the history stack is
+ * empty (see updateVisibility in undo-button.ts), so the hint never
+ * appears as an orphan beneath an invisible button. */
+.undo-hint {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.3;
+  color: var(--muted-foreground);
+  text-align: center;
+  white-space: nowrap;
+  user-select: none;
+  /* `direction: inherit` (the default for spans) keeps the text
+   * direction matching the document's <html dir> so Arabic / RTL
+   * locales render the hint right-to-left naturally. The hint is
+   * project text (catalog string), so no LTR isolation override is
+   * needed (it's not a URL or hostname). */
 }
 
 /* ─── Loading ─── */

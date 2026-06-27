@@ -153,6 +153,7 @@ const messages = {
   'undo.label': '元に戻す',
   'undo.title': '最後のアクションを元に戻す',
   'undo.titleWithCount': '最後のアクションを元に戻す（{count} ステップ）',
+  'undo.sessionHint': 'このセッション内のみ取り消し可能。再読み込みで消去',
   'searchResults.empty': '入力して検索…',
   'searchResults.footer.navigate': '移動',
   'searchResults.footer.open': '開く',

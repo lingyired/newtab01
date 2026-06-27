@@ -202,6 +202,7 @@ export type MessageKey =
   | 'undo.label'
   | 'undo.title'
   | 'undo.titleWithCount'
+  | 'undo.sessionHint'
   // Search results
   | 'searchResults.empty'
   | 'searchResults.footer.navigate'

@@ -153,6 +153,7 @@ const messages = {
   'undo.label': 'Отменить',
   'undo.title': 'Отменить последнее действие',
   'undo.titleWithCount': 'Отменить последнее действие ({count} шагов)',
+  'undo.sessionHint': 'Отмена доступна только в текущей сессии; очищается при обновлении',
   'searchResults.empty': 'Введите для поиска…',
   'searchResults.footer.navigate': 'навигация',
   'searchResults.footer.open': 'открыть',

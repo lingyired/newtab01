@@ -5,6 +5,36 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.17] - 2026-06-27
+
+### Changed
+- **回退按钮回归原始尺寸，hint 浮动在按钮下方**（feat/undo-button-polish rev 4）。把 v1.0.15 rev 1/2（按钮被撑大对齐搜索框）和 v1.0.16（hint 塞进按钮内）这两个改法都退了，回到最初的按钮 box-model：`padding: 7px 14px` + `font-size: 1.2rem` + `line-height: 1.4`，渲染高度约 33px。hint 改成 `position: absolute`（`top: calc(100% + 4px)`）锚到 `.undo-wrap`，浮在按钮下方 4px 处 —— 因为脱离文档流，**不影响 topbar 的 flex 布局**，搜索框和按钮在 topbar 里依然干净对齐，hint 像一个浮动的 label 一样 hover 在按钮下。
+  - **DOM 变化**：`.undo-wrap` div 重新出现，作为 hint 的 `position: relative` 锚点；按钮内不再包含 hint，也不再需要 `.undo-line` 包装层。
+  - **CSS 变化**：`.undo-wrap` 从 `display: flex; flex-direction: column` 简化为 `position: relative`（不再有 gap、不再有 flex column）；`.undo-hint` 加 `position: absolute; top: calc(100% + 4px); left: 50%; transform: translateX(-50%)`，加 `white-space: nowrap`；`#undo_button` 全面回滚到原始样式（去掉了 v1.0.15/16 的 `font-family: inherit` / `font-weight: 400` / 放大字号 / 加大 padding 那些 hack）。
+  - **副作用**：hint 浮在按钮下方会跟书签列的第一行重叠 —— 视觉上 hint 跟下面的 bookmark 距离更近了。如果觉得拥挤可以再加个底色 + border 把 hint 做成一个气泡样式，告诉我就行。
+
+## [1.0.16] - 2026-06-27
+
+### Changed
+- **「回退」按钮的 hint 文字从按钮外部搬到按钮内部**（feat/undo-button-polish rev 3）。原来 hint 是按钮的兄弟节点（外面包了一个 `.undo-wrap` div）；现在直接做 `#undo_button` 的第二个 flex-column 子元素，跟「回退 1」label 行共用同一个 border 边框，整个提示区域读起来是一个统一的带框区域。
+  - **DOM 变化**：移除 `.undo-wrap` div；label + badge 包到一个新的 `.undo-line` span 里（保持横向排列）；hint 作为 button 的直接子节点。
+  - **CSS 变化**：按钮 `padding: 4px 14px → 8px 16px`（容纳两行内容）；`flex-direction: column` + `gap: 4px` 让两行垂直堆叠且居中；`.undo-line` 内部走 `inline-flex` 让 label + badge 横向并排；`margin-left: 8px` 从 `.undo-wrap` 搬回 `#undo_button`。
+  - **副作用**：按钮现在比搜索框高很多（两行内容 + 16px 垂直 padding ≈ 60-70px）。`.undo-wrap` 之前做的"wrap 总高度 = 搜索框高度"对齐失效 —— 这是用户主动选择的取舍（要 inline 就不能严格对齐搜索框）。
+
+## [1.0.15] - 2026-06-27
+
+### Added
+- **「回退」按钮下方加一行小字 hint**。文案：「仅本次会话可回退，刷新后清空」/ "Only undoable in this session; clears on refresh"。新 MessageKey `undo.sessionHint` 已加进 10 个 catalog（en / zh / es / ar / hi / fr / pt / de / ja / ru），tsc 编译期校验 0 error。
+- 解释 in-memory history stack 行为：拖拽/编辑布局后变更已写入 `chrome.storage.local`，刷新页面相当于把当前布局 apply 落地，刷新之后回退栈清空，之前的旧布局无法再 undo。
+
+### Changed
+- **回退按钮 box-model 对齐搜索框**（rev 2）。最初想让按钮单独等于搜索框高度（`padding: 11px 14px` + `font-size: 1.8em`），但加上 hint 之后整个 `.undo-wrap`（按钮 + gap + hint）会延伸到搜索框下方 ~14px，破坏两列上下对齐。改成把 wrap 总高度跟搜索框对齐 —— 预算：搜索框 46px - hint 14px - gap 2px = 按钮可分配 30px，按钮 padding 缩到 4px（保留 18px 字号，文字依然跟搜索框一致）。`#undo_button` 加 `font-family: inherit` 避免 Chrome UA `font: -apple-system-body` 覆盖继承链上的 `system-ui` / `62.5%` 根字号（之前因为这个 `1.8em` 计算错位，导致回退文字比搜索框文字明显小）。`font-weight` 从 500 改回 400 跟搜索框默认 weight 对齐，去掉 weight 对比带来的"看起来大小不同"的光学错觉。
+- **DOM 结构**：回退按钮包了一层 `.undo-wrap`（vertical flex column），按钮在上面、hint 在下面。`margin-left: 8px` 从 `#undo_button` 搬到 `.undo-wrap`，hint 居中对齐在按钮下。wrap 跟按钮一起 hide（`display: none`）—— history stack 为空时连同小字一起消失，避免出现"空 hint 列"。
+- 10 个 locale 同步加 `undo.sessionHint` 翻译（项目自有文案，AI 翻译生成；hi / ar / ru 优先人工校对）。
+
+### Fixed
+- **三处版本号同步**：`manifest.json` / `package.json` / `src/lib/version.ts` 全部 bump 到 `1.0.15`。v1.0.14 release 时 `src/lib/version.ts` 没跟上（停留在 `1.0.13`），这次一并修正。
+
 ## [1.0.14] - 2026-07-06
 
 ### Added

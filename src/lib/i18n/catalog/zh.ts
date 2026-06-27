@@ -169,6 +169,7 @@ const messages = {
   'undo.label': '回退',
   'undo.title': '回退上一步操作',
   'undo.titleWithCount': '回退操作（{count} 步）',
+  'undo.sessionHint': '仅本次会话可回退，刷新后清空',
   // Search results
   'searchResults.empty': '输入以搜索…',
   'searchResults.footer.navigate': '导航',

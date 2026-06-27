@@ -164,6 +164,7 @@ const messages = {
   'undo.label': 'Deshacer',
   'undo.title': 'Deshacer última acción',
   'undo.titleWithCount': 'Deshacer última acción ({count} pasos)',
+  'undo.sessionHint': 'Solo se puede deshacer en esta sesión; se borra al recargar',
   // Search results
   'searchResults.empty': 'Escribe para buscar…',
   'searchResults.footer.navigate': 'navegar',

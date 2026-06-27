@@ -156,6 +156,7 @@ const messages = {
   'undo.label': 'تراجع',
   'undo.title': 'التراجع عن آخر إجراء',
   'undo.titleWithCount': 'التراجع عن آخر إجراء ({count} خطوة)',
+  'undo.sessionHint': 'يمكن التراجع فقط في هذه الجلسة؛ يُمسح عند التحديث',
   'searchResults.empty': 'اكتب للبحث…',
   'searchResults.footer.navigate': 'تنقل',
   'searchResults.footer.open': 'فتح',
