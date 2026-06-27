@@ -729,10 +729,24 @@
    * undo-label text is therefore slightly larger than before but
    * matches the search input's text size, which reads as more
    * coherent (the two adjacent topbar elements no longer compete
-   * in size). */
+   * in size).
+   *
+   * `font-family: inherit` is critical: Chrome's UA stylesheet
+   * sets `font: -apple-system-body` on `<button>`, which
+   * overrides the inherited root `system-ui, -apple-system,
+   * sans-serif` AND resets font-size to a UA-default value.
+   * Without `font-family: inherit`, the button's em calculation
+   * can resolve against the UA's font-size (e.g. 13px on macOS)
+   * instead of the root's 10px (62.5%) — which produces a
+   * visibly smaller glyph than the search input even when both
+   * rules declare `font-size: 1.8em`. `font-weight: 400` matches
+   * the search input's default so the two adjacent elements
+   * read as the same typographic weight (avoiding the "search
+   * text + bold button" weight-contrast optical illusion). */
   padding: 11px 14px;
   font-size: 1.8em;
-  font-weight: 500;
+  font-family: inherit;
+  font-weight: 400;
   /* Inputs in HTML have line-height: normal by default; we inherit
    * that behavior so the button height matches the search input
    * exactly. The undo-count badge inside has its own line-height
