@@ -918,7 +918,14 @@ function createRow(
         const next = readPerThemeValue(k);
         if (input instanceof HTMLInputElement) {
           if (input.type === 'color') {
-            input.value = resolveCssColor(String(next ?? ''));
+            // v1.0.16: use `resolveColorForInput` (not `resolveCssColor`)
+            //  so the picker always receives a valid #rrggbb. When the
+            //  per-theme override has been cleared and the global
+            //  fallback is '' (never set), `resolveCssColor('')` returns
+            //  '' which <input type="color"> rejects with "does not
+            //  conform to the required format '#rrggbb'". `resolveColorForInput`
+            //  falls back to the rendered CSS var (→ resolved CSS → hex).
+            input.value = resolveColorForInput(k, String(next ?? ''));
           } else {
             input.value = String(next);
           }
