@@ -473,6 +473,7 @@ function resolveColorForInput(key: keyof Settings, stored: string): string {
  * valid #rrggbb.
  */
 function refreshInputsFromSettings(): void {
+  const defaults = getDefaults();
   for (const key of COLOR_INPUT_KEYS) {
     const input = document.getElementById(`sp-${key}`) as HTMLInputElement | null;
     if (!input || input.type !== 'color') continue;
@@ -483,6 +484,17 @@ function refreshInputsFromSettings(): void {
     // also falls back to the rendered CSS var when storage is ''.
     const next = resolveColorForInput(key, String(getSetting(key) ?? ''));
     if (input.value !== next) input.value = next;
+    // v1.0.16: after refreshing the input value (e.g. because another
+    //  tab/source changed storage), re-check whether the value is
+    //  still at default. The revert button (↩) should show only when
+    //  the user has customised away from the default.
+    const row = input.closest('.sp-input') as HTMLElement | null;
+    const revertBtn = row?.querySelector('.sp-revert') as HTMLButtonElement | null;
+    if (revertBtn) {
+      const stored = String(getSetting(key) ?? '');
+      const dflt = String(defaults[key] ?? '');
+      revertBtn.style.display = (stored === dflt) ? 'none' : '';
+    }
   }
   // Theme + darkMode selects live on the same tabs as the color inputs;
   // keep them in sync. v0.2.75: both tabs (外观 + 自定义主题) carry a
@@ -872,6 +884,28 @@ function createRow(
       ? t('settings.revert.clearPerTheme')
       : t('settings.revert.toDefault');
     revertBtn.textContent = '↩';
+
+    /**
+     * v1.0.16: helper to re-evaluate whether the revert button should
+     * be visible. For global inputs, compare storage against the
+     * hardcoded default (from getDefaults). For per-theme inputs,
+     * check whether a per-theme override exists (hasPerThemeOverride).
+     * The button is hidden when the current value already equals the
+     * default, so the user isn't shown a no-op "↩" button.
+     */
+    const refreshRevertVisibility = () => {
+      const atDefault = scope === 'perTheme'
+        ? !hasPerThemeOverride(key as PerThemeKey)
+        : String(getSetting(key) ?? '') === String(getDefaults()[key] ?? '');
+      revertBtn.style.display = atDefault ? 'none' : '';
+    };
+    refreshRevertVisibility();
+
+    // Re-check on every user keystroke / picker change so the button
+    // appears the moment the user types a non-default value, and
+    // disappears when they type back to the default.
+    input.addEventListener('input', refreshRevertVisibility);
+    input.addEventListener('change', refreshRevertVisibility);
     revertBtn.addEventListener('click', () => {
       if (scope === 'perTheme' && hasPerThemeOverride(key as PerThemeKey)) {
         // v0.2.97 per-theme revert: clear the override for the
@@ -895,6 +929,9 @@ function createRow(
         //  to storage, which fires chrome.storage.onChanged and
         //  runs applySettingsToDOM through the apply.ts listener.
         //  No further DOM work needed here.
+        // v1.0.16: after clearing the override, the button should
+        //  hide since there's nothing to revert anymore.
+        revertBtn.style.display = 'none';
         return;
       }
       const defaults = getDefaults();
@@ -1524,8 +1561,8 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   details.appendChild(createRow(t('settings.field.font'), createTextInput('font', 'perTheme'), 'font', t('settings.field.fontDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.fontSize'), createNumberInput('fontSize', '0.1', 'perTheme'), 'fontSize', t('settings.field.fontSizeDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.fontWeight'), createNumberInput('fontWeight', '0.1', 'perTheme'), 'fontWeight', t('settings.field.fontWeightDesc'), 'perTheme'));
-  details.appendChild(createRow(t('settings.field.fontColor'), createColorInput('fontColor', 'perTheme'), 'fontColor', t('settings.field.fontColorDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.backgroundColor'), createColorInput('backgroundColor', 'perTheme'), 'backgroundColor', t('settings.field.backgroundColorDesc'), 'perTheme'));
+  details.appendChild(createRow(t('settings.field.fontColor'), createColorInput('fontColor', 'perTheme'), 'fontColor', t('settings.field.fontColorDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.linkBgColor'), createColorInput('linkBgColor', 'perTheme'), 'linkBgColor', t('settings.field.linkBgColorDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.highlightColor'), createColorInput('highlightColor', 'perTheme'), 'highlightColor', t('settings.field.highlightColorDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.highlightFontColor'), createColorInput('highlightFontColor', 'perTheme'), 'highlightFontColor', t('settings.field.highlightFontColorDesc'), 'perTheme'));
