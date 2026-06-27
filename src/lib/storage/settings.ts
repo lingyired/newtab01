@@ -34,6 +34,12 @@ const defaults: Settings = {
   // starts overriding the theme.
   fontColor: '',
   backgroundColor: '',
+  // v1.0.16: empty by default — `applyUserColorOverride` treats '' as
+  //  "no override" and removeProperty the CSS var so the link bg
+  //  cascade falls through to the theme's --card (or --newtab-bg
+  //  for older themes without --card). Same pattern as the other 5
+  //  palette fields above.
+  linkBgColor: '',
   backgroundImage: '',
   highlightColor: '',
   highlightFontColor: '',

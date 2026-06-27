@@ -70,7 +70,16 @@
   font-size: 1.8em;
   line-height: 1.4;
   text-decoration: none;
-  color: var(--card-foreground, var(--newtab-text));
+  /* v1.0.15: insert `--newtab-link-color` at the TOP of the cascade
+   *  so the user's `fontColor` setting flows through to bookmark
+   *  link text and folder titles. apply.ts writes the user's
+   *  fontColor to BOTH `--newtab-text` (topbar / undo button / etc.)
+   *  AND `--newtab-link-color` (link / folder title cascade). When
+   *  fontColor is unset, `--newtab-link-color` is unset and the
+   *  cascade falls through to `--card-foreground` (the theme's
+   *  card-surface text color, v0.2.83 design) then `--newtab-text`.
+   *  See also .folder .icon / .folder-icon below. */
+  color: var(--newtab-link-color, var(--card-foreground, var(--newtab-text)));
   /* All per-theme link style is driven by --newtab-link-* variables
    * with sensible fallbacks inline. A theme that wants a different
    * link treatment (brutalist, neumorphic, glassmorphism, etc.) just
@@ -100,7 +109,18 @@
    * resting bg for cards / inputs / list rows, so link = card reads
    * as a proper surface, not a continuation of the page. */
   padding: 0.45em 0.8em 0.45em 1.2em;
-  background-color: var(--newtab-link-bg, var(--card, var(--newtab-bg)));
+  /* v1.0.16: insert `--newtab-link-bg-color` at the TOP of the link
+   *  bg cascade so the user's "Link background color" setting wins.
+   *  apply.ts writes linkBgColor to `--newtab-link-bg-color` (set
+   *  when the user picks a color; empty → unset → cascade falls
+   *  through). The fallback chain mirrors the v0.2.83 design:
+   *    --newtab-link-bg (per-theme escape hatch — rarely set)
+   *    → --card (shadcn card surface — set by every built-in theme)
+   *    → --newtab-bg (page background, user's backgroundColor)
+   *  Hover / selected states intentionally use the highlightColor
+   *  cascade (`--newtab-link-bg-hover`) instead — those have their
+   *  own visual language and linkBgColor does NOT bleed into them. */
+  background-color: var(--newtab-link-bg-color, var(--newtab-link-bg, var(--card, var(--newtab-bg))));
   border: var(--newtab-link-border, 1px solid var(--border));
   border-radius: var(--newtab-link-radius, calc(var(--radius) - 2px));
   font-weight: var(--newtab-link-weight, normal);
@@ -210,7 +230,11 @@
 .folder .icon,
 .folder-icon {
   background-image: none;
-  color: var(--card-foreground, var(--newtab-text));
+  /* v1.0.15: same `--newtab-link-color` cascade as `#main a` so the
+   *  folder header SVG icon picks up the user's fontColor. Pre-fix,
+   *  --card-foreground always won, so changing fontColor had no
+   *  effect on the folder title icon. */
+  color: var(--newtab-link-color, var(--card-foreground, var(--newtab-text)));
 }
 
 .folder .icon svg {

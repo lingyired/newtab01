@@ -96,7 +96,7 @@ let currentTab: SettingsTab = 'layout';
  */
 const PER_THEME_KEYS = [
   'font', 'fontSize', 'fontWeight',
-  'fontColor', 'backgroundColor', 'highlightColor', 'highlightFontColor', 'shadowColor',
+  'fontColor', 'backgroundColor', 'linkBgColor', 'highlightColor', 'highlightFontColor', 'shadowColor',
   'shadowBlur', 'highlightRound',
 ] as const satisfies ReadonlyArray<keyof ThemeModeOverrides>;
 type PerThemeKey = (typeof PER_THEME_KEYS)[number];
@@ -402,6 +402,8 @@ export function closeSettingsPanel(): void {
 const COLOR_INPUT_KEYS: ReadonlyArray<keyof Settings> = [
   'backgroundColor',
   'fontColor',
+  // v1.0.16: dedicated link bg color, separate from page bg.
+  'linkBgColor',
   'highlightColor',
   'highlightFontColor',
   'shadowColor',
@@ -418,6 +420,7 @@ const COLOR_INPUT_KEYS: ReadonlyArray<keyof Settings> = [
 const COLOR_INPUT_CSS_VAR: Partial<Record<keyof Settings, string>> = {
   backgroundColor: '--newtab-bg',
   fontColor: '--newtab-text',
+  linkBgColor: '--newtab-link-bg-color',
   highlightColor: '--newtab-highlight',
   highlightFontColor: '--newtab-highlight-text',
   // v0.2.100: shadowColor was aliased to --newtab-highlight; now
@@ -967,6 +970,7 @@ function getDefaults(): Settings {
     // button (↩) clears the override instead of stamping a hex.
     fontColor: '',
     backgroundColor: '',
+    linkBgColor: '',
     backgroundImage: '',
     highlightColor: '',
     highlightFontColor: '',
@@ -1159,6 +1163,7 @@ async function saveThemeChange(theme: string): Promise<void> {
     darkMode: (String(getSetting('darkMode') ?? 'system') as 'system' | 'light' | 'dark'),
     backgroundColor: readVar('--newtab-bg'),
     fontColor: readVar('--newtab-text'),
+    linkBgColor: readVar('--newtab-link-bg-color'),
     highlightColor: readVar('--newtab-highlight'),
     highlightFontColor: readVar('--newtab-highlight-text'),
     shadowColor: readVar('--newtab-highlight'),
@@ -1521,6 +1526,7 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   details.appendChild(createRow(t('settings.field.fontWeight'), createNumberInput('fontWeight', '0.1', 'perTheme'), 'fontWeight', t('settings.field.fontWeightDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.fontColor'), createColorInput('fontColor', 'perTheme'), 'fontColor', t('settings.field.fontColorDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.backgroundColor'), createColorInput('backgroundColor', 'perTheme'), 'backgroundColor', t('settings.field.backgroundColorDesc'), 'perTheme'));
+  details.appendChild(createRow(t('settings.field.linkBgColor'), createColorInput('linkBgColor', 'perTheme'), 'linkBgColor', t('settings.field.linkBgColorDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.highlightColor'), createColorInput('highlightColor', 'perTheme'), 'highlightColor', t('settings.field.highlightColorDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.highlightFontColor'), createColorInput('highlightFontColor', 'perTheme'), 'highlightFontColor', t('settings.field.highlightFontColorDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.shadowColor'), createColorInput('shadowColor', 'perTheme'), 'shadowColor', t('settings.field.shadowColorDesc'), 'perTheme'));
@@ -2068,7 +2074,7 @@ function renderAdvancedTab(): HTMLElement {
   //  then "win" over the user's actual per-theme overrides.
   const PER_THEME_APPEARANCE_KEYS: ReadonlySet<keyof Settings> = new Set([
     'font', 'fontSize', 'fontWeight',
-    'fontColor', 'backgroundColor', 'highlightColor', 'highlightFontColor', 'shadowColor',
+    'fontColor', 'backgroundColor', 'linkBgColor', 'highlightColor', 'highlightFontColor', 'shadowColor',
     'shadowBlur', 'highlightRound',
   ]);
 

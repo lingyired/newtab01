@@ -5,6 +5,18 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.16] - 2026-06-27
+
+### Added
+- **新选项「链接背景颜色」（linkBgColor）**。独立于 `backgroundColor`（新标签页背景色），用户可以给书签链接单独设置背景色（默认不设置 = 回退到主题的 `--card` / `--newtab-bg`）。新 CSS 变量 `--newtab-link-bg-color` 插在 link bg cascade 最前面（`var(--newtab-link-bg-color, var(--newtab-link-bg, var(--card, var(--newtab-bg))))`），用户设置后优先生效。支持 per-theme per-mode override（跟其他 5 个 palette 颜色一样的逻辑）。新 MessageKey `settings.field.linkBgColor` / `settings.field.linkBgColorDesc` 在 10 个 catalog 中均有翻译。
+- **把「背景颜色」label 改成「新标签页背景色」/「New tab background color」**（10 个 locale）。有了 `linkBgColor` 后原来的"背景颜色"名字太模糊，改完一眼能看出这是页面背景还是链接背景。
+
+### Fixed
+- **「文字颜色」设置（fontColor）现在真正作用于书签链接文字和目录标题**。之前在设置面板里改文字颜色只对目录的三个动作图标、回退按钮、齿轮等生效；对书签链接和目录标题**完全无效**。原因：v0.2.83 把链接文字色 cascade 从 `var(--newtab-text)` 改成了 `var(--card-foreground, var(--newtab-text))`（目的是让链接用 shadcn card 表面配套的 foreground），导致主题定义的 `--card-foreground` 永远赢过 `--newtab-text`（也就是用户的 fontColor 设置）。
+  - **修复**：引入新 CSS 变量 `--newtab-link-color`，由 `apply.ts` 在用户设置 fontColor 时写到 `<html>` 的 inline style 上；cascade 改成 `var(--newtab-link-color, var(--card-foreground, var(--newtab-text)))` —— 用户设置时用户的色赢，未设置时回退到主题的 `--card-foreground`（保留 v0.2.83 设计意图），再回退到 `--newtab-text`。
+  - **受影响元素**：`#main a`（书签链接）、`.folder .icon / .folder-icon`（目录标题左侧的 SVG 图标）。
+  - **不受影响的元素**：`.search-input`（搜索框文字色维持 `var(--card-foreground, var(--foreground))`，不在这次修复范围内 —— 用户没要求改搜索框，且搜索框的 "card 表面" 语义更明确）、`#main a.selected`（选中链接走 accent-foreground 高亮色，不应被 fontColor 覆盖）。
+
 ## [1.0.15] - 2026-06-27
 
 ### Added

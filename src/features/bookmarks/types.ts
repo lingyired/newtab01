@@ -56,7 +56,7 @@ export interface CoordMap {
  */
 export type ThemeModeOverrides = Partial<Pick<Settings,
   'font' | 'fontSize' | 'fontWeight' |
-  'fontColor' | 'backgroundColor' | 'highlightColor' | 'highlightFontColor' | 'shadowColor' |
+  'fontColor' | 'backgroundColor' | 'linkBgColor' | 'highlightColor' | 'highlightFontColor' | 'shadowColor' |
   'shadowBlur' | 'highlightRound'
 >> & {
   /**
@@ -86,6 +86,18 @@ export interface Settings {
   darkMode: 'system' | 'light' | 'dark';
   fontColor: string;
   backgroundColor: string;
+  /**
+   * v1.0.16: dedicated bookmark link background color, independent of
+   * the page-level `backgroundColor`. Flows to `--newtab-link-bg-color`
+   * (NEW in v1.0.16) which sits at the TOP of the link bg cascade in
+   * newtab.css — before the per-theme escape hatch `--newtab-link-bg`
+   * and the shadcn `--card` default. Empty string = no override, the
+   * cascade falls through to the theme default.
+   *
+   * Disambiguated from `backgroundColor` (page bg) which is now labeled
+   * "新标签页背景色" / "New tab background color" in the settings UI.
+   */
+  linkBgColor: string;
   backgroundImage: string;
   highlightColor: string;
   highlightFontColor: string;

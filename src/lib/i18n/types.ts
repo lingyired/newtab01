@@ -101,6 +101,8 @@ export type MessageKey =
   | 'settings.field.fontColorDesc'
   | 'settings.field.backgroundColor'
   | 'settings.field.backgroundColorDesc'
+  | 'settings.field.linkBgColor'
+  | 'settings.field.linkBgColorDesc'
   | 'settings.field.highlightColor'
   | 'settings.field.highlightColorDesc'
   | 'settings.field.highlightFontColor'

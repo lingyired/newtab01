@@ -41,6 +41,12 @@ const USER_THEME_CSS_ELEMENT_ID = 'user-theme-css';
 const COLOR_KEYS = {
   backgroundColor: '--newtab-bg',
   fontColor: '--newtab-text',
+  // v1.0.16: dedicated user override for bookmark link bg,
+  //  separate from the page-level `backgroundColor` (which writes
+  //  to --newtab-bg). Sits at the TOP of the link bg cascade in
+  //  newtab.css so the user's color wins over the per-theme escape
+  //  hatch `--newtab-link-bg` and the shadcn `--card` default.
+  linkBgColor: '--newtab-link-bg-color',
   highlightColor: '--newtab-highlight',
   highlightFontColor: '--newtab-highlight-text',
   // v0.2.100: shadowColor was aliased to --newtab-highlight (shared
@@ -55,6 +61,25 @@ const COLOR_KEYS = {
   shadowColor: '--newtab-shadow',
 } as const satisfies Partial<Record<keyof Settings, string>>;
 type ColorKey = keyof typeof COLOR_KEYS;
+
+/**
+ * Extra CSS variables that `fontColor` ALSO writes to, in addition to
+ * `--newtab-text`. The link/folder-title cascade in newtab.css
+ * (`#main a` / `#main a.selected` / `.folder .icon, .folder-icon`)
+ * reads from these vars as the TOP of its `var(...)` fallback chain,
+ * so a user-set fontColor flows through to those elements.
+ *
+ * v1.0.15: introduced. Pre-fix, those three cascades used
+ * `var(--card-foreground, var(--newtab-text))` — `--card-foreground`
+ * (theme-defined card surface text color) won, so `fontColor` had no
+ * effect on links/folder titles in themes where `--card-foreground`
+ * was set. With `--newtab-link-color` written by fontColor and
+ * placed at the top of the cascade, the user's color takes priority
+ * while `--card-foreground` is still preserved as the default
+ * (when fontColor is unset, `--newtab-link-color` is unset and the
+ * cascade falls through to `--card-foreground` → `--newtab-text`).
+ */
+const FONT_COLOR_EXTRA_VARS = ['--newtab-link-color'] as const;
 
 /**
  * Settings that affect the generated `<style id="dynamic-styles">` block.
@@ -105,6 +130,7 @@ function resolveEffectiveSettings(): {
   fontWeight: number;
   fontColor: string;
   backgroundColor: string;
+  linkBgColor: string;
   highlightColor: string;
   highlightFontColor: string;
   shadowColor: string;
@@ -130,6 +156,9 @@ function resolveEffectiveSettings(): {
     fontWeight: overrides?.fontWeight ?? Number(getSetting('fontWeight') ?? 400),
     fontColor: overrides?.fontColor ?? String(getSetting('fontColor') ?? ''),
     backgroundColor: overrides?.backgroundColor ?? String(getSetting('backgroundColor') ?? ''),
+    // v1.0.16: linkBgColor — distinct from backgroundColor (page bg).
+    //  Same per-theme per-mode resolution as the other 5 palette fields.
+    linkBgColor: overrides?.linkBgColor ?? String(getSetting('linkBgColor') ?? ''),
     highlightColor: overrides?.highlightColor ?? String(getSetting('highlightColor') ?? ''),
     highlightFontColor: overrides?.highlightFontColor ?? String(getSetting('highlightFontColor') ?? ''),
     shadowColor: overrides?.shadowColor ?? String(getSetting('shadowColor') ?? ''),
@@ -167,9 +196,11 @@ export function applyUserColorOverride(key: ColorKey): void {
   const value = String(getSetting(sourceKey) ?? '').trim();
   if (!value) {
     document.documentElement.style.removeProperty(cssVar);
+    if (key === 'fontColor') clearExtraFontColorVars();
     return;
   }
   document.documentElement.style.setProperty(cssVar, value);
+  if (key === 'fontColor') writeExtraFontColorVars(value);
   log('apply', 'applyUserColorOverride', { key, cssVar, sourceKey, value });
 }
 
@@ -188,9 +219,36 @@ function writeResolvedColor(key: ColorKey, value: string): void {
   const v = String(value ?? '').trim();
   if (!v) {
     document.documentElement.style.removeProperty(cssVar);
+    if (key === 'fontColor') clearExtraFontColorVars();
     return;
   }
   document.documentElement.style.setProperty(cssVar, v);
+  if (key === 'fontColor') writeExtraFontColorVars(v);
+}
+
+/**
+ * v1.0.15: write the user's fontColor to the extra link-color CSS vars
+ * (currently `--newtab-link-color`). The link/folder-title cascade
+ * prefers these over `--card-foreground` so the user's color wins.
+ * Empty / cleared value is handled by the caller (removeProperty on
+ * the primary var); here we only handle the "value present" branch. */
+function writeExtraFontColorVars(value: string): void {
+  if (typeof document === 'undefined') return;
+  for (const name of FONT_COLOR_EXTRA_VARS) {
+    document.documentElement.style.setProperty(name, value);
+  }
+}
+
+/**
+ * v1.0.15: counterpart to `writeExtraFontColorVars` for the cleared
+ * case (user removed their fontColor). Removes all extra link-color
+ * vars from the inline `<html>` style so the cascade falls through to
+ * `--card-foreground` / `--newtab-text` again. */
+function clearExtraFontColorVars(): void {
+  if (typeof document === 'undefined') return;
+  for (const name of FONT_COLOR_EXTRA_VARS) {
+    document.documentElement.style.removeProperty(name);
+  }
 }
 
 /** Build (or replace) the `<style id="dynamic-styles">` node from current settings. */
@@ -372,6 +430,11 @@ export function applySettingsToDOM(): void {
   //  active theme's CSS variable renders through.
   writeResolvedColor('backgroundColor', eff.backgroundColor);
   writeResolvedColor('fontColor', eff.fontColor);
+  // v1.0.16: linkBgColor — page bg vs link bg are independent now;
+  //  user can have e.g. dark page with lighter link cards (or vice
+  //  versa). linkBgColor writes to --newtab-link-bg-color, which
+  //  sits at the top of the link bg cascade in newtab.css.
+  writeResolvedColor('linkBgColor', eff.linkBgColor);
   writeResolvedColor('highlightColor', eff.highlightColor);
   writeResolvedColor('highlightFontColor', eff.highlightFontColor);
   // shadowColor shares the highlightColor CSS var.

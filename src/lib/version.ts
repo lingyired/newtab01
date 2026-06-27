@@ -89,6 +89,17 @@
 //            "Chrome" qualifier keeps the copy accurate for the
 //            Edge Add-ons store without changing behavior.
 
+// v1.0.16: fix(theming) — fontColor setting now applies to bookmark
+//          link text + folder titles (previously only affected folder
+//          action icons, undo button, options button, etc.). The link
+//          color cascade was `var(--card-foreground, var(--newtab-text))`
+//          since v0.2.83 — the theme's `--card-foreground` always won,
+//          silently overriding the user's fontColor. Fix: introduce a
+//          new CSS var `--newtab-link-color`, written by apply.ts when
+//          fontColor is set, and placed at the TOP of the link / folder-
+//          icon cascade. Default case (fontColor unset) preserves the
+//          v0.2.83 behavior (cascade falls through to `--card-foreground`
+//          then `--newtab-text`).
 // v1.0.15: undo button polish — small "session-only" hint floats below
 //          the undo button explaining that the history stack is
 //          in-memory and clears on refresh. Button box-model kept
@@ -108,4 +119,4 @@
 //          intentionally not bumped in this commit (caught later —
 //          v1.0.15 above fixed the drift).
 // v1.0.13: store submission metadata — drop "Chrome" brand for Edge.
-export const VERSION = '1.0.15';
+export const VERSION = '1.0.16';
