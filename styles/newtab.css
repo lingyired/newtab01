@@ -706,11 +706,24 @@
   align-items: center;
   flex: 0 0 auto;
   margin-left: 8px;
-  /* The wrap hosts the button (top) + a small explanatory hint
-   * (bottom). With `align-items: center` the hint is centered
-   * under the button; the 4px gap puts a hair of breathing room
-   * between the button border and the first hint line. */
-  gap: 4px;
+  /* v0.2.143 (rev 2): the wrap is now sized to match .search-input's
+   *  box height so the topbar centers the WHOLE wrap (button + gap
+   *  + hint) at the same vertical position as the search input.
+   *  Without this tuning, the button alone (~46px tall) + gap +
+   *  hint (~14px) makes the wrap ~64px tall, which extends below
+   *  the search input's bottom edge and breaks the visual alignment.
+   *  Budget:
+   *    search input = 11 + 18*1.2 + 11 + 2 = 45.6px
+   *    hint         = 11 * 1.3            = 14.3px
+   *    gap          = 2px
+   *    → button box = 45.6 - 14.3 - 2 = 29.3px
+   *  Button padding (4px both sides) + 18px font + 2px border
+   *  = ~30px — matches the budget.
+   *  Result: wrap ≈ 46px, vertically aligned with .search-input.
+   *  The wrap is shorter than v0.2.143 rev 1 (button alone = 46px),
+   *  but now the BUTTON + GAP + HINT together equal the search
+   *  input height instead of just the button. */
+  gap: 2px;
 }
 
 #undo_button {
@@ -720,30 +733,26 @@
   color: var(--newtab-text);
   cursor: pointer;
   opacity: 0.85;
-  /* v0.2.143 (feat/undo-button-polish): match .search-input's
-   * box-model so the button sits at the same height as the search
-   * input. Previously `padding: 7px 14px` + `font-size: 1.2rem`
-   * (~12px) + `line-height: 1.4` rendered at ~33px tall, ~13px
-   * shorter than the search input (~46px tall). Now both share
-   * `font-size: 1.8em` (~18px) + `padding: 11px` vertical. The
-   * undo-label text is therefore slightly larger than before but
-   * matches the search input's text size, which reads as more
-   * coherent (the two adjacent topbar elements no longer compete
-   * in size).
+  /* v0.2.143 (rev 2): padding 11px → 4px so the button fits in
+   *  the wrap-height budget above. The button is now ~30px tall
+   *  (4 + 18*1.2 + 4 + 2), down from ~46px. The 18px font is
+   *  unchanged so the "回退" text still matches the search
+   *  input's text size — only the surrounding breathing room
+   *  shrinks.
    *
-   * `font-family: inherit` is critical: Chrome's UA stylesheet
-   * sets `font: -apple-system-body` on `<button>`, which
-   * overrides the inherited root `system-ui, -apple-system,
-   * sans-serif` AND resets font-size to a UA-default value.
-   * Without `font-family: inherit`, the button's em calculation
-   * can resolve against the UA's font-size (e.g. 13px on macOS)
-   * instead of the root's 10px (62.5%) — which produces a
-   * visibly smaller glyph than the search input even when both
-   * rules declare `font-size: 1.8em`. `font-weight: 400` matches
-   * the search input's default so the two adjacent elements
-   * read as the same typographic weight (avoiding the "search
-   * text + bold button" weight-contrast optical illusion). */
-  padding: 11px 14px;
+   *  `font-family: inherit` is critical: Chrome's UA stylesheet
+   *  sets `font: -apple-system-body` on `<button>`, which
+   *  overrides the inherited root `system-ui, -apple-system,
+   *  sans-serif` AND resets font-size to a UA-default value.
+   *  Without `font-family: inherit`, the button's em calculation
+   *  can resolve against the UA's font-size (e.g. 13px on macOS)
+   *  instead of the root's 10px (62.5%) — which produces a
+   *  visibly smaller glyph than the search input even when both
+   *  rules declare `font-size: 1.8em`. `font-weight: 400` matches
+   *  the search input's default so the two adjacent elements
+   *  read as the same typographic weight (avoiding the "search
+   *  text + bold button" weight-contrast optical illusion). */
+  padding: 4px 14px;
   font-size: 1.8em;
   font-family: inherit;
   font-weight: 400;

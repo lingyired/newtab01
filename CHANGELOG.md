@@ -12,7 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - 解释 in-memory history stack 行为：拖拽/编辑布局后变更已写入 `chrome.storage.local`，刷新页面相当于把当前布局 apply 落地，刷新之后回退栈清空，之前的旧布局无法再 undo。
 
 ### Changed
-- **回退按钮 box-model 对齐搜索框**。之前 `#undo_button` 是 `padding: 7px 14px` + `font-size: 1.2rem` (12px) + `line-height: 1.4`，渲染高度约 33px，比搜索框（约 46px）矮 ~13px。现在改为 `padding: 11px 14px` + `font-size: 1.8em` (18px) + `line-height: normal`，跟 `.search-input` 共享同一份 box-model，按钮高度 ≈ 搜索框高度。"回退" 文字也跟搜索框字号一致（1.8em ≈ 18px），两个相邻元素不再"打架"。
+- **回退按钮 box-model 对齐搜索框**（rev 2）。最初想让按钮单独等于搜索框高度（`padding: 11px 14px` + `font-size: 1.8em`），但加上 hint 之后整个 `.undo-wrap`（按钮 + gap + hint）会延伸到搜索框下方 ~14px，破坏两列上下对齐。改成把 wrap 总高度跟搜索框对齐 —— 预算：搜索框 46px - hint 14px - gap 2px = 按钮可分配 30px，按钮 padding 缩到 4px（保留 18px 字号，文字依然跟搜索框一致）。`#undo_button` 加 `font-family: inherit` 避免 Chrome UA `font: -apple-system-body` 覆盖继承链上的 `system-ui` / `62.5%` 根字号（之前因为这个 `1.8em` 计算错位，导致回退文字比搜索框文字明显小）。`font-weight` 从 500 改回 400 跟搜索框默认 weight 对齐，去掉 weight 对比带来的"看起来大小不同"的光学错觉。
 - **DOM 结构**：回退按钮包了一层 `.undo-wrap`（vertical flex column），按钮在上面、hint 在下面。`margin-left: 8px` 从 `#undo_button` 搬到 `.undo-wrap`，hint 居中对齐在按钮下。wrap 跟按钮一起 hide（`display: none`）—— history stack 为空时连同小字一起消失，避免出现"空 hint 列"。
 - 10 个 locale 同步加 `undo.sessionHint` 翻译（项目自有文案，AI 翻译生成；hi / ar / ru 优先人工校对）。
 
