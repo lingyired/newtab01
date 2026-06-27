@@ -89,6 +89,18 @@
 //            "Chrome" qualifier keeps the copy accurate for the
 //            Edge Add-ons store without changing behavior.
 
+// v1.0.17: undo button reverted to its ORIGINAL box-model (padding
+//          7px 14px + font-size 1.2rem + line-height 1.4, ~33px tall).
+//          The hint now FLOATS below the button via position: absolute
+//          (top: calc(100% + 4px)) anchored to the .undo-wrap div.
+//          Because the hint is out-of-flow, the topbar's flex layout
+//          no longer compensates for hint height — button + search
+//          input align cleanly in the topbar, and the hint visually
+//          "hovers" beneath the button. User feedback: the v1.0.15
+//          rev 1/2 grew the button to match the search input's ~46px
+//          height, and the v1.0.16 inline-hint approach made the
+//          button even taller — both felt visually heavy. The original
+//          button size with a floating hint is the cleanest balance.
 // v1.0.16: undo button hint inlined into the button as a second row
 //          (rev 3 of feat/undo-button-polish). The previous rev had
 //          the hint as a sibling of the button inside an .undo-wrap
@@ -108,4 +120,4 @@
 //          intentionally not bumped in this commit (caught later —
 //          v1.0.15 above fixed the drift).
 // v1.0.13: store submission metadata — drop "Chrome" brand for Edge.
-export const VERSION = '1.0.16';
+export const VERSION = '1.0.17';

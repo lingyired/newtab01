@@ -14,6 +14,7 @@ const MOVED_OUT_KEY = 'movedOut';
 
 /** Undo button element, lazily created by renderUndoButton. */
 let undoBtn: HTMLButtonElement | null = null;
+let undoWrap: HTMLDivElement | null = null;
 let undoLabel: HTMLSpanElement | null = null;
 let undoHint: HTMLSpanElement | null = null;
 
@@ -23,20 +24,26 @@ let undoHint: HTMLSpanElement | null = null;
  * always shown now), so the no-op branch is gone and the button is
  * always created. The caller in `topbar.ts` no longer passes the flag.
  *
- * v0.2.143 (feat/undo-button-polish): button hosts the small
- * explanatory hint ("Only undoable in this session; clears on
- * refresh" / 「仅本次会话可回退，刷新后清空」) as a SECOND ROW
- * inside the button. Layout:
+ * v0.2.143 (feat/undo-button-polish) rev 4: the button is restored
+ * to its ORIGINAL size (padding 7px 14px + font-size 1.2rem +
+ * line-height 1.4, ~33px tall) — earlier revs grew the button to
+ * match the search input's ~46px height, but the user found the
+ * larger button visually heavy. The hint ("Only undoable in this
+ * session; clears on refresh" / 「仅本次会话可回退，刷新后清空」)
+ * lives OUTSIDE the button as a sibling, positioned absolutely
+ * below it (`position: absolute; top: calc(100% + 4px)`) so it
+ * "floats" beneath the button without affecting the topbar's
+ * vertical layout. Layout:
  *
- *   ┌──────────────────────┐
- *   │  回退  1             │  ← .undo-line: label + badge
- *   │  仅本次会话可回退... │  ← .undo-hint
- *   └──────────────────────┘
+ *      ┌──────────────┐
+ *      │  回退  1     │   ← #undo_button (original size)
+ *      └──────────────┘
+ *             │
+ *             ↓
+ *   仅本次会话可回退，刷新后清空   ← .undo-hint (absolutely positioned)
  *
- * Earlier rev had the hint as a sibling of the button (inside an
- * `.undo-wrap` div). The user asked to inline the hint into the
- * button itself — single bordered box, both rows inside the same
- * border, hint visually "owns" by the button.
+ * The .undo-wrap div is `position: relative` so it acts as the
+ * positioning anchor for the absolutely-positioned hint.
  */
 export function renderUndoButton(topbar: HTMLElement): void {
   if (undoBtn) return;
@@ -47,44 +54,43 @@ export function renderUndoButton(topbar: HTMLElement): void {
   undoBtn.setAttribute('aria-label', t('undo.title'));
   undoBtn.title = t('undo.title');
 
-  // v0.2.143: explicit row wrapper for label + badge so the
-  //  button's flex-column layout doesn't stack them on separate
-  //  lines. The badge ALWAYS renders a number (1, 2, …) when
-  //  the history stack is non-empty — no empty state. An earlier
-  //  version hid the badge at count=1, which read as "blue pill
-  //  with nothing in it, then suddenly a number" and felt
-  //  inconsistent (see CHANGELOG v0.2.61).
-  const line = document.createElement('span');
-  line.classList.add('undo-line');
-
+  // Layout: text label + inline count badge. The badge ALWAYS renders
+  // a number (1, 2, …) when the history stack is non-empty — no empty
+  // state. An earlier version hid the badge at count=1, which read as
+  // "blue pill with nothing in it, then suddenly a number" and felt
+  // inconsistent (see CHANGELOG v0.2.61).
   const label = document.createElement('span');
   label.id = 'undo_button_label';
   label.classList.add('undo-label');
   label.textContent = t('undo.label');
   undoLabel = label;
-  line.appendChild(label);
+  undoBtn.appendChild(label);
 
   const badge = document.createElement('span');
   badge.id = 'undo_button_count';
   badge.classList.add('undo-count');
-  line.appendChild(badge);
+  undoBtn.appendChild(badge);
 
-  undoBtn.appendChild(line);
+  undoBtn.addEventListener('click', onUndoClick);
 
-  // v0.2.143: explanatory hint as a second row INSIDE the button.
-  //  Sits directly under the .undo-line, separated by the button's
-  //  column `gap`. Lives inside the button border so it's part of
-  //  the same clickable surface.
+  // v0.2.143 rev 4: wrap hosts the button + the absolutely-positioned
+  //  hint. The hint is positioned relative to this wrap (which is
+  //  sized by the button alone, since the hint is out-of-flow). The
+  //  wrap is hidden alongside the button when history stack is empty
+  //  so the orphan hint doesn't appear below an invisible button.
+  undoWrap = document.createElement('div');
+  undoWrap.id = 'undo_wrap';
+  undoWrap.classList.add('undo-wrap');
+  undoWrap.appendChild(undoBtn);
+
   const hint = document.createElement('span');
   hint.id = 'undo_button_hint';
   hint.classList.add('undo-hint');
   hint.textContent = t('undo.sessionHint');
   undoHint = hint;
-  undoBtn.appendChild(hint);
+  undoWrap.appendChild(hint);
 
-  undoBtn.addEventListener('click', onUndoClick);
-
-  topbar.appendChild(undoBtn);
+  topbar.appendChild(undoWrap);
 
   // Initial visibility + react to stack changes (push from drop, pop
   // from undo, clear from init). The unsubscribe return value is
@@ -118,15 +124,20 @@ async function onUndoClick(): Promise<void> {
   await saveLayout();
 }
 
-/** Toggle visibility + update badge text based on current stack length. */
+/** Toggle visibility + update badge text based on current stack length.
+ *  v0.2.143 rev 4: hide the WRAP (not just the button) when count is 0,
+ *  so the absolutely-positioned hint doesn't appear as an orphan below
+ *  an invisible button. */
 function updateVisibility(): void {
   if (!undoBtn) return;
   const count = getHistoryLength();
   const badge = undoBtn.querySelector<HTMLSpanElement>('#undo_button_count');
   if (count === 0) {
     undoBtn.style.display = 'none';
+    if (undoWrap) undoWrap.style.display = 'none';
   } else {
     undoBtn.style.display = '';
+    if (undoWrap) undoWrap.style.display = '';
     undoBtn.title = count === 1
       ? t('undo.title')
       : t('undo.titleWithCount', { count });

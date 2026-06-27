@@ -5,6 +5,14 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.17] - 2026-06-27
+
+### Changed
+- **回退按钮回归原始尺寸，hint 浮动在按钮下方**（feat/undo-button-polish rev 4）。把 v1.0.15 rev 1/2（按钮被撑大对齐搜索框）和 v1.0.16（hint 塞进按钮内）这两个改法都退了，回到最初的按钮 box-model：`padding: 7px 14px` + `font-size: 1.2rem` + `line-height: 1.4`，渲染高度约 33px。hint 改成 `position: absolute`（`top: calc(100% + 4px)`）锚到 `.undo-wrap`，浮在按钮下方 4px 处 —— 因为脱离文档流，**不影响 topbar 的 flex 布局**，搜索框和按钮在 topbar 里依然干净对齐，hint 像一个浮动的 label 一样 hover 在按钮下。
+  - **DOM 变化**：`.undo-wrap` div 重新出现，作为 hint 的 `position: relative` 锚点；按钮内不再包含 hint，也不再需要 `.undo-line` 包装层。
+  - **CSS 变化**：`.undo-wrap` 从 `display: flex; flex-direction: column` 简化为 `position: relative`（不再有 gap、不再有 flex column）；`.undo-hint` 加 `position: absolute; top: calc(100% + 4px); left: 50%; transform: translateX(-50%)`，加 `white-space: nowrap`；`#undo_button` 全面回滚到原始样式（去掉了 v1.0.15/16 的 `font-family: inherit` / `font-weight: 400` / 放大字号 / 加大 padding 那些 hack）。
+  - **副作用**：hint 浮在按钮下方会跟书签列的第一行重叠 —— 视觉上 hint 跟下面的 bookmark 距离更近了。如果觉得拥挤可以再加个底色 + border 把 hint 做成一个气泡样式，告诉我就行。
+
 ## [1.0.16] - 2026-06-27
 
 ### Changed
