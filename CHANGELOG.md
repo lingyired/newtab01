@@ -5,6 +5,16 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.18] - 2026-07-07
+
+### Added
+- **_locales Chinese variant support**。v1.0.14 只发了 `zh/` 目录，Chrome Web Store listing 的下拉里只有「中文」。但很多用户用的浏览器语言是 `zh-CN`、`zh-TW`、`zh-HK`（三位 locale code），所以 dashboard 不匹配「zh」目录导致「中文」选项不可选。加 3 个新目录：
+  - `_locales/zh_CN/` — 与 `zh/` 内容一致（简体中文，45 chars ≤ 132）
+  - `_locales/zh_HK/` — 香港繁体（45 chars ≤ 132）
+  - `_locales/zh_TW/` — 台湾繁体（45 chars ≤ 132）
+  - 原 `_locales/zh/` 保留（向后兼容仅 zh 的浏览器）
+  - 新 locale 不影响运行时 `src/lib/i18n/` 的 `LocaleCode = 'zh'`（Chrome store listing 和 runtime 走两套 i18n，设计决策见 v0.2.117 + v1.0.14）
+
 ## [1.0.17] - 2026-06-27
 
 ### Fixed
