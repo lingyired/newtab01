@@ -153,6 +153,7 @@ const messages = {
   'undo.label': 'पूर्ववत करें',
   'undo.title': 'अंतिम क्रिया पूर्ववत करें',
   'undo.titleWithCount': 'अंतिम क्रिया पूर्ववत करें ({count} चरण)',
+  'undo.sessionHint': 'केवल इस सत्र में पूर्ववत किया जा सकता है; रीफ़्रेश करने पर साफ़ हो जाता है',
   'searchResults.empty': 'खोजने के लिए टाइप करें…',
   'searchResults.footer.navigate': 'नेविगेट',
   'searchResults.footer.open': 'खोलें',

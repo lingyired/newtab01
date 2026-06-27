@@ -89,4 +89,15 @@
 //            "Chrome" qualifier keeps the copy accurate for the
 //            Edge Add-ons store without changing behavior.
 
-export const VERSION = '1.0.13';
+// v1.0.15: undo button polish — small "session-only" hint added below
+//          the undo button explaining that the history stack is
+//          in-memory and clears on refresh; button box-model
+//          (font-size 1.8em + padding 11px) now matches the search
+//          input so they share the same height. New MessageKey
+//          undo.sessionHint in all 10 catalogs.
+// v1.0.14: Chrome Web Store listing translation support (default_locale
+//          + 10 _locales/<code>/messages.json). Version constant
+//          intentionally not bumped in this commit (caught later —
+//          v1.0.15 above fixed the drift).
+// v1.0.13: store submission metadata — drop "Chrome" brand for Edge.
+export const VERSION = '1.0.15';

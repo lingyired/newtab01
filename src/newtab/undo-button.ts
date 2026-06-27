@@ -15,12 +15,24 @@ const MOVED_OUT_KEY = 'movedOut';
 /** Undo button element, lazily created by renderUndoButton. */
 let undoBtn: HTMLButtonElement | null = null;
 let undoLabel: HTMLSpanElement | null = null;
+let undoHint: HTMLSpanElement | null = null;
 
 /**
  * Create the undo button and append it to the given topbar container.
  * v0.2.93: the `showSearch` parameter was removed (the search bar is
  * always shown now), so the no-op branch is gone and the button is
  * always created. The caller in `topbar.ts` no longer passes the flag.
+ *
+ * v0.2.143 (feat/undo-button-polish): the button is wrapped in a
+ * vertical column (.undo-wrap) that also hosts the small explanatory
+ * hint ("Only undoable in this session; clears on refresh" / 「仅本
+ * 次会话可回退，刷新后清空」) below the button. The hint sits under
+ * the button at all times when the button is visible, so the wrap
+ * itself is hidden alongside the button (visibility tracks the
+ * button, not the history stack, so we don't show an empty column
+ * when there's nothing to undo). The `margin-left: 8px` gap from the
+ * search wrap moves from `#undo_button` to `.undo-wrap` so the wrap
+ * sits flush against the button.
  */
 export function renderUndoButton(topbar: HTMLElement): void {
   if (undoBtn) return;
@@ -50,7 +62,23 @@ export function renderUndoButton(topbar: HTMLElement): void {
 
   undoBtn.addEventListener('click', onUndoClick);
 
-  topbar.appendChild(undoBtn);
+  // v0.2.143: vertical wrap that hosts both the button and the small
+  //  explanatory hint below it. The wrap is hidden when the button
+  //  is hidden (history stack empty), so the hint never appears
+  //  without its button. See styles/newtab.css `.undo-wrap` / `.undo-hint`.
+  const wrap = document.createElement('div');
+  wrap.id = 'undo_wrap';
+  wrap.classList.add('undo-wrap');
+  wrap.appendChild(undoBtn);
+
+  const hint = document.createElement('span');
+  hint.id = 'undo_button_hint';
+  hint.classList.add('undo-hint');
+  hint.textContent = t('undo.sessionHint');
+  undoHint = hint;
+  wrap.appendChild(hint);
+
+  topbar.appendChild(wrap);
 
   // Initial visibility + react to stack changes (push from drop, pop
   // from undo, clear from init). The unsubscribe return value is
@@ -87,12 +115,15 @@ async function onUndoClick(): Promise<void> {
 /** Toggle visibility + update badge text based on current stack length. */
 function updateVisibility(): void {
   if (!undoBtn) return;
+  const wrap = undoBtn.parentElement;
   const count = getHistoryLength();
   const badge = undoBtn.querySelector<HTMLSpanElement>('#undo_button_count');
   if (count === 0) {
     undoBtn.style.display = 'none';
+    if (wrap) wrap.style.display = 'none';
   } else {
     undoBtn.style.display = '';
+    if (wrap) wrap.style.display = '';
     undoBtn.title = count === 1
       ? t('undo.title')
       : t('undo.titleWithCount', { count });
@@ -106,13 +137,20 @@ function updateVisibility(): void {
  *  + title + aria-label) for the active locale. Called from
  *  `applyLocaleToDom` (newtab/main.ts) on `setLocale()`. Re-uses
  *  `updateVisibility()` so the title (which includes the live
- *  history count) re-computes against the new locale. */
+ *  history count) re-computes against the new locale.
+ *
+ *  feat/undo-button-polish: also refresh the small explanatory hint
+ *  span below the button so the "session-only" caveat re-translates
+ *  on locale change. */
 export function updateUndoStrings(): void {
   if (undoBtn) {
     undoBtn.setAttribute('aria-label', t('undo.title'));
   }
   if (undoLabel) {
     undoLabel.textContent = t('undo.label');
+  }
+  if (undoHint) {
+    undoHint.textContent = t('undo.sessionHint');
   }
   updateVisibility();
 }

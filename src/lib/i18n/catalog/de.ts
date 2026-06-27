@@ -153,6 +153,7 @@ const messages = {
   'undo.label': 'Rückgängig',
   'undo.title': 'Letzte Aktion rückgängig machen',
   'undo.titleWithCount': 'Letzte Aktion rückgängig machen ({count} Schritte)',
+  'undo.sessionHint': 'Nur in dieser Sitzung rückgängig; wird beim Aktualisieren gelöscht',
   'searchResults.empty': 'Zum Suchen tippen…',
   'searchResults.footer.navigate': 'navigieren',
   'searchResults.footer.open': 'öffnen',

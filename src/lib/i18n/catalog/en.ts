@@ -168,6 +168,7 @@ const messages = {
   'undo.label': 'Undo',
   'undo.title': 'Undo last action',
   'undo.titleWithCount': 'Undo last action ({count} steps)',
+  'undo.sessionHint': 'Only undoable in this session; clears on refresh',
   // Search results
   'searchResults.empty': 'Type to search…',
   'searchResults.footer.navigate': 'navigate',

@@ -153,6 +153,7 @@ const messages = {
   'undo.label': 'Annuler',
   'undo.title': 'Annuler la dernière action',
   'undo.titleWithCount': 'Annuler la dernière action ({count} étapes)',
+  'undo.sessionHint': 'Annulable uniquement dans cette session ; effacé au rechargement',
   'searchResults.empty': 'Tapez pour rechercher…',
   'searchResults.footer.navigate': 'naviguer',
   'searchResults.footer.open': 'ouvrir',
