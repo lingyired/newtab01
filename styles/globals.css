@@ -102,6 +102,14 @@
   --newtab-highlight: var(--accent);
   --newtab-highlight-text: var(--accent-foreground);
   --newtab-drop-indicator: var(--primary);
+  /* Soft drop-shadow behind favicon <img> elements so pure-white
+   * icons remain visible on light backgrounds and pure-black icons
+   * on dark backgrounds. Uses color-mix of --foreground at 50%
+   * opacity: in light themes --foreground ≈ black → dark glow;
+   * in dark themes --foreground ≈ white → light glow.
+   * drop-shadow respects the image's alpha channel, so the glow
+   * traces the icon silhouette without clobbering the icon itself. */
+  --newtab-icon-shadow: drop-shadow(0 0 2px color-mix(in oklch, var(--foreground) 50%, transparent));
   /* v0.2.100: shadowColor is decoupled from highlightColor. Default
    * falls back to --newtab-highlight so a fresh install looks the same
    * as before, but a user-set shadowColor now controls only the

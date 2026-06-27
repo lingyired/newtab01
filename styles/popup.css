@@ -104,6 +104,7 @@ body.popup-body {
 .picker-favicon {
   flex-shrink: 0;
   border-radius: 2px;
+  filter: var(--newtab-icon-shadow, none);
 }
 
 .picker-title {

@@ -200,6 +200,7 @@
   background-size: 100% 100%;
   vertical-align: middle;
   flex-shrink: 0;
+  filter: var(--newtab-icon-shadow, none);
 }
 
 #main a:after {
@@ -235,6 +236,9 @@
    *  --card-foreground always won, so changing fontColor had no
    *  effect on the folder title icon. */
   color: var(--newtab-link-color, var(--card-foreground, var(--newtab-text)));
+  /* Folder SVG icons use currentColor and already have sufficient
+   * contrast — no need for the favicon drop-shadow. */
+  filter: none;
 }
 
 .folder .icon svg {
@@ -623,6 +627,7 @@
   height: 16px;
   flex-shrink: 0;
   border-radius: 2px;
+  filter: var(--newtab-icon-shadow, none);
 }
 
 .search-result-title {

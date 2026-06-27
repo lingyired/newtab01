@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.17] - 2026-06-27
+
+### Fixed
+- **纯白/纯黑 favicon 在对应背景下不可见问题**。使用 `filter: drop-shadow()` 外发光柔光替代背景面板：通过 `color-mix(in oklch, var(--foreground) 50%, transparent)` 生成自适应柔光色 —— 浅色主题自动产生暗柔光（纯白图标可见），深色主题自动产生亮柔光（纯黑图标可见）。`drop-shadow` 跟随图标 alpha 通道，柔光精确描边图标轮廓，不覆盖图标本身。覆盖范围：`#main a .icon`（书签链接）、`.search-result-favicon`（搜索结果）、`.picker-favicon`（popup）。文件夹 SVG 图标排除（走 `currentColor` 已有足够对比度）。
+
 ## [1.0.16] - 2026-06-27
 
 ### Added
