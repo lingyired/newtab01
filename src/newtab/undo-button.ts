@@ -23,16 +23,20 @@ let undoHint: HTMLSpanElement | null = null;
  * always shown now), so the no-op branch is gone and the button is
  * always created. The caller in `topbar.ts` no longer passes the flag.
  *
- * v0.2.143 (feat/undo-button-polish): the button is wrapped in a
- * vertical column (.undo-wrap) that also hosts the small explanatory
- * hint ("Only undoable in this session; clears on refresh" / 「仅本
- * 次会话可回退，刷新后清空」) below the button. The hint sits under
- * the button at all times when the button is visible, so the wrap
- * itself is hidden alongside the button (visibility tracks the
- * button, not the history stack, so we don't show an empty column
- * when there's nothing to undo). The `margin-left: 8px` gap from the
- * search wrap moves from `#undo_button` to `.undo-wrap` so the wrap
- * sits flush against the button.
+ * v0.2.143 (feat/undo-button-polish): button hosts the small
+ * explanatory hint ("Only undoable in this session; clears on
+ * refresh" / 「仅本次会话可回退，刷新后清空」) as a SECOND ROW
+ * inside the button. Layout:
+ *
+ *   ┌──────────────────────┐
+ *   │  回退  1             │  ← .undo-line: label + badge
+ *   │  仅本次会话可回退... │  ← .undo-hint
+ *   └──────────────────────┘
+ *
+ * Earlier rev had the hint as a sibling of the button (inside an
+ * `.undo-wrap` div). The user asked to inline the hint into the
+ * button itself — single bordered box, both rows inside the same
+ * border, hint visually "owns" by the button.
  */
 export function renderUndoButton(topbar: HTMLElement): void {
   if (undoBtn) return;
@@ -43,42 +47,44 @@ export function renderUndoButton(topbar: HTMLElement): void {
   undoBtn.setAttribute('aria-label', t('undo.title'));
   undoBtn.title = t('undo.title');
 
-  // Layout: text label + inline count badge. The badge ALWAYS renders
-  // a number (1, 2, …) when the history stack is non-empty — no empty
-  // state. An earlier version hid the badge at count=1, which read as
-  // "blue pill with nothing in it, then suddenly a number" and felt
-  // inconsistent (see CHANGELOG v0.2.61).
+  // v0.2.143: explicit row wrapper for label + badge so the
+  //  button's flex-column layout doesn't stack them on separate
+  //  lines. The badge ALWAYS renders a number (1, 2, …) when
+  //  the history stack is non-empty — no empty state. An earlier
+  //  version hid the badge at count=1, which read as "blue pill
+  //  with nothing in it, then suddenly a number" and felt
+  //  inconsistent (see CHANGELOG v0.2.61).
+  const line = document.createElement('span');
+  line.classList.add('undo-line');
+
   const label = document.createElement('span');
   label.id = 'undo_button_label';
   label.classList.add('undo-label');
   label.textContent = t('undo.label');
   undoLabel = label;
-  undoBtn.appendChild(label);
+  line.appendChild(label);
 
   const badge = document.createElement('span');
   badge.id = 'undo_button_count';
   badge.classList.add('undo-count');
-  undoBtn.appendChild(badge);
+  line.appendChild(badge);
 
-  undoBtn.addEventListener('click', onUndoClick);
+  undoBtn.appendChild(line);
 
-  // v0.2.143: vertical wrap that hosts both the button and the small
-  //  explanatory hint below it. The wrap is hidden when the button
-  //  is hidden (history stack empty), so the hint never appears
-  //  without its button. See styles/newtab.css `.undo-wrap` / `.undo-hint`.
-  const wrap = document.createElement('div');
-  wrap.id = 'undo_wrap';
-  wrap.classList.add('undo-wrap');
-  wrap.appendChild(undoBtn);
-
+  // v0.2.143: explanatory hint as a second row INSIDE the button.
+  //  Sits directly under the .undo-line, separated by the button's
+  //  column `gap`. Lives inside the button border so it's part of
+  //  the same clickable surface.
   const hint = document.createElement('span');
   hint.id = 'undo_button_hint';
   hint.classList.add('undo-hint');
   hint.textContent = t('undo.sessionHint');
   undoHint = hint;
-  wrap.appendChild(hint);
+  undoBtn.appendChild(hint);
 
-  topbar.appendChild(wrap);
+  undoBtn.addEventListener('click', onUndoClick);
+
+  topbar.appendChild(undoBtn);
 
   // Initial visibility + react to stack changes (push from drop, pop
   // from undo, clear from init). The unsubscribe return value is
@@ -115,15 +121,12 @@ async function onUndoClick(): Promise<void> {
 /** Toggle visibility + update badge text based on current stack length. */
 function updateVisibility(): void {
   if (!undoBtn) return;
-  const wrap = undoBtn.parentElement;
   const count = getHistoryLength();
   const badge = undoBtn.querySelector<HTMLSpanElement>('#undo_button_count');
   if (count === 0) {
     undoBtn.style.display = 'none';
-    if (wrap) wrap.style.display = 'none';
   } else {
     undoBtn.style.display = '';
-    if (wrap) wrap.style.display = '';
     undoBtn.title = count === 1
       ? t('undo.title')
       : t('undo.titleWithCount', { count });

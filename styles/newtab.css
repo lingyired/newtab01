@@ -678,67 +678,43 @@
  * Sits to the immediate right of .search-wrap, part of the topbar's
  * flex row. The whole (search + undo) pair is centered as a group.
  *
- * v0.2.143 (feat/undo-button-polish): the button is hosted by a
- * vertical column (.undo-wrap) that also carries the small
- * "session-only" explanatory hint below it. The wrap carries the
- * 8px gap from the search wrap (was previously on #undo_button
- * itself); the button is reset to `margin-left: 0` so the gap is
- * owned by the wrap. Both the wrap and the button start as
- * `display: none`; undo-button.ts flips them to their default
- * (`''`) when the history stack is non-empty.
+ * v0.2.143 (feat/undo-button-polish) rev 3: the small
+ * "session-only" explanatory hint now lives INSIDE the button as
+ * a second row, not as a sibling below it (that was rev 1/2). The
+ * user asked to inline the hint so the whole affordance reads as a
+ * single bordered surface. Layout:
  *
- * Layout: text label `回退` + inline count badge. The badge ALWAYS
- * shows a number (1, 2, …) when the history is non-empty —
- * no empty-pill state. Earlier versions either hid the badge at
- * count=1 (felt inconsistent) or used only a SVG icon without a
- * label (less self-explanatory). This combination is the current
- * consensus per user feedback in CHANGELOG v0.2.61.
+ *   ┌──────────────────────┐
+ *   │  回退  1             │  ← .undo-line: label + badge row
+ *   │  仅本次会话可回退... │  ← .undo-hint row
+ *   └──────────────────────┘
+ *
+ * `display: flex; flex-direction: column` on the button stacks the
+ * two rows vertically; `align-items: center` keeps both rows
+ * horizontally centered. The 4px column `gap` is the breathing room
+ * between the label-row and the hint-row.
  *
  * Style mirrors the settings panel button vocabulary
- * (.sp-btn in styles/newtab.css) for visual consistency, sized up
- * to match .search-input's box model (font-size 1.8em + padding
- * 11px) so the button visually balances the search input — they
- * share the same height, border treatment, and corner radius.
- */
-.undo-wrap {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  flex: 0 0 auto;
-  margin-left: 8px;
-  /* v0.2.143 (rev 2): the wrap is now sized to match .search-input's
-   *  box height so the topbar centers the WHOLE wrap (button + gap
-   *  + hint) at the same vertical position as the search input.
-   *  Without this tuning, the button alone (~46px tall) + gap +
-   *  hint (~14px) makes the wrap ~64px tall, which extends below
-   *  the search input's bottom edge and breaks the visual alignment.
-   *  Budget:
-   *    search input = 11 + 18*1.2 + 11 + 2 = 45.6px
-   *    hint         = 11 * 1.3            = 14.3px
-   *    gap          = 2px
-   *    → button box = 45.6 - 14.3 - 2 = 29.3px
-   *  Button padding (4px both sides) + 18px font + 2px border
-   *  = ~30px — matches the budget.
-   *  Result: wrap ≈ 46px, vertically aligned with .search-input.
-   *  The wrap is shorter than v0.2.143 rev 1 (button alone = 46px),
-   *  but now the BUTTON + GAP + HINT together equal the search
-   *  input height instead of just the button. */
-  gap: 2px;
-}
-
+ * (.sp-btn in styles/newtab.css) for visual consistency.
+ *
+ * `margin-left: 8px` returns to the button (was on .undo-wrap in
+ * rev 1/2; the wrap is now gone since the hint lives inside the
+ * button). */
 #undo_button {
   position: relative;
+  flex: 0 0 auto;
+  margin-left: 8px;
   background: transparent;
   border: 1px solid var(--border);
   color: var(--newtab-text);
   cursor: pointer;
   opacity: 0.85;
-  /* v0.2.143 (rev 2): padding 11px → 4px so the button fits in
-   *  the wrap-height budget above. The button is now ~30px tall
-   *  (4 + 18*1.2 + 4 + 2), down from ~46px. The 18px font is
-   *  unchanged so the "回退" text still matches the search
-   *  input's text size — only the surrounding breathing room
-   *  shrinks.
+  /* v0.2.143 rev 3: padding is bigger than rev 1/2 because the
+   *  button now hosts two rows. 8px vertical padding gives the
+   *  label-row + hint-row a bit of breathing room inside the
+   *  border without making the button feel "padded out". 16px
+   *  horizontal padding widens the button enough to fit the
+   *  ~140px hint on a single line at 1.1rem (the widest content).
    *
    *  `font-family: inherit` is critical: Chrome's UA stylesheet
    *  sets `font: -apple-system-body` on `<button>`, which
@@ -752,22 +728,33 @@
    *  the search input's default so the two adjacent elements
    *  read as the same typographic weight (avoiding the "search
    *  text + bold button" weight-contrast optical illusion). */
-  padding: 4px 14px;
+  padding: 8px 16px;
   font-size: 1.8em;
   font-family: inherit;
   font-weight: 400;
   /* Inputs in HTML have line-height: normal by default; we inherit
-   * that behavior so the button height matches the search input
-   * exactly. The undo-count badge inside has its own line-height
-   * (1) and a fixed height, so it stays visually centered
-   * against the larger button text. */
+   * that behavior so the label-row's text matches the search
+   * input's text exactly. The undo-count badge inside .undo-line
+   * has its own line-height (1) and a fixed height, so it stays
+   * visually centered against the larger label. */
   line-height: normal;
   border-radius: calc(var(--radius) - 2px);
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  transition: opacity 0.15s, background-color 0.15s, border-color 0.15s;
+}
+
+/* Inline row wrapper for label + badge. Lives inside the button's
+ * flex-column layout, so this row sits on its own line; the inner
+ * `display: inline-flex` + 8px gap keeps label + badge
+ * horizontally adjacent, mirroring the pre-rev-3 appearance. */
+.undo-line {
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: opacity 0.15s, background-color 0.15s, border-color 0.15s;
 }
 
 #undo_button:hover {
@@ -799,21 +786,28 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* v0.2.143 (feat/undo-button-polish): small explanatory hint
- * shown under the undo button. Tells the user the undo stack is
- * in-memory only — refreshing the page (or hitting a storage
- * "apply" equivalent) clears it and the previous layout is
- * committed to disk, after which the button can no longer help.
+/* v0.2.143 (feat/undo-button-polish) rev 3: small explanatory
+ * hint now lives INSIDE the undo button as a second row, not as
+ * a sibling below it. Tells the user the undo stack is in-memory
+ * only — refreshing the page (or hitting a storage "apply"
+ * equivalent) clears it and the previous layout is committed to
+ * disk, after which the button can no longer help.
  *
  * Sized small enough to read as a footnote (1.1rem ≈ 11px in
  * this project's 10px root font-size) and tinted with the
  * muted-foreground token so it sits clearly below the primary
- * button in visual weight. `white-space: nowrap` keeps the
- * line intact on the typical desktop widths; on very narrow
- * viewports the line may wrap (no `nowrap` so non-English
- * locales — esp. German and Russian — get a comfortable
- * natural break). `user-select: none` prevents accidental text
- * selection when the user is just clicking nearby. */
+ * label-row in visual weight. `text-align: center` keeps the
+ * hint centered under the (typically wider) label-row.
+ * `user-select: none` prevents accidental text selection when
+ * the user is just clicking the surrounding button border.
+ *
+ * The button's `align-items: center` (flex-column) auto-centers
+ * the hint horizontally — but `text-align: center` is needed
+ * for multi-line wrapping on narrow viewports (e.g. German /
+ * Russian locales), where the hint text wraps to a second line
+ * inside the button. The button width is auto-sized to the
+ * widest child (the hint), so the hint effectively sets the
+ * button width. */
 .undo-hint {
   margin: 0;
   font-size: 1.1rem;

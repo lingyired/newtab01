@@ -89,6 +89,14 @@
 //            "Chrome" qualifier keeps the copy accurate for the
 //            Edge Add-ons store without changing behavior.
 
+// v1.0.16: undo button hint inlined into the button as a second row
+//          (rev 3 of feat/undo-button-polish). The previous rev had
+//          the hint as a sibling of the button inside an .undo-wrap
+//          div; user feedback preferred the hint to live INSIDE the
+//          button border so the whole affordance reads as a single
+//          bordered surface. Button padding bumped to 8px 16px to
+//          fit the two-row layout; .undo-line wrapper holds the
+//          label + badge on the first row. .undo-wrap div is gone.
 // v1.0.15: undo button polish — small "session-only" hint added below
 //          the undo button explaining that the history stack is
 //          in-memory and clears on refresh; button box-model
@@ -100,4 +108,4 @@
 //          intentionally not bumped in this commit (caught later —
 //          v1.0.15 above fixed the drift).
 // v1.0.13: store submission metadata — drop "Chrome" brand for Edge.
-export const VERSION = '1.0.15';
+export const VERSION = '1.0.16';

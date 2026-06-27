@@ -5,6 +5,14 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.16] - 2026-06-27
+
+### Changed
+- **「回退」按钮的 hint 文字从按钮外部搬到按钮内部**（feat/undo-button-polish rev 3）。原来 hint 是按钮的兄弟节点（外面包了一个 `.undo-wrap` div）；现在直接做 `#undo_button` 的第二个 flex-column 子元素，跟「回退 1」label 行共用同一个 border 边框，整个提示区域读起来是一个统一的带框区域。
+  - **DOM 变化**：移除 `.undo-wrap` div；label + badge 包到一个新的 `.undo-line` span 里（保持横向排列）；hint 作为 button 的直接子节点。
+  - **CSS 变化**：按钮 `padding: 4px 14px → 8px 16px`（容纳两行内容）；`flex-direction: column` + `gap: 4px` 让两行垂直堆叠且居中；`.undo-line` 内部走 `inline-flex` 让 label + badge 横向并排；`margin-left: 8px` 从 `.undo-wrap` 搬回 `#undo_button`。
+  - **副作用**：按钮现在比搜索框高很多（两行内容 + 16px 垂直 padding ≈ 60-70px）。`.undo-wrap` 之前做的"wrap 总高度 = 搜索框高度"对齐失效 —— 这是用户主动选择的取舍（要 inline 就不能严格对齐搜索框）。
+
 ## [1.0.15] - 2026-06-27
 
 ### Added
