@@ -4,10 +4,21 @@
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE_MIT.txt)
 [![Manifest V3](https://img.shields.io/badge/manifest-MV3-4285F4.svg)](manifest.json)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-v1.0.13-0f9d58.svg)](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj)
 [![Built with Vanilla JS](https://img.shields.io/badge/stack-Vanilla%20JS%20%2B%20Vite-f7df1e.svg)](#技术栈)
 [![Co-authored by TRAE.AI](https://img.shields.io/badge/co--author-TRAE.AI-7c3aed.svg)](#致谢)
 
 [English](../README.md) · [中文](README.zh.md)
+
+---
+
+## 安装
+
+[<img src="https://img.shields.io/badge/安装到%20Chrome-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white" height="40" alt="安装 newtab01 到 Chrome">](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj)
+
+扩展已发布到 Chrome Web Store。点击上方徽章（或用 [这个直链](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj)）安装最新发布版本。Edge Add-ons 上架进行中。
+
+如果想本地加载未压缩版本用于开发，请看下方[开发](#开发)一节。
 
 ---
 
@@ -165,7 +176,10 @@ pnpm dev
 pnpm build
 ```
 
-`pnpm build` 完成后，在 `chrome://extensions/` 打开「开发者模式」，加载 `dist/` 目录作为「未打包的扩展程序」即可使用。
+`pnpm build` 之后，在 `chrome://extensions/` 页面打开「开发者模式」，
+点「加载已解压的扩展程序」并选择 `dist/` 目录。普通用户请从
+[Chrome Web Store](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj)
+直接安装 —— 上述构建命令仅供贡献者与本地测试者使用。
 
 完整的工程约束见 [CLAUDE.md](../CLAUDE.md)。
 
