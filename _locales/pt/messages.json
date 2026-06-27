@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "newtab01",
+    "description": "Nome da extensão exibido na barra de ferramentas do Chrome, em chrome://extensions e na página do Chrome Web Store."
+  },
+  "appDescription": {
+    "message": "Nova aba centrada em favoritos. Pastas como grupos de abas ou vista dividida. 12 temas + temas personalizados.",
+    "description": "Resumo breve exibido na página do Chrome Web Store e em chrome://extensions. Deve respeitar o limite de 132 caracteres da descrição do manifest do Chrome."
+  }
+}

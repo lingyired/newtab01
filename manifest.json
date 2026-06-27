@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
-  "name": "newtab01 [dev — DO NOT LOAD: load dist/ instead]",
-  "version": "1.0.13",
+  "default_locale": "en",
+  "name": "__MSG_appName__",
+  "version": "1.0.14",
   "minimum_chrome_version": "111",
-  "description": "Source manifest. The /src/*.ts entry points below are served by `pnpm dev` and have no MIME type when loaded directly from disk, which breaks module-script loading. Always build (`pnpm build`) and load the `dist/` directory. See README.md \"开发\" section.",
+  "description": "__MSG_appDescription__",
   "icons": {
     "128": "icons/icon_128.png",
     "48": "icons/icon_48.png",

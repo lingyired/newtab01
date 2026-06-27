@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "newtab01",
+    "description": "Nombre de la extensión que se muestra en la barra de herramientas de Chrome, chrome://extensions y en la ficha de Chrome Web Store."
+  },
+  "appDescription": {
+    "message": "Nueva pestaña centrada en marcadores. Carpetas como grupos de pestañas o vista dividida. 12 temas + temas personalizados.",
+    "description": "Resumen breve que aparece en la ficha de Chrome Web Store y en chrome://extensions. Debe respetar el límite de 132 caracteres de la descripción del manifest de Chrome."
+  }
+}

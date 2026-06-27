@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "newtab01",
+    "description": "拡張機能名。Chrome ツールバー、chrome://extensions、Chrome ウェブストアの商品詳細に表示されます。"
+  },
+  "appDescription": {
+    "message": "ブックマーク中心の新しいタブ。フォルダをタブグループまたは分割ビューで開けます。12 テーマ + カスタムテーマ。",
+    "description": "Chrome ウェブストアの商品詳細と chrome://extensions に表示される短い説明。Chrome manifest description の 132 文字制限を守る必要があります。"
+  }
+}

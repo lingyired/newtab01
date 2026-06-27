@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "newtab01",
+    "description": "Extension display name shown in the Chrome toolbar, chrome://extensions, and the Chrome Web Store listing."
+  },
+  "appDescription": {
+    "message": "Bookmark-driven new tab. Open folders as tab groups or in split view. 12 themes + custom ones from tweakcn.",
+    "description": "Short summary shown in the Chrome Web Store listing and chrome://extensions. Must stay under Chrome's 132-character manifest description limit."
+  }
+}

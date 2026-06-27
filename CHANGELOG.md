@@ -5,6 +5,17 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.14] - 2026-07-06
+
+### Added
+- **Chrome Web Store 多语言 listing 解锁**。之前 newtab01 的 manifest 没有 `default_locale` + `_locales/`，Chrome Web Store dashboard 把它当成单语言扩展，「Manage translations」编辑器不显示，所以不能为每种语言编辑商品详情描述。这次在 manifest.json 加 `default_locale: "en"`、把 `name` 和 `description` 改成 `__MSG_appName__` / `__MSG_appDescription__` 占位符，并新增 `_locales/<code>/messages.json` 10 个 locale（en / zh / es / ar / hi / fr / pt / de / ja / ru）。
+  - **注意**：项目运行时 UI 已经用 `src/lib/i18n/`（`t()` + 10 个 catalog）独立 i18n，不依赖 Chrome `_locales/`（CHANGELOG.md v0.2.117 设计决策，理由是 chrome.i18n 是只读 + popup 拿不到 SW 的调用 + 与 Settings 跨设备同步哲学冲突）。**这次新加的 `_locales/` 只服务于 manifest 翻译和 store listing 翻译**，与运行时 UI 互不影响。
+  - 所有 `_locales/<code>/messages.json` 里的 `appDescription` 长度 ≤ 121 字符（Chrome manifest 限制 132），避免上传时被 store 拒绝。
+- **vite.config.ts `fixupDistManifest` 钩子升级**。之前这个钩子会无条件把 `dist/manifest.json` 的 `name` / `description` 覆盖成 `PUBLIC_NAME` / `PUBLIC_DESCRIPTION` 字面量，**会把 `__MSG_xxx__` 覆盖掉**。新逻辑：如果源 manifest 已经用 `__MSG_xxx__`，**透传**（让 store 看到 i18n 标记）；只有当源 manifest 没有 `__MSG_` 时才回退到 `PUBLIC_*`（保持 dev 警告剥离能力）。
+
+### Fixed
+- **package.json + manifest.json version 字段不同步**。之前 v1.0.13 的时候只 bump 了 manifest.json，package.json 一直停在 v1.0.13（虽然 build 脚本用的是 package.json 的 version，所以 zip 文件名实际是 1.0.13 而不是 manifest 写的 1.0.13 — 这个 v1.0.13 一致是巧合）。两个文件统一 bump 到 v1.0.14。
+
 ## [1.0.13] - 2026-06-24
 
 ### Changed

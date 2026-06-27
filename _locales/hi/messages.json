@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "newtab01",
+    "description": "एक्सटेंशन का नाम जो Chrome टूलबार, chrome://extensions और Chrome Web Store लिस्टिंग में दिखाई देता है।"
+  },
+  "appDescription": {
+    "message": "बुकमार्क-केंद्रित नया टैब। फ़ोल्डरों को टैब समूह या स्प्लिट व्यू में खोलें। 12 थीम + कस्टम थीम।",
+    "description": "Chrome Web Store लिस्टिंग और chrome://extensions में दिखाया गया संक्षिप्त विवरण। Chrome manifest description की 132-वर्ण सीमा के भीतर रहना चाहिए।"
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "newtab01",
+    "description": "اسم الإضافة الذي يظهر في شريط أدوات Chrome، و chrome://extensions، وفي صفحة Chrome Web Store."
+  },
+  "appDescription": {
+    "message": "علامة تبويب جديدة قائمة على الإشارات. افتح المجلدات كمجموعات علامات تبويب أو في عرض مقسم. 12 سمة + سمات مخصصة.",
+    "description": "ملخص قصير يظهر في صفحة Chrome Web Store و chrome://extensions. يجب أن يبقى ضمن حد 132 حرفًا لوصف بيان Chrome."
+  }
+}
