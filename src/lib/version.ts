@@ -89,35 +89,23 @@
 //            "Chrome" qualifier keeps the copy accurate for the
 //            Edge Add-ons store without changing behavior.
 
-// v1.0.17: undo button reverted to its ORIGINAL box-model (padding
-//          7px 14px + font-size 1.2rem + line-height 1.4, ~33px tall).
-//          The hint now FLOATS below the button via position: absolute
-//          (top: calc(100% + 4px)) anchored to the .undo-wrap div.
-//          Because the hint is out-of-flow, the topbar's flex layout
-//          no longer compensates for hint height — button + search
-//          input align cleanly in the topbar, and the hint visually
-//          "hovers" beneath the button. User feedback: the v1.0.15
-//          rev 1/2 grew the button to match the search input's ~46px
-//          height, and the v1.0.16 inline-hint approach made the
-//          button even taller — both felt visually heavy. The original
-//          button size with a floating hint is the cleanest balance.
-// v1.0.16: undo button hint inlined into the button as a second row
-//          (rev 3 of feat/undo-button-polish). The previous rev had
-//          the hint as a sibling of the button inside an .undo-wrap
-//          div; user feedback preferred the hint to live INSIDE the
-//          button border so the whole affordance reads as a single
-//          bordered surface. Button padding bumped to 8px 16px to
-//          fit the two-row layout; .undo-line wrapper holds the
-//          label + badge on the first row. .undo-wrap div is gone.
-// v1.0.15: undo button polish — small "session-only" hint added below
+// v1.0.15: undo button polish — small "session-only" hint floats below
 //          the undo button explaining that the history stack is
-//          in-memory and clears on refresh; button box-model
-//          (font-size 1.8em + padding 11px) now matches the search
-//          input so they share the same height. New MessageKey
-//          undo.sessionHint in all 10 catalogs.
+//          in-memory and clears on refresh. Button box-model kept
+//          at the original size (padding 7px 14px + font-size 1.2rem
+//          + line-height 1.4, ~33px tall); the hint is positioned
+//          absolutely (top: calc(100% + 4px)) anchored to the
+//          .undo-wrap div so it "floats" beneath the button without
+//          affecting the topbar's flex layout. New MessageKey
+//          undo.sessionHint added to all 10 catalogs.
+//          Note: development went through 4 design iterations on
+//          feat/undo-button-polish (button-grown-to-match-height →
+//          padding-shrunk → hint-inline-inside-button → hint-floats-
+//          below). All kept in git history; only this final design is
+//          released as v1.0.15.
 // v1.0.14: Chrome Web Store listing translation support (default_locale
 //          + 10 _locales/<code>/messages.json). Version constant
 //          intentionally not bumped in this commit (caught later —
 //          v1.0.15 above fixed the drift).
 // v1.0.13: store submission metadata — drop "Chrome" brand for Edge.
-export const VERSION = '1.0.17';
+export const VERSION = '1.0.15';
