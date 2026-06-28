@@ -1,10 +1,10 @@
 # newtab01
 
-> 一个克制、高性能、支持分屏的 Chrome 新标签页扩展。
+> 书签驱动的 Chrome 新标签页。文件夹可整体作为标签组打开，或丢进分屏视图。12 套内置主题 + 无限 tweakcn 自定义主题。
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE_MIT.txt)
 [![Manifest V3](https://img.shields.io/badge/manifest-MV3-4285F4.svg)](manifest.json)
-[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-Install-green?style=for-the-badge&logo=google-chrome&logoColor=white)](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome%20Web%20Store-v1.0.18-0f9d58.svg)](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj)
 [![Built with Vanilla JS](https://img.shields.io/badge/stack-Vanilla%20JS%20%2B%20Vite-f7df1e.svg)](#技术栈)
 [![Co-authored by TRAE.AI](https://img.shields.io/badge/co--author-TRAE.AI-7c3aed.svg)](#致谢)
 
