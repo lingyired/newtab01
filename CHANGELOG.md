@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.18] - 2026-07-07
 
+### Fixed
+- **三处版本号同步**：`src/lib/version.ts` 的 `VERSION` 常量从 `1.0.16` 同步到 `1.0.18`，与 `manifest.json` / `package.json` 对齐（v1.0.18 release 时漏改，与 v1.0.14 → v1.0.15 的漂移模式相同）。**注意**：Chrome Web Store 上传的是源码 `3d3ec93` 那一刻的版本（VERSION 仍是 1.0.16），用户从 store 看到的「关于」tab 会显示 1.0.16；这个 commit 跟 tag v1.0.18 一起，让本地源码与 git tag 保持一致，store 端不重传（无功能差异）。
+
 ### Added
 - **_locales Chinese variant support**。v1.0.14 只发了 `zh/` 目录，Chrome Web Store listing 的下拉里只有「中文」。但很多用户用的浏览器语言是 `zh-CN`、`zh-TW`、`zh-HK`（三位 locale code），所以 dashboard 不匹配「zh」目录导致「中文」选项不可选。加 3 个新目录：
   - `_locales/zh_CN/` — 与 `zh/` 内容一致（简体中文，45 chars ≤ 132）
