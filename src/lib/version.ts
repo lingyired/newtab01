@@ -89,6 +89,28 @@
 //            "Chrome" qualifier keeps the copy accurate for the
 //            Edge Add-ons store without changing behavior.
 
+// v1.0.18: Chrome Web Store zh_CN / zh_HK / zh_TW _locales — fix the
+//          listing-language dropdown so users with `zh-CN` / `zh-TW` /
+//          `zh-HK` browser locales can pick Chinese. New _locales/<dir>
+//          directories (45-char appDescription each, well within the
+//          132-char Chrome limit). The original _locales/zh/ is kept
+//          for backward compatibility. Runtime i18n (src/lib/i18n/)
+//          unchanged — Chrome store listing and runtime use separate
+//          pipelines (see v0.2.117 + v1.0.14 design note).
+//          Note: this commit retroactively bumps VERSION to 1.0.18.
+//          v1.0.18 was uploaded to the Chrome Web Store with VERSION
+//          still at 1.0.16 (the same drift pattern as v1.0.14); the
+//          bump lands here so the v1.0.18 git tag represents the
+//          fully-correct source tree (all three version strings in
+//          sync), even though the Chrome Store zip is unchanged.
+// v1.0.17: pure-white / pure-black favicons on matching backgrounds
+//          now visible. Adaptive `filter: drop-shadow()` halo via
+//          `color-mix(in oklch, var(--foreground) 50%, transparent)`
+//          replaces the old opaque background panel — light themes get
+//          a dark halo (white icons readable), dark themes get a light
+//          halo (black icons readable). Applied to #main a .icon,
+//          .search-result-favicon, .picker-favicon. Folder SVG icons
+//          exempt (currentColor already gives enough contrast).
 // v1.0.16: fix(theming) — fontColor setting now applies to bookmark
 //          link text + folder titles (previously only affected folder
 //          action icons, undo button, options button, etc.). The link
@@ -119,4 +141,4 @@
 //          intentionally not bumped in this commit (caught later —
 //          v1.0.15 above fixed the drift).
 // v1.0.13: store submission metadata — drop "Chrome" brand for Edge.
-export const VERSION = '1.0.16';
+export const VERSION = '1.0.18';
