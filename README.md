@@ -1,6 +1,6 @@
 # newtab01
 
-> A minimal, performant, split-screen capable New Tab Page extension for Chrome.
+> Bookmark-driven new tab for Chrome. Open folders as tab groups or in split view. 12 themes + custom ones from tweakcn.
 
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE_MIT.txt)
 [![Manifest V3](https://img.shields.io/badge/manifest-MV3-4285F4.svg)](manifest.json)
