@@ -14,7 +14,7 @@
 
 ## Install
 
-[<img src="https://img.shields.io/badge/Install%20for%20Chrome-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white" height="40" alt="Install newtab01 for Chrome">](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj)
+[<img src="https://img.shields.io/badge/Chrome%20Web%20Store-Install-green?style=for-the-badge&logo=google-chrome&logoColor=white" height="40" alt="Install newtab01 for Chrome">](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj)
 
 The extension is published on the Chrome Web Store. Click the badge
 above (or use [this direct link](https://chromewebstore.google.com/detail/newtab01/nlecfkdndodablijmfcjbnannkgmpegj))
