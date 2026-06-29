@@ -176,17 +176,26 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
     });
   }
 
-  // Layout items (if not locked) — v0.2.93: read `lockColumns` from
-  // storage at right-click time. Was hardcoded `false` (a "TODO when
-  // integrated" comment), so the menu kept showing "Create new column"
-  // / "Remove folder" / "Move column" / "Remove column" even when the
-  // user had the "锁定列" toggle on in the settings panel. Reading
-  // here (vs at module load) means toggling the setting takes effect
-  // on the next right-click without needing a page reload.
+  // Layout items — v0.2.93: read `lockColumns` from storage at
+  // right-click time. Was hardcoded `false` (a "TODO when integrated"
+  // comment), so the menu kept showing "Create new column" / "Remove
+  // folder" / "Move column" / "Remove column" even when the user had
+  // the "锁定列" toggle on in the settings panel. Reading here (vs at
+  // module load) means toggling the setting takes effect on the next
+  // right-click without needing a page reload.
+  //
+  // v1.1.1: the lockColumns gate now only applies to "Create new
+  //  column" (which actually adds a new column to the layout).
+  //  "Remove from column" (regular folder) is shown regardless of
+  //  lockColumns — removing a folder from a column is the inverse of
+  //  the "add to column" drag, and locking the lockColumns setting
+  //  expresses a desire to prevent column *rearrangement* (add / move
+  //  / split), not extraction. The special-folder "Remove" (see
+  //  SHOW_KEY_MAP block below) was already unlocked in v1.0.30.
   const lock = Number(getSetting('lockColumns')) !== 0;
-  if (!lock) {
-    const coords = getCoords(node.id);
+  const coords = getCoords(node.id);
 
+  if (!lock) {
     items.push(null); // separator
 
     items.push({
@@ -195,59 +204,54 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
         void addColumn([node.id]);
       }),
     });
+  }
 
-    if (coords) {
-      // Move-folder UX was deemed insufficient — the 4 menu items below
-      // (Move folder up / down / left / right) are temporarily hidden
-      // while the interaction is redesigned. The layout-ops (addRow /
-      // getCoords) code paths remain untouched so they can be re-enabled
-      // by removing this comment block.
-      /*
-      if (coords.y > 0) {
-        items.push({
-          label: 'Move folder up',
-          action: () => {
-            addRow(node.id, coords.x, coords.y - 1);
-          },
-        });
-      }
-      if (coords.y < columns[coords.x]!.length - 1) {
-        items.push({
-          label: 'Move folder down',
-          action: () => {
-            addRow(node.id, coords.x, coords.y + 2);
-          },
-        });
-      }
-      if (coords.x > 0) {
-        items.push({
-          label: 'Move folder left',
-          action: () => {
-            addRow(node.id, coords.x - 1);
-          },
-        });
-      }
-      if (coords.x < columns.length - 1) {
-        items.push({
-          label: 'Move folder right',
-          action: () => {
-            addRow(node.id, coords.x + 1);
-          },
-        });
-      }
-      */
-      // v1.0.29: regular (non-special) folder "Remove from column" stays
-      //  gated by lockColumns — moving it out would let users break
-      //  the column structure (removeRow mutates layout) even with
-      //  locking on. The special-folder branch (above) is handled
-      //  outside the lock block in the showKey push below.
+  if (coords) {
+    // Move-folder UX was deemed insufficient — the 4 menu items below
+    // (Move folder up / down / left / right) are temporarily hidden
+    // while the interaction is redesigned. The layout-ops (addRow /
+    // getCoords) code paths remain untouched so they can be re-enabled
+    // by removing this comment block.
+    /*
+    if (coords.y > 0) {
       items.push({
-        label: t('contextMenu.removeFolder'),
-        action: () => withUndo(() => {
-          void removeRow(coords.x, coords.y);
-        }),
+        label: 'Move folder up',
+        action: () => {
+          addRow(node.id, coords.x, coords.y - 1);
+        },
       });
     }
+    if (coords.y < columns[coords.x]!.length - 1) {
+      items.push({
+        label: 'Move folder down',
+        action: () => {
+          addRow(node.id, coords.x, coords.y + 2);
+        },
+      });
+    }
+    if (coords.x > 0) {
+      items.push({
+        label: 'Move folder left',
+        action: () => {
+          addRow(node.id, coords.x - 1);
+        },
+      });
+    }
+    if (coords.x < columns.length - 1) {
+      items.push({
+        label: 'Move folder right',
+        action: () => {
+          addRow(node.id, coords.x + 1);
+        },
+      });
+    }
+    */
+    items.push({
+      label: t('contextMenu.removeFolder'),
+      action: () => withUndo(() => {
+        void removeRow(coords.x, coords.y);
+      }),
+    });
   }
 
   // v1.0.29: special-folder "Remove" is shown regardless of

@@ -229,4 +229,11 @@
 //          - Toast (lib/toast.ts) shown at top-center when
 //            lockColumns rejects a new-column drop (v1.0.31).
 //          - 7 new i18n keys (10 catalogs updated).
-export const VERSION = '1.1.0';
+// v1.1.1: regular-folder "Remove from column" is now shown even
+//          when lockColumns is on. Rationale: removing a folder
+//          from a column is the inverse of dragging it in, and the
+//          user has not expressed a desire to lock the
+//          folder→parent relationship. createNewColumn (which adds
+//          a new column) is still gated by lockColumns. See
+//          context-menu.ts:179-255.
+export const VERSION = '1.1.1';

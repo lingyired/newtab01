@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2026-06-29
+
+### Changed
+- **普通文件夹的「从列中移除文件夹」在锁定列时也允许使用**。v1.0.30 把特殊目录的「移除」从 `lockColumns` 门控中移除（特殊目录只翻 `show*` 设置，不动 layout），但保留了普通文件夹的门控（普通文件夹走 `removeRow` 改 layout）。这次同步把普通文件夹的「移除」也移出门控：把一个文件夹从列里取出是「加入列」的逆向操作（拖拽是「加入」，右键移除是「取出」），锁定列的语义是「禁止列重排（添加/移动/拆分）」，不是「禁止把列成员取回父目录」。新位置：[context-menu.ts:179-255](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/context-menu.ts#L179-L255)。`createNewColumn` 仍受门控（添加列才是真正的 layout 变化）。
+
 ## [1.1.0] - 2026-06-29
 
 ### Added
@@ -17,7 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - **「从列中移除文件夹」对特殊目录需要刷新页面才隐藏的 bug**（v1.0.26）。`chrome.storage.onChanged` 不会因同标签页内的 set 触发自己。修复：设置写入后立即 `renderColumns()` 同步重绘。
-- **锁定列时「从列中移除文件夹」对特殊目录被隐藏**（v1.0.30）。`lockColumns` 门控把整段 layout items（包括特殊目录的 "remove via show*=0"）一并屏蔽。锁定列的语义是**禁止 layout 结构变化**（移动/合并列），但隐藏一个特殊目录只翻 `show*` 设置、不动 layout，逻辑上跟锁定不冲突。[context-menu.ts:253-270](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/context-menu.ts#L253-L270) 把特殊目录的 "Remove folder" 移出 `if (!lock)` 块。普通文件夹的移除仍受锁门控。
+- **锁定列时仍允许对特殊目录使用「从列中移除文件夹」**（v1.0.30）。`lockColumns` 门控把整段 layout items（包括特殊目录的 "remove via show*=0"）一并屏蔽，强迫用户解锁 → 右键 → 重新锁定才能隐藏一个特殊目录。特殊目录的「移除」只翻 `show*` 设置、不动 layout，逻辑上跟锁定不冲突，所以移出 `if (!lock)` 块。普通文件夹的「移除」（v1.1.1 之前调 `removeRow` 改 layout）保持锁门控。
 
 ### i18n
 - **新增 7 个 key**：`showBar` / `showBarDesc` / `showOther` / `showOtherDesc` / `board.empty` / `board.emptyAction` / `toast.lockedColumnsCannotAddNew`，10 个 catalog 全部补齐。
