@@ -15,6 +15,10 @@ const messages = {
   'settings.section.themeOverridesSummary': '現在のテーマの外観（{theme} · {mode}）',
   'settings.section.themeOverridesSummaryDark': 'ダーク',
   'settings.section.themeOverridesSummaryLight': 'ライト',
+  // v0.2.19X: 外観タブ下部の説明。3 段階 CSS カスケード
+  //  （フォントを例に）：カスタムテーマフォント > グローバルフォント > テーマデフォルト。
+  //  グローバルを空にするとテーマデフォルトを使用。
+  'settings.section.fontCascadeHint': 'CSS 優先度（フォントを例に）：カスタムテーマフォント > グローバルフォント > テーマデフォルト。グローバルを空にするとテーマデフォルトを使用します。',
   'settings.field.language': '言語',
   'settings.field.languageDesc': 'newtab01 のインターフェース言語を切り替えます。「ブラウザに従う」は Chrome の言語設定を使用します。対応リストにない言語は英語がフォールバックとして使用されます。',
   'settings.language.auto': 'ブラウザに従う',

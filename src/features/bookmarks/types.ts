@@ -32,16 +32,24 @@ export interface CoordMap {
 
 /**
  * Per-theme per-appearance-mode overrides for the 10 appearance-tab
- * options (font / fontSize / fontWeight / 5 colors / shadowBlur /
- * highlightRound) PLUS the per-theme per-mode `customCss` field
- * introduced in v0.2.102. Other settings (theme, darkMode, width,
- * hPos, align, spacing, columnWidth, ...) are intentionally NOT in
- * this set — they remain global.
+ * options (globalFont / globalFontSize / globalFontWeight / 5 colors /
+ * shadowBlur / highlightRound) PLUS the per-theme per-mode `customCss`
+ * field introduced in v0.2.102. Other settings (theme, darkMode,
+ * width, hPos, align, spacing, columnWidth, ...) are intentionally
+ * NOT in this set — they remain global.
  *
  * Stored in `Settings.themeOverrides[themeId][light|dark]` (nested
- * map). Each entry is a `Partial<Settings>` so the user can override
- * a single key (e.g. just `fontSize`) without restating the other
- * 9. Missing keys fall back to the global `Settings[key]`.
+ * map). Each entry is a `Partial<>` covering the 10 appearance
+ * overrides so the user can override a single key (e.g. just
+ * `globalFontSize`) without restating the other 9. Missing keys
+ * fall back to the global `Settings[key]`.
+ *
+ * v0.2.19X: bucket keys are renamed to match the new global-tier
+ *  Settings keys (`font` → `globalFont` etc.). The keys here are
+ *  storage details — what the user sees on screen is still "字体"
+ *  / "字号" / "字重" — but the rename keeps `PER_THEME_KEYS` and
+ *  `Settings` keys aligned so `Pick<Settings, ...>` can stay in
+ *  the type.
  *
  * `customCss` is the only field in this bucket that does NOT mirror
  * a global `Settings` key — global CSS was removed in v0.2.102 in
@@ -50,15 +58,23 @@ export interface CoordMap {
  * through.
  *
  * Resolution order in `resolveEffectiveSettings` (features/settings/apply.ts):
- *   `themeOverrides[baseTheme][mode]?.[key] ?? Settings[key]`
+ *   `themeOverrides[baseTheme][mode]?.[key] ?? Settings[key] ?? <hardcoded fallback>`
  * (`customCss` is not resolved by that function — it's injected
  * separately by `rebuildUserThemeCss`.)
  */
-export type ThemeModeOverrides = Partial<Pick<Settings,
-  'font' | 'fontSize' | 'fontWeight' |
-  'fontColor' | 'backgroundColor' | 'linkBgColor' | 'highlightColor' | 'highlightFontColor' | 'shadowColor' |
-  'shadowBlur' | 'highlightRound'
->> & {
+export type ThemeModeOverrides = Partial<{
+  globalFont: string;
+  globalFontSize: number;
+  globalFontWeight: number;
+  fontColor: string;
+  backgroundColor: string;
+  linkBgColor: string;
+  highlightColor: string;
+  highlightFontColor: string;
+  shadowColor: string;
+  shadowBlur: number;
+  highlightRound: number;
+}> & {
   /**
    * v0.2.102: per-theme per-mode custom CSS. Replaces the global
    * `Settings.css` field (removed in the same version) so each
@@ -71,9 +87,22 @@ export type ThemeModeOverrides = Partial<Pick<Settings,
 
 /** Settings configuration with defaults */
 export interface Settings {
-  font: string;
-  fontSize: number;
-  fontWeight: number;
+  /**
+   * v0.2.19X: global font-family. Renamed from `font` (which is
+   * now reserved as a per-theme bucket key in `ThemeModeOverrides`).
+   * Cascade in `resolveEffectiveSettings`:
+   *   `themeOverrides[baseTheme][mode]?.globalFont
+   *    ?? Settings.globalFont
+   *    ?? 'Sans-serif'`
+   * Empty string (`''`) is the "no override" sentinel — falls
+   * through to the hardcoded fallback. Same pattern as the 5
+   * palette fields.
+   */
+  globalFont: string;
+  /** v0.2.19X: global font-size (px). Renamed from `fontSize`. */
+  globalFontSize: number;
+  /** v0.2.19X: global font-weight. Renamed from `fontWeight`. */
+  globalFontWeight: number;
   theme: string;
   /**
    * Dark mode preference. Independent from `theme` — the rendered

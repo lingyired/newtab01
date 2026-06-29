@@ -16,6 +16,11 @@ const messages = {
   'settings.section.themeOverridesSummary': 'Apariencia del tema actual ({theme} · {mode})',
   'settings.section.themeOverridesSummaryDark': 'oscuro',
   'settings.section.themeOverridesSummaryLight': 'claro',
+  // v0.2.19X: nota al final de la pestaña Apariencia. Cascada CSS
+  //  de 3 niveles (usando la fuente como ejemplo): anulación del
+  //  tema personalizado > global > tema predeterminado. Deje
+  //  « global » vacío para usar el tema predeterminado.
+  'settings.section.fontCascadeHint': 'Cascada CSS (usando la fuente como ejemplo): anulación del tema personalizado > global > tema predeterminado. Deje « global » vacío para usar el tema predeterminado.',
   // Settings panel — language row
   'settings.field.language': 'Idioma',
   'settings.field.languageDesc': 'Cambia el idioma de la interfaz de newtab01. "Seguir al navegador" usa la preferencia de idioma de Chrome; si el idioma no está en la lista admitida, se usa inglés como respaldo.',

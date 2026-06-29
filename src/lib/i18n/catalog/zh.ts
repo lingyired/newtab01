@@ -21,6 +21,10 @@ const messages = {
   'settings.section.themeOverridesSummary': '当前主题外观（{theme} · {mode}）',
   'settings.section.themeOverridesSummaryDark': '暗',
   'settings.section.themeOverridesSummaryLight': '亮',
+  // v0.2.19X: 外观 tab 底部说明。3 层 CSS 权重（以字体为例）：
+  //  自定义主题字体 > 全局字体 > 主题默认字体。
+  //  全局留空 = 使用主题默认字体。
+  'settings.section.fontCascadeHint': 'CSS 权重顺序（以字体为例）：自定义主题字体 > 全局字体 > 主题默认字体。全局留空则使用主题默认。',
   // Settings panel — language row
   'settings.field.language': '界面语言',
   'settings.field.languageDesc': '切换 newtab01 界面语言。选择「跟随浏览器」会使用 Chrome 的语言设置；不在支持列表时回退到英文。',

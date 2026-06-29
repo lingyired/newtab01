@@ -4,7 +4,7 @@
 // page reload. Also installs a chrome.storage.onChanged listener so other
 // tabs that update settings propagate here live.
 
-import type { Settings } from '../bookmarks/types';
+import type { Settings, ThemeModeOverrides } from '../bookmarks/types';
 import { getSetting, replaceSettings } from '../../lib/storage/settings';
 import { applyTheme } from '../themes/switcher';
 import { resolveLocale, setLocale } from '../../lib/i18n';
@@ -95,7 +95,8 @@ const FONT_COLOR_EXTRA_VARS = ['--newtab-link-color'] as const;
  * silently keeping the stale `dynamic-styles` block.
  */
 const STYLE_KEYS: ReadonlySet<keyof Settings> = new Set<keyof Settings>([
-  'font', 'fontSize', 'fontWeight',
+  // v0.2.19X: font/fontSize/fontWeight renamed to globalFont/...
+  'globalFont', 'globalFontSize', 'globalFontWeight',
   'shadowBlur', 'highlightRound',
   'spacing', 'width', 'hPos', 'autoScale',
   'align',
@@ -147,13 +148,25 @@ function resolveEffectiveSettings(): {
           && window.matchMedia?.('(prefers-color-scheme: dark)').matches)
         ? 'dark'
         : 'light';
-  const allOverrides = (getSetting('themeOverrides') ?? {}) as Record<string, { light?: Partial<Settings>; dark?: Partial<Settings> }>;
-  const overrides = allOverrides[baseTheme]?.[mode] as Partial<Settings> | undefined;
+  const allOverrides = (getSetting('themeOverrides') ?? {}) as Record<string, { light?: ThemeModeOverrides; dark?: ThemeModeOverrides }>;
+  const overrides = allOverrides[baseTheme]?.[mode];
+
+  // v0.2.19X: read the global values straight from storage — no
+  //  `?? default` here because we want 0 / '' to fall through to
+  //  the hardcoded tier (use `||` on the call site).
+  const globalFont = getSetting('globalFont');
+  const globalFontSize = getSetting('globalFontSize');
+  const globalFontWeight = getSetting('globalFontWeight');
 
   return {
-    font: overrides?.font ?? String(getSetting('font') ?? 'Sans-serif'),
-    fontSize: overrides?.fontSize ?? Number(getSetting('fontSize') ?? 16),
-    fontWeight: overrides?.fontWeight ?? Number(getSetting('fontWeight') ?? 400),
+    // 3-tier cascade: perTheme > global > hardcoded fallback.
+    //  `overrides?.globalFont || globalFont || 'Sans-serif'` —
+    //  any falsy value (undefined / '' / 0) short-circuits to the
+    //  next tier. `0` is not a valid font family / size / weight,
+    //  so `||` semantics align with the user's "no override" intent.
+    font: String(overrides?.globalFont || globalFont || 'Sans-serif'),
+    fontSize: Number(overrides?.globalFontSize || globalFontSize || 16),
+    fontWeight: Number(overrides?.globalFontWeight || globalFontWeight || 400),
     fontColor: overrides?.fontColor ?? String(getSetting('fontColor') ?? ''),
     backgroundColor: overrides?.backgroundColor ?? String(getSetting('backgroundColor') ?? ''),
     // v1.0.16: linkBgColor — distinct from backgroundColor (page bg).
