@@ -5,59 +5,22 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.31] - 2026-06-29
+## [1.1.0] - 2026-06-29
 
 ### Added
-- **锁定列时拖拽被拒的 toast 提示**。之前 [drop-handler.ts:162-165](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/drag-drop/drop-handler.ts#L162-L165) 在 `lockColumns=1` 时直接 `return` — 拖拽看起来像无响应。现在改成调 `showToast(t('toast.lockedColumnsCannotAddNew'))`，顶部居中弹一条「列已锁定，无法新建列。如需允许新建列，请到设置面板中关闭「锁定列」开关。」
-- **新增 `lib/toast.ts`**（30 行）：单实例顶部 toast，2.5s 自动消失；走 `--popover` / `--popover-foreground` / `--border` 主题变量，CSS 在 [newtab.css:2097-2132](file:///Users/lingsmbp/Documents/aiwork/newtab01/styles/newtab.css#L2097-L2132)。无新依赖。
-- **i18n 新增 1 个 key**：`toast.lockedColumnsCannotAddNew`，10 个 catalog 全部补齐。
-
-## [1.0.30] - 2026-06-29
+- **特殊目录「从列中移除文件夹」改为触发 `show*` 设置开关**（v1.0.25）。常用网站 / 最近关闭 / 设备 / 应用 这 4 个特殊目录右键点移除后，因为 `verifyColumns()` 会把缺失的 root items 重新加回第一列，文件夹「移除了又跑回来」。现在点击移除 → 直接把对应 `show*` 开关关掉（与设置面板复选框行为一致）。`SHOW_KEY_MAP` 集中映射 7 种内置文件夹（apps / top / recent / closed / devices / bar / other）。书签栏（ID '1'）右键不显示移除项，因为书签栏不可隐藏。普通文件夹的「移除」行为不变（调 `removeRow` 改 layout）。
+- **`showBar` 和 `showOther` 设置**（v1.0.26）。「功能」tab 新增两个复选框，允许隐藏书签栏（ID '1'）和其他收藏夹（ID '2'）根目录。关闭后该列立即隐藏，再次开启可恢复列结构。
+- **Apps 链接支持右键菜单**（v1.0.27）。Apps 是普通 `<a href="chrome://apps">` 链接（不是文件夹），列级 contextmenu handler 在 `tagName === 'A'` 时直接 return，所以一直没有任何右键菜单。现在在 [link.ts:137-169](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/link.ts#L137-L169) 给 Apps 链接单独绑定 contextmenu，提供「移除」项（设置 `showApps=0` 并立即 `renderColumns()` 实时隐藏）。普通书签链接不加重命名菜单（它们没有「列成员」概念）。
+- **空状态提示**（v1.0.28 + v1.0.29）。当所有特殊目录和内置根目录都被关掉时，页面以前只渲染一个 1/N 宽的空白列。现在 [board.ts:63-91](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/board.ts#L63-L91) 检测到空态后追加一个居中提示（「当前没有可显示的内容…打开设置 → 功能开启一些目录，然后从书签栏中拖拽你想要的目录出来」）+ 一个「显示书签栏」按钮（点击 = `updateSetting('showBar', 1)` + `location.reload()`）。空态触发条件：扫描渲染后 `#main > li`，所有 `data-type` 都是 `'empty'`（覆盖 layout 完全空 / layout 有列但每列里文件夹全空 两种实际场景）。`renderLink` / `renderFolder` 写 `li.dataset.type = node.type` 让扫描器能区分真实节点与 placeholder。
+- **锁定列时拖拽被拒的 toast 提示**（v1.0.31）。之前 `drop-handler.ts` 在 `lockColumns=1` 时直接 `return` — 拖拽看起来像无响应。现在改成调 `showToast(t('toast.lockedColumnsCannotAddNew'))`，顶部居中弹一条「列已锁定，无法新建列。如需允许新建列，请到设置面板中关闭「锁定列」开关。」
+- **新增 `lib/toast.ts`**（v1.0.31，30 行）：单实例顶部 toast，2.5s 自动消失；走 `--popover` / `--popover-foreground` / `--border` 主题变量，CSS 在 [newtab.css:2097-2132](file:///Users/lingsmbp/Documents/aiwork/newtab01/styles/newtab.css#L2097-L2132)。无新依赖。
 
 ### Fixed
-- **锁定列时「从列中移除文件夹」对特殊目录被隐藏**。v0.2.93 引入的 lockColumns 门控把整段 layout items（包括特殊目录的 "remove via show*=0"）一并屏蔽。锁定列的语义是**禁止 layout 结构变化**（移动/合并列），但隐藏一个特殊目录只翻 `show*` 设置、不动 layout，逻辑上跟锁定不冲突。[context-menu.ts:253-270](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/context-menu.ts#L253-L270) 把特殊目录的 "Remove folder" 移出 `if (!lock)` 块。普通文件夹的"移除"（调 `removeRow` 改 layout）保持锁门控。
+- **「从列中移除文件夹」对特殊目录需要刷新页面才隐藏的 bug**（v1.0.26）。`chrome.storage.onChanged` 不会因同标签页内的 set 触发自己。修复：设置写入后立即 `renderColumns()` 同步重绘。
+- **锁定列时「从列中移除文件夹」对特殊目录被隐藏**（v1.0.30）。`lockColumns` 门控把整段 layout items（包括特殊目录的 "remove via show*=0"）一并屏蔽。锁定列的语义是**禁止 layout 结构变化**（移动/合并列），但隐藏一个特殊目录只翻 `show*` 设置、不动 layout，逻辑上跟锁定不冲突。[context-menu.ts:253-270](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/context-menu.ts#L253-L270) 把特殊目录的 "Remove folder" 移出 `if (!lock)` 块。普通文件夹的移除仍受锁门控。
 
-## [1.0.29] - 2026-06-29
-
-### Fixed
-- **空态提示触发条件过窄**。v1.0.28 的检查是 `renderedColumns === [[]]`，只在 layout 完全空时触发。实际大多数"全空"情况是 layout 里还有列，但每列里的文件夹本身是空的（`children.length === 0` → folder.ts:243 渲染 `< Empty >` placeholder）。现在 [board.ts:76-83](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/board.ts#L76-L83) 改为扫描渲染后的 `#main > li`，只要所有 li 的 `data-type` 都是 `'empty'`（即全是 placeholder），就显示空态。覆盖三种实际场景：
-  1. layout 完全空（v1.0.28 已覆盖）
-  2. layout 有列，但每列里所有文件夹都为空（**新覆盖**）
-  3. 特殊目录本身有 type='top'/'recent' 等（不会被误判为空，因为它们的 li 上 `data-type` 是 type 字段而非 'empty'）
-- **`data-type` 写入**：[link.ts:17-24](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/link.ts#L17-L24) 和 [folder.ts:62-68](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/folder.ts#L62-L68) 写入 `li.dataset.type = node.type`（仅在 `node.type` 存在时），让空态扫描器能区分真实节点与 placeholder。
-
-### Added
-- v1.0.28 的空态提示文案（`board.empty`）末尾追加「然后从书签栏中拖拽你想要的目录出来」（zh），10 个 catalog 同步更新。
-
-## [1.0.28] - 2026-06-29
-
-### Added
-- **空状态提示**。当所有特殊目录和内置根目录（书签栏 / 其他收藏夹）都被关掉时，页面以前只渲染一个 1/N 宽的空白列。现在 [board.ts:63-91](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/board.ts#L63-L91) 检测到空态后追加一个居中提示（"当前没有可显示的内容…打开设置 → 功能开启一些目录"）+ 一个"显示书签栏"按钮（点击 = `updateSetting('showBar', 1)` + `location.reload()`）。零新文件，零新依赖，CSS 走现有 `--primary` / `--accent` 等主题变量，自动适配深浅色与所有 4 套内置主题。
-- **i18n 新增 2 个 key**：`board.empty` / `board.emptyAction`，10 个 catalog 全部补齐。
-
-## [1.0.27] - 2026-06-29
-
-### Added
-- **Apps 链接支持右键菜单**。Apps 是一个普通 `<a href="chrome://apps">` 链接（不是文件夹），但因为 [column.ts:138-149](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/column.ts#L138-L149) 的列级 contextmenu handler 在 `eventTarget.tagName === 'A'` 时直接 return，所以一直没有任何右键菜单。现在在 [link.ts:137-169](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/link.ts#L137-L169) 给 Apps 链接单独绑定 contextmenu，提供「移除」项（设置 `showApps=0` 并立即 `renderColumns()` 实时隐藏）。
-- 普通书签链接**不**会加右键菜单（它们没有"列成员"概念，菜单会空）。如果未来新增"通过 show* 控制可见性"的 link 节点，只需在 `link.ts` 加一个 if 分支。
-
-## [1.0.26] - 2026-06-29
-
-### Fixed
-- **「从列中移除文件夹」后需要刷新页面才隐藏的问题**。v1.0.25 把特殊文件夹的移除改为更新 `show*` 设置（依赖 `chrome.storage.onChanged` 触发重渲染），但 `chrome.storage.onChanged` 不会因同标签页内的 set 触发自己 —— 用户需要刷新页面才能看到效果。现在改为设置写入后立即 `renderColumns()` 同步重绘，立即隐藏。
-- **右键菜单逻辑简化**：之前 v1.0.25 给书签栏（ID '1'）做特殊处理、其它特殊文件夹走 `SHOW_KEY_MAP`；现在 SHOW_KEY_MAP 包含了所有内置根目录（'1' → `showBar`、'2' → `showOther`），逻辑统一。右键"从列中移除"对 7 种内置文件夹都生效（apps/top/recent/closed/devices/bar/other）。
-
-### Added
-- **新增 `showBar` 和 `showOther` 设置**：允许在「功能」tab 控制书签栏（Chrome 内置的 ID '1' 根目录）和其他收藏夹（ID '2' 根目录）的显示。关闭后该列立即隐藏，再次开启可恢复列结构。
-- **i18n 新增 4 个键**：`settings.field.showBar` / `showBarDesc` / `showOther` / `showOtherDesc`，10 个 catalog 全部补齐翻译。
-
-## [1.0.25] - 2026-06-29
-
-### Fixed
-- **特殊文件夹右键「从列中移除文件夹」行为修复**。之前特殊文件夹（常用网站 / 最近添加 / 最近关闭 / 其他设备 / 应用）右键点「从列中移除文件夹」后，因为 `verifyColumns()` 会把缺失的 root items 重新加回第一列，导致文件夹"移除了又跑回来"。现在改为：
-  - **特殊文件夹**：点击移除 → 直接把设置中对应的 `show*` 开关关掉（即隐藏），与设置面板的复选框行为一致。
-  - **书签栏（ID '1'）**：右键菜单不再显示「从列中移除文件夹」选项，因为书签栏不能被隐藏。
-  - **普通书签文件夹**：保持原有行为（从列中移除，回到父文件夹中）。
+### i18n
+- **新增 7 个 key**：`showBar` / `showBarDesc` / `showOther` / `showOtherDesc` / `board.empty` / `board.emptyAction` / `toast.lockedColumnsCannotAddNew`，10 个 catalog 全部补齐。
 
 ## [1.0.24] - 2026-06-29
 

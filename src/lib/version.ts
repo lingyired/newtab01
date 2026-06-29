@@ -207,4 +207,26 @@
 //          `revertBtn.style.display = 'none'`. Fix: add
 //          refreshRevertVisibility() to both the color and
 //          non-color branches of the global revert handler.
-export const VERSION = '1.0.31';
+// v1.1.0: minor release consolidating v1.0.25 → v1.0.31.
+//          - Special-folder "Remove folder" right-click now toggles
+//            the matching show* setting instead of trying to move
+//            the folder (v1.0.25). SHOW_KEY_MAP in special-folders.ts.
+//          - "Remove folder" takes effect immediately — explicit
+//            renderColumns() after updateSetting since
+//            chrome.storage.onChanged doesn't fire on the same tab
+//            (v1.0.26).
+//          - New `showBar` / `showOther` settings to hide the
+//            built-in bookmark bar / other bookmarks roots
+//            (v1.0.26).
+//          - Apps link gets its own right-click menu with a "Remove"
+//            option (v1.0.27).
+//          - Empty-state UI when all special folders + root folders
+//            are hidden — centered hint + "Show bookmark bar" button
+//            (v1.0.28). Trigger widened to cover empty folders inside
+//            non-empty columns (v1.0.29) by reading li.dataset.type.
+//          - "Remove folder" for special folders is no longer hidden
+//            by lockColumns (v1.0.30).
+//          - Toast (lib/toast.ts) shown at top-center when
+//            lockColumns rejects a new-column drop (v1.0.31).
+//          - 7 new i18n keys (10 catalogs updated).
+export const VERSION = '1.1.0';
