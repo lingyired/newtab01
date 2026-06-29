@@ -168,4 +168,13 @@
 //          globalFontWeight in all 10 catalogs. Per-theme <details>
 //          rows keep the bare settings.field.font / fontSize /
 //          fontWeight labels; descriptions stay shared.
-export const VERSION = '1.0.21';
+// v1.0.22: bumped default values for globalFont / globalFontSize /
+//          globalFontWeight from '' / 0 / 0 to 'Sans-serif' / 16 / 400
+//          (matching the hardcoded fallbacks in resolveEffectiveSettings)
+//          so the global inputs show a real value by default. The `||`
+//          cascade still treats '' / 0 as "no override" so clearing
+//          the input keeps meaning. One-time migration in initSettings
+//          fills empty / 0 values for v1.0.20/21 upgraders. Per-theme
+//          <details> inputs automatically follow (they cascade to the
+//          global value when no override is set).
+export const VERSION = '1.0.22';

@@ -9,23 +9,29 @@ import * as debug from '../debug';
 const SETTINGS_KEY = 'settings';
 
 const defaults: Settings = {
-  // v0.2.19X: rename `font` → `globalFont`. The value still defaults
-  //  to 'Sans-serif' for backward compatibility (existing users with
-  //  the old field in storage keep their font via the hardcoded
-  //  fallback in `resolveEffectiveSettings`). Empty string is the
-  //  "no override" sentinel — see the Settings.globalFont docstring.
-  globalFont: '',
-  // v0.2.19X: rename `fontSize` → `globalFontSize`. Default 0 = no
-  //  override (fall through to hardcoded 16px in resolveEffectiveSettings).
-  //  v0.2.98 originally set 16 as the default but the new design
-  //  intentionally uses empty/0 so the user can distinguish "I want
-  //  a custom size" from "I'm fine with the hardcoded default" —
-  //  `coerceToSettingType` and the cascade use `||` (not `??`) so
-  //  0/'' correctly falls through.
-  globalFontSize: 0,
-  // v0.2.19X: rename `fontWeight` → `globalFontWeight`. Default 0
-  //  = no override (fall through to hardcoded 400).
-  globalFontWeight: 0,
+  // v0.2.19X: rename `font` → `globalFont`. Default 'Sans-serif'
+  //  matches the hardcoded fallback in `resolveEffectiveSettings` so
+  //  the global input shows the actual default value (instead of
+  //  empty + a placeholder hint). Empty string is still the "no
+  //  override" sentinel — the cascade uses `||` so an empty value
+  //  falls through to 'Sans-serif' (same hardcoded fallback), which
+  //  means the visible rendering is identical. Migration in
+  //  `initSettings` fills pre-v0.2.19X-era empty values with the
+  //  hardcoded defaults so upgraders see the same UI as new users.
+  globalFont: 'Sans-serif',
+  // v0.2.19X: rename `fontSize` → `globalFontSize`. Default 16
+  //  matches the hardcoded fallback in `resolveEffectiveSettings`.
+  //  The `||` cascade in the resolver treats 0 the same as unset
+  //  (falls through to 16) so the user can still clear the input
+  //  to mean "use the theme default". v0.2.98 originally set 16
+  //  as the default; v0.2.19X reverted to empty/0 briefly, then
+  //  v0.2.22X settled on 16 here so the input shows a real value
+  //  (matching user feedback: "也要加上默认值吧，不要留空").
+  globalFontSize: 16,
+  // v0.2.19X: rename `fontWeight` → `globalFontWeight`. Default
+  //  400 matches the hardcoded fallback. Same `||` cascade
+  //  semantics as globalFontSize.
+  globalFontWeight: 400,
   theme: 'astrovista',
   darkMode: 'system',
   // The five palette fields are intentionally empty strings: `applyUserColorOverride`
@@ -299,6 +305,37 @@ export async function initSettings(): Promise<Settings> {
     if (renamedFont) {
       await setSync(SETTINGS_KEY, merged);
       debug.log('settings', 'migrate font → globalFont (legacy rename)', {
+        globalFont: merged.globalFont,
+        globalFontSize: merged.globalFontSize,
+        globalFontWeight: merged.globalFontWeight,
+      });
+    }
+    // v0.2.22X: previous defaults for the 3 global font fields
+    //  were '' / 0 / 0 (matching the "no override" sentinel for
+    //  the cascade). New defaults are 'Sans-serif' / 16 / 400 to
+    //  match the hardcoded fallbacks. Migration: fill empty / 0
+    //  values with the hardcoded defaults so upgraders from
+    //  v1.0.20/21 see the same UI as new users (inputs not empty
+    //  by default). The cascade still treats '' / 0 as "no override"
+    //  for users who deliberately clear the input after upgrade —
+    //  the migration is one-time and only acts on the existing
+    //  stored value, not on subsequent user edits.
+    let filledDefaults = false;
+    if (merged.globalFont === '') {
+      merged.globalFont = 'Sans-serif';
+      filledDefaults = true;
+    }
+    if (merged.globalFontSize === 0) {
+      merged.globalFontSize = 16;
+      filledDefaults = true;
+    }
+    if (merged.globalFontWeight === 0) {
+      merged.globalFontWeight = 400;
+      filledDefaults = true;
+    }
+    if (filledDefaults) {
+      await setSync(SETTINGS_KEY, merged);
+      debug.log('settings', 'migrate font defaults → hardcoded fallbacks', {
         globalFont: merged.globalFont,
         globalFontSize: merged.globalFontSize,
         globalFontWeight: merged.globalFontWeight,

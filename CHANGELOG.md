@@ -5,6 +5,15 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.22] - 2026-06-29
+
+### Changed
+- **全局字体 / 字号 / 字重的默认值从 `''` / `0` / `0` 改成 `'Sans-serif'` / `16` / `400`**。用户反馈"也要加上默认值吧，不要留空"。新默认值跟 `resolveEffectiveSettings` 里的硬编码 fallback 一致，所以渲染结果不变，但 UI input 现在显示真实值，不再空白 + placeholder。
+  - **`||` cascade 行为不变**：清空 input（变回 `''` / `0`）仍然 fall through 到硬编码 fallback，保留"不覆盖主题默认"的语义。
+  - **per-theme `<details>` 里的 input 自动跟着非空**：因为 per-theme input 走 `readPerThemeValue` cascade，global 是非空时自然显示 global 值。
+  - **`createGlobalFontInput` 移除 `'Sans-serif'` placeholder**：现在默认值就是 `'Sans-serif'`，保留 placeholder 会让 input 同时显示"值"和"灰色占位"，视觉重复。
+  - **storage 迁移**：`initSettings` 里加了一段，把 v1.0.20/21 用户空 / 0 的旧值填上新默认值（一次性），让升级用户体验跟新装用户一致。
+
 ## [1.0.21] - 2026-06-29
 
 ### Fixed
