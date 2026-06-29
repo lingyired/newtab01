@@ -996,6 +996,15 @@ function createRow(
       if (input instanceof HTMLInputElement && input.type === 'color') {
         void updateSetting(key, '' as Settings[typeof key]);
         input.value = resolveColorForInput(key, '');
+        // v0.2.24X: refresh the revert button's visibility. The early
+        //  `return` here skips the `refreshRevertVisibility()` call at
+        //  the bottom of the handler; without this, the button would
+        //  stay visible (no `change` / `input` event fires from
+        //  programmatic value assignment). The `refreshInputsFromSettings`
+        //  path also re-evaluates revert buttons for color inputs on
+        //  storage.onChanged, but that's cross-tab only — same-tab
+        //  reverts need the explicit call here.
+        refreshRevertVisibility();
         return;
       }
       if (input instanceof HTMLInputElement) {
@@ -1010,6 +1019,21 @@ function createRow(
         input.value = String(defaultVal);
       }
       saveSetting(key, scope);
+      // v0.2.24X: refresh the revert button's visibility. `saveSetting`
+      //  updates the DOM and storage but doesn't fire a `change` /
+      //  `input` event (programmatic value assignment), so the
+      //  per-input `refreshRevertVisibility` listeners attached above
+      //  don't get a chance to run. Without this call, the button
+      //  stays visible after revert (matches the bug report: the
+      //  font / fontSize / fontWeight revert buttons in the
+      //  appearance-tab main flow didn't disappear on click). The
+      //  per-theme <details> rows already had an explicit
+      //  `revertBtn.style.display = 'none'` above, and the 5 palette
+      //  color fields get re-evaluated via the `refreshInputsFromSettings`
+      //  storage.onChanged path — so this only affects non-color
+      //  global inputs (the 3 font rows being the only such rows
+      //  in v0.2.24X, but the fix is generic).
+      refreshRevertVisibility();
     });
 
     inputWrap.appendChild(input);

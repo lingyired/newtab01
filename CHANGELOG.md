@@ -5,6 +5,15 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.24] - 2026-06-29
+
+### Fixed
+- **外观 tab 全局字体回退按钮不消失 bug**。`createRow` 里全局 revert 处理函数（color / checkbox / number / text / select / textarea 路径）只更新了 input value 和 storage，但没调 `refreshRevertVisibility()` 重算 revert 按钮的可见性。`input.value = ...` 之类的程序化赋值不触发 `change` / `input` 事件，所以绑在 input 上的 `refreshRevertVisibility` listener 也不会跑。
+  - **5 个 palette color 字段没这个 bug**：因为 `refreshInputsFromSettings` 在 `storage.onChanged` 时显式重算 color 输入的 revert 按钮可见性。
+  - **per-theme 字段没这个 bug**：`clearPerThemeValue` 路径里直接 `revertBtn.style.display = 'none'` 写死。
+  - **全局 font / fontSize / fontWeight（这次受影响）**：两条路径都不在上述两个机制里，所以按钮一直显示。
+  - 修复：在全局 revert handler 两条分支末尾都加一行 `refreshRevertVisibility()`。Color 分支加了（line 1004）因为它有早 `return`；非 color 分支在 `saveSetting` 之后加（line 1022）。修复通用，理论上所有「未来的非 color 全局字段」也都能 work。
+
 ## [1.0.23] - 2026-06-29
 
 ### Changed
