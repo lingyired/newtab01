@@ -5,6 +5,17 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.19] - 2026-06-29
+
+### Fixed
+- **popup 界面的「Open Split」按钮文案走 i18n**。原来 `src/popup/app.ts:127` 的 `splitBtn.textContent = 'Open Split'` 是裸英文硬编码，切到任何非英文 locale 仍然是英文。改成 `t('popup.openSplit')` 后跟 popup 其他字符串（tab 标签、layout picker、empty state）一样跟随用户 locale 切换，中文「打开分屏」、日文「分割して開く」等。复用了 v0.2.117 已有的 `popup.openSplit` key（10 个 catalog 全部已有翻译，无需新增 MessageKey）。
+
+### Changed
+- **单 URL 时跳转到该 URL，不再走 split view 包装**。两种入口都覆盖：
+  - **目录动作图标（folder-actions-handler.ts → openSplit）**：picker 之后如果只选到 1 个 URL，直接走 `openUrlsInNewtabMode(pickedUrls, newtabMode)` 用标准 newtab 模式打开（当前 tab / 前景 / 后台，跟用户设置走），不再调 `splitManager.open`。原来这个路径会创建 1 个 iframe 的「半空」grid。
+  - **split view 页面（split-view.ts → renderSplitView）**：作为兜底，如果 split view URL 被外部链接 / popup / 旧收藏以 1 个有效 URL 形式打开，`window.location.replace(url)` 把当前 tab 跳转到该 URL。`replace` 避免用户按「后退」回到已废的 split view 页面。修掉「Invalid split view configuration: need 2-4 valid URLs」提示的根因。
+- **目录三个动作图标（批量打开 / Group 打开 / 分屏打开）支持 Ctrl/Cmd + 鼠标左键 → 后台新标签页**。改 `folder-actions-handler.ts → resolveNewtabMode` 增加 `e.ctrlKey || e.metaKey` 分支，强制返回 newtab=2（后台）。原来只有中键 (`event.button === 1`) 走后台路径，Ctrl/Cmd + 左键会被当作普通点击落到用户的 `newtab` 设置（可能 0 / 1 / 2）。这次统一让 Ctrl/Cmd + 左键和中键行为一致，跟普通 `<a target="_blank">` 链接的浏览器原生行为对齐。`click` 事件本身就会因为 modifier key 而触发，无需在 `folder-actions.ts` 里再加 listener。
+
 ## [1.0.18] - 2026-07-07
 
 ### Fixed

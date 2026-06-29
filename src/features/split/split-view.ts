@@ -200,6 +200,20 @@ function createFrameToolbar(url: string, iframe: HTMLIFrameElement, slot: HTMLEl
 export function renderSplitView(urls: string[], layout: SplitLayout): HTMLElement {
   const validUrls = validateUrls(urls);
 
+  // v0.2.18X: 1 valid URL — split view with one iframe is meaningless.
+  // Navigate the current tab to the URL directly so the user gets a
+  // normal page instead of a half-empty grid. `replace` so the user
+  // can't "back" into the broken split view. Defence in depth — the
+  // folder-action handler already short-circuits 1-URL cases, but
+  // the split view may be opened via the popup or an external URL
+  // hash and should still degrade gracefully.
+  if (validUrls.length === 1) {
+    const singleUrl = validUrls[0]!;
+    window.location.replace(singleUrl);
+    const placeholder = document.createElement('div');
+    return placeholder;
+  }
+
   if (!validateLayout(validUrls, layout.mode)) {
     const error = document.createElement('div');
     error.style.cssText = `
