@@ -159,4 +159,13 @@
 //          new MessageKey settings.section.fontCascadeHint added to all
 //          10 catalogs with explanatory hint at the bottom of the
 //          appearance tab.
-export const VERSION = '1.0.20';
+// v1.0.21: actually-fixed bug from v1.0.20 — the second context-menu
+//          `SearchReplace` for 'Remove folder' silently failed
+//          (indentation mismatch: file had 8+10 spaces, pattern was
+//          6+8). Re-applied manually. Also added 'Global' prefix to
+//          the three new global font row labels — new MessageKeys
+//          settings.field.globalFont / globalFontSize /
+//          globalFontWeight in all 10 catalogs. Per-theme <details>
+//          rows keep the bare settings.field.font / fontSize /
+//          fontWeight labels; descriptions stay shared.
+export const VERSION = '1.0.21';

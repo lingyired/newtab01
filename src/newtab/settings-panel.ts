@@ -1599,29 +1599,32 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   //  hint at the bottom of the tab — see the `fontCascadeHint`
   //  paragraph appended after `<details>` below.
   //
-  //  The labels and descriptions reuse the existing
-  //  `settings.field.font` / `fontSize` / `fontWeight` keys (the
-  //  same text describes both the global row and the per-theme
-  //  row in the `<details>`; the cascade hint disambiguates them).
-  //  Defaults from `getDefaults()` are empty / 0 — the
+  //  Labels use the dedicated `settings.field.globalFont` /
+  //  `globalFontSize` / `globalFontWeight` keys (the bare
+  //  `settings.field.font` etc. are reused by the per-theme
+  //  rows in `<details>`, which have their own context — so a
+  //  「全局」prefix disambiguates the two tiers in the UI).
+  //  Descriptions are shared (`settings.field.fontDesc` etc.) —
+  //  the cascade hint at the bottom makes the tier difference
+  //  explicit. Defaults from `getDefaults()` are empty / 0 — the
   //  `resolveEffectiveSettings` cascade in apply.ts treats those
   //  as "no override" (falls through to the hardcoded fallback).
   //  The placeholders show the hardcoded defaults so the user
   //  sees what they're overriding.
   container.appendChild(createRow(
-    t('settings.field.font'),
+    t('settings.field.globalFont'),
     createGlobalFontInput(),
     'globalFont',
     t('settings.field.fontDesc'),
   ));
   container.appendChild(createRow(
-    t('settings.field.fontSize'),
+    t('settings.field.globalFontSize'),
     createNumberInput('globalFontSize', '0.1'),
     'globalFontSize',
     t('settings.field.fontSizeDesc'),
   ));
   container.appendChild(createRow(
-    t('settings.field.fontWeight'),
+    t('settings.field.globalFontWeight'),
     createNumberInput('globalFontWeight', '0.1'),
     'globalFontWeight',
     t('settings.field.fontWeightDesc'),

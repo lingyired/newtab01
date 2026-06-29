@@ -60,6 +60,12 @@ const messages = {
   'settings.field.fontSizeDesc': 'Schriftgröße der Lesezeichen-Links (in Pixeln).',
   'settings.field.fontWeight': 'Schriftgewicht',
   'settings.field.fontWeightDesc': 'Schriftgewicht der Lesezeichen-Links. Übliche Werte: 400 normal, 500 medium, 600 semibold, 700 bold.',
+  // v0.2.19X: Labels der globalen Ebene mit „Global"-Präfix,
+  //  um sie von den per-theme-<details>-Zeilen darunter zu
+  //  unterscheiden.
+  'settings.field.globalFont': 'Globale Schriftart',
+  'settings.field.globalFontSize': 'Globale Schriftgröße',
+  'settings.field.globalFontWeight': 'Globales Schriftgewicht',
   'settings.field.fontColor': 'Textfarbe',
   'settings.field.fontColorDesc': 'Farbe des Lesezeichen-Link-Texts im Standardzustand.',
   'settings.field.backgroundColor': 'Hintergrundfarbe des neuen Tabs',

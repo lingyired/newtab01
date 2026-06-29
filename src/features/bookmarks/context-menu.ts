@@ -235,7 +235,7 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
       }
       */
       items.push({
-        label: 'Remove folder',
+        label: t('contextMenu.removeFolder'),
         action: () => withUndo(() => {
           void removeRow(coords.x, coords.y);
         }),

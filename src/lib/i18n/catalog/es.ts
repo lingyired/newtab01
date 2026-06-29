@@ -64,6 +64,11 @@ const messages = {
   'settings.field.fontSizeDesc': 'Tamaño de fuente de los enlaces de marcadores (en píxeles).',
   'settings.field.fontWeight': 'Peso de fuente',
   'settings.field.fontWeightDesc': 'Peso de la fuente de los enlaces de marcadores. Valores comunes: 400 normal, 500 medio, 600 seminegrita, 700 negrita.',
+  // v0.2.19X: etiquetas del nivel global con el prefijo «Global»,
+  //  para distinguirlas de las filas de `<details>` por tema.
+  'settings.field.globalFont': 'Fuente global',
+  'settings.field.globalFontSize': 'Tamaño de fuente global',
+  'settings.field.globalFontWeight': 'Peso de fuente global',
   'settings.field.fontColor': 'Color de texto',
   'settings.field.fontColorDesc': 'Color del texto del enlace de marcador en su estado predeterminado.',
   'settings.field.backgroundColor': 'Color de fondo de la nueva pestaña',

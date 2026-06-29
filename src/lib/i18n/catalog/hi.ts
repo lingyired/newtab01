@@ -60,6 +60,12 @@ const messages = {
   'settings.field.fontSizeDesc': 'बुकमार्क लिंक का फ़ॉन्ट आकार (पिक्सेल में)।',
   'settings.field.fontWeight': 'फ़ॉन्ट वज़न',
   'settings.field.fontWeightDesc': 'बुकमार्क लिंक का फ़ॉन्ट वज़न। सामान्य मान: 400 normal, 500 medium, 600 semibold, 700 bold।',
+  // v0.2.19X: ग्लोबल स्तर के लेबल «ग्लोबल» उपसर्ग के साथ,
+  //  ताकि उन्हें थीम-प्रति `<details>` पंक्तियों से अलग
+  //  पहचाना जा सके।
+  'settings.field.globalFont': 'ग्लोबल फ़ॉन्ट',
+  'settings.field.globalFontSize': 'ग्लोबल फ़ॉन्ट आकार',
+  'settings.field.globalFontWeight': 'ग्लोबल फ़ॉन्ट वज़न',
   'settings.field.fontColor': 'टेक्स्ट रंग',
   'settings.field.fontColorDesc': 'डिफ़ॉल्ट स्थिति में बुकमार्क लिंक टेक्स्ट का रंग।',
   'settings.field.backgroundColor': 'नए टैब की पृष्ठभूमि का रंग',

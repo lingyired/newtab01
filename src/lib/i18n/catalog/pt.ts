@@ -60,6 +60,11 @@ const messages = {
   'settings.field.fontSizeDesc': 'Tamanho da fonte dos links de favoritos (em pixels).',
   'settings.field.fontWeight': 'Peso da fonte',
   'settings.field.fontWeightDesc': 'Peso da fonte dos links de favoritos. Valores comuns: 400 normal, 500 medium, 600 semibold, 700 bold.',
+  // v0.2.19X: rótulos do nível global com o prefixo «Global»,
+  //  para distingui-los das linhas do `<details>` por tema.
+  'settings.field.globalFont': 'Fonte global',
+  'settings.field.globalFontSize': 'Tamanho da fonte global',
+  'settings.field.globalFontWeight': 'Peso da fonte global',
   'settings.field.fontColor': 'Cor do texto',
   'settings.field.fontColorDesc': 'Cor do texto do link de favorito em seu estado padrão.',
   'settings.field.backgroundColor': 'Cor de fundo da nova aba',
