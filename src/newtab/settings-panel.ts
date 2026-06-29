@@ -1317,19 +1317,16 @@ function createTextInput(key: keyof Settings, scope: InputScope = 'global'): HTM
 
 /**
  * v0.2.19X: build the global-font text input. Wraps the standard
- * `createTextInput` so we can add a placeholder that hints at the
- * hardcoded fallback ('Sans-serif') — when the field is empty, the
- * cascade in `resolveEffectiveSettings` falls through to this default,
- * but a plain empty `<input>` doesn't communicate that. The placeholder
- * disappears as soon as the user types anything (browser-native UX).
- *
- * The default value (`''`) is already wired into the input via
- * `createTextInput`'s `getSetting` call — no further work needed.
+ * `createTextInput`. v0.2.22X removed the `'Sans-serif'` placeholder
+ * because the default value (`'Sans-serif'` from `getDefaults()`)
+ * already populates the input — keeping both would show the same
+ * string twice (once as the value, once as a greyed-out placeholder
+ * that only appears when the user clears the input), which is
+ * confusing. The cascade hint at the bottom of the appearance tab
+ * already explains "leave global empty to use the theme default".
  */
 function createGlobalFontInput(): HTMLInputElement {
-  const input = createTextInput('globalFont');
-  input.placeholder = 'Sans-serif';
-  return input;
+  return createTextInput('globalFont');
 }
 
 /**
