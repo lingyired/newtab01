@@ -190,4 +190,21 @@
 //          settings.section.fontCascadeHint MessageKeys removed (10
 //          catalogs reverted). Storage migration: copy globalFont*
 //          → font* on upgrade from v1.0.20-22.
-export const VERSION = '1.0.23';
+// v1.0.24: bug — the 3 global font rows (字体 / 字号 / 字重) in
+//          the appearance tab main flow had a ↩ revert button that
+//          didn't disappear after the user clicked it. Root cause:
+//          the global revert handler in createRow sets the input
+//          value + persists to storage but never calls
+//          refreshRevertVisibility(), so the button visibility
+//          stayed as the user had last set it (i.e., visible).
+//          Programmatic value assignment doesn't fire change /
+//          input events, so the per-input refreshRevertVisibility
+//          listeners attached to the input don't run. Color inputs
+//          were unaffected because refreshInputsFromSettings
+//          re-evaluates their revert buttons on storage.onChanged;
+//          per-theme <details> rows were unaffected because the
+//          per-theme branch explicitly sets
+//          `revertBtn.style.display = 'none'`. Fix: add
+//          refreshRevertVisibility() to both the color and
+//          non-color branches of the global revert handler.
+export const VERSION = '1.0.24';
