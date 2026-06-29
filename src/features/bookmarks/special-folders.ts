@@ -15,13 +15,24 @@ import {
 /** Map from special folder ID to its `show*` setting key.
  *  Hoisted from `layout-ops.ts` in v0.2.94 so board.ts can use
  *  `isSpecialVisible` without creating a layout-ops → board import
- *  cycle. board.ts and column.ts both import from this module. */
+ *  cycle. board.ts and column.ts both import from this module.
+ *
+ *  v1.0.25: extended to cover the two built-in Chrome root
+ *  folders ('1' = bookmark bar, '2' = other bookmarks). Prior
+ *  versions treated these as immutable roots and the right-click
+ *  "Remove folder" had no effect on them (verifyColumns would
+ *  re-add them to the first column on the next saveLayout). The
+ *  context menu now uses this map to drive `updateSetting(key, 0)`
+ *  for the user's chosen show* field, so the column disappears
+ *  immediately. */
 export const SHOW_KEY_MAP: Record<string, keyof Settings> = {
   apps: 'showApps',
   top: 'showTop',
   recent: 'showRecent',
   closed: 'showClosed',
   devices: 'showDevices',
+  '1': 'showBar',
+  '2': 'showOther',
 };
 
 /** True when a special folder ID is currently visible per the user's

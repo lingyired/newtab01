@@ -59,6 +59,13 @@ export function renderFolder(
   const li = document.createElement('li');
   li.dataset.nodeId = node.id;
   li.dataset.depth = String(depth);
+  // v1.0.29: mirror renderLink so the empty-state scanner in
+  //  board.ts sees a consistent `data-type` for both folders and
+  //  links. BookmarkNode.type is undefined for regular folders;
+  //  we skip the assignment in that case.
+  if (node.type) {
+    li.dataset.type = node.type;
+  }
 
   const header = document.createElement('a');
   header.classList.add('folder');

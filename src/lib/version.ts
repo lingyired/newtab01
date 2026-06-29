@@ -207,4 +207,4 @@
 //          `revertBtn.style.display = 'none'`. Fix: add
 //          refreshRevertVisibility() to both the color and
 //          non-color branches of the global revert handler.
-export const VERSION = '1.0.24';
+export const VERSION = '1.0.31';

@@ -143,6 +143,14 @@ export interface Settings {
   showClosed: number;
   showDevices: number;
   showRoot: number;
+  // v1.0.25: visibility toggles for the two built-in Chrome root
+  //  folders (bookmark bar id '1' and other bookmarks id '2'). Prior
+  //  versions always rendered them as top-level columns; users can
+  //  now hide either or both via settings or the column context
+  //  menu's "Remove folder" item. Verified by SHOW_KEY_MAP in
+  //  features/bookmarks/special-folders.ts.
+  showBar: number;
+  showOther: number;
   newtab: number;
   rememberOpen: number;
   autoClose: number;

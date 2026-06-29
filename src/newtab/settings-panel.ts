@@ -60,6 +60,12 @@ const RERENDER_KEYS: ReadonlySet<keyof Settings> = new Set([
   'showRecent',
   'showClosed',
   'showDevices',
+  // v1.0.25: bookmark bar / other bookmarks visibility. Toggling
+  //  either setting hides or restores the corresponding column,
+  //  so a re-render is required (the storage.onChanged listener
+  //  alone is not enough on the same tab).
+  'showBar',
+  'showOther',
   'numberTop',
   'numberRecent',
   'numberClosed',
@@ -1101,6 +1107,10 @@ function getDefaults(): Settings {
     showClosed: 1,
     showDevices: 1,
     showRoot: 1,
+    // v1.0.25: bookmark bar / other bookmarks visibility. Mirrors
+    //  the storage defaults in src/lib/storage/settings.ts.
+    showBar: 1,
+    showOther: 1,
     newtab: 0,
   rememberOpen: 1,
   autoClose: 0,
@@ -2212,6 +2222,12 @@ function renderFeaturesTab(): HTMLElement {
   container.appendChild(createRow(t('settings.field.numberClosed'), createNumberInput('numberClosed', '1'), 'numberClosed', t('settings.field.numberClosedDesc')));
   container.appendChild(createRow(t('settings.field.showDevices'), createCheckboxInput('showDevices'), 'showDevices', t('settings.field.showDevicesDesc')));
   container.appendChild(createRow(t('settings.field.showApps'), createCheckboxInput('showApps'), 'showApps', t('settings.field.showAppsDesc')));
+  // v1.0.25: visibility toggles for the two built-in Chrome root
+  //  folders. Placed adjacent to the other root-folder controls
+  //  (showRoot is for top-level folder rendering, showBar/showOther
+  //  are for hiding the entire root column).
+  container.appendChild(createRow(t('settings.field.showBar'), createCheckboxInput('showBar'), 'showBar', t('settings.field.showBarDesc')));
+  container.appendChild(createRow(t('settings.field.showOther'), createCheckboxInput('showOther'), 'showOther', t('settings.field.showOtherDesc')));
   container.appendChild(createRow(t('settings.field.showRoot'), createCheckboxInput('showRoot'), 'showRoot', t('settings.field.showRootDesc')));
   container.appendChild(createRow(t('settings.field.rememberOpen'), createCheckboxInput('rememberOpen'), 'rememberOpen', t('settings.field.rememberOpenDesc')));
   container.appendChild(createRow(t('settings.field.autoClose'), createCheckboxInput('autoClose'), 'autoClose', t('settings.field.autoCloseDesc')));

@@ -10,8 +10,10 @@ import { getCoords, addColumn, removeRow, removeColumn, getColumns } from '../dr
 import { captureSnapshot, pushSnapshot } from '../drag-drop/history';
 import { openAllLinks } from './folder-actions-handler';
 import { createTab } from '../../lib/chrome/bookmarks';
-import { getSetting } from '../../lib/storage/settings';
+import { getSetting, updateSetting } from '../../lib/storage/settings';
 import { t } from '../../lib/i18n';
+import { SHOW_KEY_MAP } from './special-folders';
+import { renderColumns } from './board';
 
 /** Currently active menu element, if any */
 let activeMenu: HTMLUListElement | null = null;
@@ -234,6 +236,11 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
         });
       }
       */
+      // v1.0.29: regular (non-special) folder "Remove from column" stays
+      //  gated by lockColumns — moving it out would let users break
+      //  the column structure (removeRow mutates layout) even with
+      //  locking on. The special-folder branch (above) is handled
+      //  outside the lock block in the showKey push below.
       items.push({
         label: t('contextMenu.removeFolder'),
         action: () => withUndo(() => {
@@ -241,6 +248,25 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
         }),
       });
     }
+  }
+
+  // v1.0.29: special-folder "Remove" is shown regardless of
+  //  lockColumns. The action only flips a `show*` setting — it does
+  //  NOT mutate layout, so it does not conflict with the lock
+  //  semantic. Before this change, locking the columns hid the
+  //  item entirely, forcing users to unlock → right-click → relock
+  //  just to hide a special folder.
+  if (SHOW_KEY_MAP[node.id]) {
+    items.push(null); // separator
+    const showKey = SHOW_KEY_MAP[node.id]!;
+    items.push({
+      label: t('contextMenu.removeFolder'),
+      action: () => {
+        void updateSetting(showKey, 0).then(() => {
+          void renderColumns();
+        });
+      },
+    });
   }
 
   return items;

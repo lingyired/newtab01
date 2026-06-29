@@ -6,7 +6,8 @@ import { enableDragColumn } from '../drag-drop/drag-column';
 import { enableDragDrop } from '../drag-drop/drop-handler';
 import { getColumns } from '../drag-drop/layout-ops';
 import { isSpecialVisible } from './special-folders';
-import { getSetting } from '../../lib/storage/settings';
+import { getSetting, updateSetting } from '../../lib/storage/settings';
+import { t } from '../../lib/i18n';
 import * as debug from '../../lib/debug';
 
 /** Render all columns to the #main element */
@@ -58,6 +59,46 @@ export async function renderColumns(): Promise<void> {
   // Enable drag-drop on main
   enableDragDrop();
   debug.log('render', 'renderColumns:done', { columnCount: renderedColumns.length });
+
+  // v1.0.28 + v1.0.29: empty-state. v1.0.28 used the cheap filter
+  //  path (`renderedColumns === [[]]`), which only triggers when the
+  //  layout itself is empty. That misses the common case where the
+  //  layout still has columns but every visible folder is itself
+  //  empty (e.g. a fresh Chrome profile with no bookmarks, or a
+  //  user who deleted all bookmarks and then hid all specials).
+  //  v1.0.29 widens the check: scan rendered `li` nodes in #main
+  //  and treat the board as empty if NONE are real content (every
+  //  li is a placeholder from the `< Empty >` node in folder.ts:243,
+  //  which sets `data-type="empty"` via BookmarkNode.type). This
+  //  catches both "no columns" and "only empty folders" with a
+  //  single post-render DOM scan — no model layer changes, no
+  //  re-walk of the bookmark tree, runs once per renderColumns.
+  const lis = main.querySelectorAll('li');
+  let hasRealContent = false;
+  for (const li of lis) {
+    if (li.dataset['type'] !== 'empty') {
+      hasRealContent = true;
+      break;
+    }
+  }
+  if (!hasRealContent) {
+    const empty = document.createElement('div');
+    empty.className = 'board-empty';
+    const msg = document.createElement('p');
+    msg.textContent = t('board.empty');
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'board-empty-action';
+    btn.textContent = t('board.emptyAction');
+    btn.addEventListener('click', () => {
+      void updateSetting('showBar', 1).then(() => {
+        location.reload();
+      });
+    });
+    empty.appendChild(msg);
+    empty.appendChild(btn);
+    main.appendChild(empty);
+  }
 }
 
 /** Initialize the board with resize handler */

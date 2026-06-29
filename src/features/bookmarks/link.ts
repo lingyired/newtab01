@@ -5,10 +5,23 @@ import { createFavicon } from './favicon';
 import { getCurrentTab, createTab, updateTab } from '../../lib/chrome/bookmarks';
 import { getSetting } from '../../lib/storage/settings';
 import { enableDragFolder } from '../drag-drop/drag-folder';
+import { renderMenu } from './context-menu';
+import { renderColumns } from './board';
+import { updateSetting } from '../../lib/storage/settings';
+import { SHOW_KEY_MAP } from './special-folders';
+import { t } from '../../lib/i18n';
 
 /** Render a single bookmark link as li > a */
 export function renderLink(node: BookmarkNode, target: HTMLElement): HTMLLIElement {
   const li = document.createElement('li');
+  // v1.0.29: stamp the node type so the empty-state scanner in
+  //  board.ts can tell real links from the `< Empty >` placeholder
+  //  (BookmarkNode.type === 'empty', see folder.ts:243). No other
+  //  code path in the codebase reads li.dataset.type, so this is
+  //  the minimal surface to add.
+  if (node.type) {
+    li.dataset.type = node.type;
+  }
   const a = document.createElement('a');
 
   const url = node.url;
@@ -127,6 +140,40 @@ export function renderLink(node: BookmarkNode, target: HTMLElement): HTMLLIEleme
   //  parent column's dragstart and trigger whole-column drag.
   if (node.id === 'apps') {
     enableDragFolder(node, a, li);
+  }
+
+  // v1.0.27: Apps is rendered as a plain `<a>` (no folder
+  //  header), so the column-level `contextmenu` handler in
+  //  column.ts:138-149 — which short-circuits when the right-
+  //  click target is an `<a>` — never fires for Apps. Attach a
+  //  link-local contextmenu that offers "Remove" (toggles
+  //  showApps off, mirroring the right-click path used for the
+  //  other 6 special/root folders via SHOW_KEY_MAP). The
+  //  chrome.storage.onChanged listener doesn't re-render the
+  //  same tab, so we explicitly call renderColumns() after the
+  //  write so the link disappears immediately. Scoped to
+  //  `node.id === 'apps'` rather than all link nodes — regular
+  //  bookmark links have no column membership to remove, so
+  //  the menu would be empty.
+  if (node.id === 'apps' && SHOW_KEY_MAP[node.id]) {
+    a.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const showKey = SHOW_KEY_MAP[node.id]!;
+      renderMenu(
+        [{
+          label: t('contextMenu.removeFolder'),
+          action: () => {
+            void updateSetting(showKey, 0).then(() => {
+              void renderColumns();
+            });
+          },
+        }],
+        e.pageX,
+        e.pageY,
+        a,
+      );
+    });
   }
 
   target.appendChild(li);

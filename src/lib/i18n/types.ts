@@ -157,6 +157,14 @@ export type MessageKey =
   | 'settings.field.showDevicesDesc'
   | 'settings.field.showApps'
   | 'settings.field.showAppsDesc'
+  // v1.0.25: visibility toggles for the two built-in Chrome root
+  //  folders (bookmark bar + other bookmarks). Hidden by the
+  //  corresponding `show*` Settings field (see
+  //  features/bookmarks/special-folders.ts → SHOW_KEY_MAP).
+  | 'settings.field.showBar'
+  | 'settings.field.showBarDesc'
+  | 'settings.field.showOther'
+  | 'settings.field.showOtherDesc'
   | 'settings.field.rememberOpen'
   | 'settings.field.rememberOpenDesc'
   | 'settings.field.autoClose'
@@ -232,6 +240,15 @@ export type MessageKey =
   | 'contextMenu.moveColumnLeft'
   | 'contextMenu.moveColumnRight'
   | 'contextMenu.removeColumn'
+  // v1.0.31: surface why a drag was rejected (lockColumns blocks
+  //  column creation). Wording names the cause + the escape hatch
+  //  so the user doesn't have to guess.
+  | 'toast.lockedColumnsCannotAddNew'
+  // v1.0.28: empty-state shown when every column is hidden by
+  //  show* toggles. `board.empty` is the prompt text, `board.emptyAction`
+  //  is the button label that re-enables the bookmark bar.
+  | 'board.empty'
+  | 'board.emptyAction'
   // Split picker
   | 'splitPicker.title'
   | 'splitPicker.counter'

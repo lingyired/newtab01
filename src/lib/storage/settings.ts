@@ -64,6 +64,11 @@ const defaults: Settings = {
   showClosed: 1,
   showDevices: 1,
   showRoot: 1,
+  // v1.0.25: default ON for both built-in Chrome root folders
+  //  (bookmark bar + other bookmarks). Users can hide either or
+  //  both via the features tab or the column context menu.
+  showBar: 1,
+  showOther: 1,
   newtab: 0,
   rememberOpen: 1,
   autoClose: 0,

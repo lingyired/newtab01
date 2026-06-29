@@ -5,6 +5,8 @@ import { getDragIds, getDropTarget, setDropTarget } from './drag-state';
 import { getColumns, addRow, addColumn, getCoords } from './layout-ops';
 import { captureSnapshot, pushSnapshot } from './history';
 import { getSetting } from '../../lib/storage/settings';
+import { showToast } from '../../lib/toast';
+import { t } from '../../lib/i18n';
 import * as debug from '../../lib/debug';
 
 /** Initialize drag-drop handlers on #main */
@@ -161,6 +163,12 @@ async function captureAndDrop(
     // is a single-column op, not a column-structure change).
     if (getSetting('lockColumns')) {
       debug.log('drop', 'captureAndDrop: lockColumns is on, refusing addColumn');
+      // v1.0.31: surface a toast so the user knows the drop was
+      //  ignored (drag felt like a no-op). Wording: state the
+      //  cause (locked) + the escape hatch (settings panel) — a
+      //  generic "no-op" toast would force the user to guess
+      //  where to go next. Single shared helper, no queue.
+      showToast(t('toast.lockedColumnsCannotAddNew'));
       return;
     }
     const rect = target.getBoundingClientRect();

@@ -2057,3 +2057,76 @@
   border-top: 1px solid var(--border);
   flex-shrink: 0;
 }
+
+/* v1.0.28: empty-state shown when every column is hidden by show*
+ *  toggles. Centered message + a one-click button to re-enable the
+ *  bookmark bar. Uses theme variables to look right in any theme. */
+.board-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 80px 24px;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+.board-empty p {
+  margin: 0;
+  font-size: var(--newtab-font-size, 16px);
+  color: var(--newtab-text);
+  opacity: 0.7;
+}
+
+.board-empty-action {
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font: inherit;
+}
+
+.board-empty-action:hover {
+  background: var(--accent);
+  color: var(--accent-foreground);
+}
+
+/* v1.0.31: toast notification shown at the top-center of the page when
+ *  a drag action is rejected by lockColumns (drop-handler.ts).
+ *  Single-line, theme-aware, no stack queue. */
+.toast-container {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  pointer-events: none;
+}
+
+.toast-message {
+  margin: 0;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  background: var(--popover);
+  color: var(--popover-foreground);
+  border: 1px solid var(--border);
+  box-shadow: 0 2px 8px hsl(0 0% 0% / 0.15);
+  font-size: var(--newtab-font-size, 14px);
+  max-width: 480px;
+  text-align: center;
+  animation: toast-fade-in 120ms ease-out;
+}
+
+@keyframes toast-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
