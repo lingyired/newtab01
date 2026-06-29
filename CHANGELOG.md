@@ -5,6 +5,14 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.21] - 2026-06-29
+
+### Fixed
+- **「移除文件夹」右键菜单项之前的翻译没生效**。v1.0.20 commit 时第二个 search/replace 因为缩进不匹配（实际文件是 8+10 空格，pattern 是 6+8 空格）silent fail，没替换成 `t('contextMenu.removeFolder')`。这次手动修。
+
+### Changed
+- **外观 tab 三个全局字体行 label 加「全局」前缀**：`全局字体` / `全局字号` / `全局字重`。新增 3 个 MessageKey（`settings.field.globalFont` / `globalFontSize` / `globalFontWeight`）加进 10 个 catalog，原 `settings.field.font` / `fontSize` / `fontWeight` 现在专门用于 per-theme `<details>` 里的 bucket 行。描述共用 `settings.field.fontDesc` 等 —— 底部 cascade hint 说明 tier 差异。
+
 ## [1.0.20] - 2026-06-29
 
 ### Fixed

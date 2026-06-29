@@ -60,6 +60,11 @@ const messages = {
   'settings.field.fontSizeDesc': 'Taille de la police des liens de favoris (en pixels).',
   'settings.field.fontWeight': 'Graisse de police',
   'settings.field.fontWeightDesc': 'Graisse de la police des liens de favoris. Valeurs courantes : 400 normal, 500 medium, 600 semibold, 700 bold.',
+  // v0.2.19X : labels du niveau global avec le préfixe « Global »,
+  //  pour les distinguer des lignes du `<details>` par thème.
+  'settings.field.globalFont': 'Police globale',
+  'settings.field.globalFontSize': 'Taille de police globale',
+  'settings.field.globalFontWeight': 'Graisse de police globale',
   'settings.field.fontColor': 'Couleur du texte',
   'settings.field.fontColorDesc': 'Couleur du texte du lien de favori dans son état par défaut.',
   'settings.field.backgroundColor': 'Couleur de fond du nouvel onglet',

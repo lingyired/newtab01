@@ -63,6 +63,11 @@ const messages = {
   'settings.field.fontSizeDesc': 'حجم خط روابط الإشارات (بالبكسل).',
   'settings.field.fontWeight': 'سماكة الخط',
   'settings.field.fontWeightDesc': 'سماكة خط روابط الإشارات. القيم الشائعة: 400 عادي، 500 متوسط، 600 شبه عريض، 700 عريض.',
+  // v0.2.19X: تسميات المستوى العام مع بادئة «عام» لتمييزها
+  //  عن صفوف `<details>` الخاصة بالسمة.
+  'settings.field.globalFont': 'الخط العام',
+  'settings.field.globalFontSize': 'حجم الخط العام',
+  'settings.field.globalFontWeight': 'وزن الخط العام',
   'settings.field.fontColor': 'لون النص',
   'settings.field.fontColorDesc': 'لون نص رابط الإشارة في حالته الافتراضية.',
   'settings.field.backgroundColor': 'لون خلفية الصفحة الرئيسية',

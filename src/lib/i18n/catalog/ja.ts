@@ -59,6 +59,11 @@ const messages = {
   'settings.field.fontSizeDesc': 'ブックマークリンクのフォントサイズ（ピクセル単位）。',
   'settings.field.fontWeight': 'フォントの太さ',
   'settings.field.fontWeightDesc': 'ブックマークリンクのフォントの太さ。一般的な値: 400 通常、500 中、600 やや太字、700 太字。',
+  // v0.2.19X: グローバルティアラベル。per-theme <details> の
+  //  「フォント」と区別するために「グローバル」接頭辞を付ける。
+  'settings.field.globalFont': 'グローバルフォント',
+  'settings.field.globalFontSize': 'グローバルフォントサイズ',
+  'settings.field.globalFontWeight': 'グローバルフォントの太さ',
   'settings.field.fontColor': 'テキスト色',
   'settings.field.fontColorDesc': '既定状態でのブックマークリンクのテキスト色。',
   'settings.field.backgroundColor': '新しいタブの背景色',

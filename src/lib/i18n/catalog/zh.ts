@@ -68,6 +68,12 @@ const messages = {
   'settings.field.fontSizeDesc': '书签链接的字号（单位：px）。',
   'settings.field.fontWeight': '字重',
   'settings.field.fontWeightDesc': '书签链接的字重，常用值：400 正常、500 中等、600 半粗、700 粗体。',
+  // v0.2.19X: 全局字体级联里，全局行的 label 加「全局」前缀
+  //  跟 per-theme <details> 里的「字体」/「字号」/「字重」
+  //  区分开。描述共用 settings.field.fontDesc 等。
+  'settings.field.globalFont': '全局字体',
+  'settings.field.globalFontSize': '全局字号',
+  'settings.field.globalFontWeight': '全局字重',
   'settings.field.fontColor': '文字颜色',
   'settings.field.fontColorDesc': '书签链接在默认状态下的文字颜色。',
   'settings.field.backgroundColor': '新标签页背景色',

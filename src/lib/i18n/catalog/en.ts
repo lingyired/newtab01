@@ -68,6 +68,13 @@ const messages = {
   'settings.field.fontSizeDesc': 'Font size of bookmark links (in pixels).',
   'settings.field.fontWeight': 'Font weight',
   'settings.field.fontWeightDesc': 'Font weight of bookmark links. Common values: 400 normal, 500 medium, 600 semibold, 700 bold.',
+  // v0.2.19X: global-tier labels for the appearance tab. The
+  //  Settings.font/.fontSize/.fontWeight keys above are reused for
+  //  the per-theme `<details>` rows (bucket keys), so the global
+  //  rows above need their own label keys with the 'Global' prefix.
+  'settings.field.globalFont': 'Global font',
+  'settings.field.globalFontSize': 'Global font size',
+  'settings.field.globalFontWeight': 'Global font weight',
   'settings.field.fontColor': 'Text color',
   'settings.field.fontColorDesc': 'Color of bookmark link text in its default state.',
   'settings.field.backgroundColor': 'New tab background color',
