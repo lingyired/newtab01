@@ -246,12 +246,22 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
       });
     }
     */
-    items.push({
-      label: t('contextMenu.removeFolder'),
-      action: () => withUndo(() => {
-        void removeRow(coords.x, coords.y);
-      }),
-    });
+    // v1.1.2: skip removeRow for folders that are also in
+    //  SHOW_KEY_MAP (bookmark bar / other bookmarks). Those folders
+    //  also get a "Remove" item from the special-folder branch below
+    //  (which toggles a show* setting). Without this guard, the
+    //  user would see two items with the same label but different
+    //  effects (removeRow = take folder out of column, show*=0 =
+    //  hide the entire column). The show* action is the canonical
+    //  one for these folders.
+    if (!SHOW_KEY_MAP[node.id]) {
+      items.push({
+        label: t('contextMenu.removeFolder'),
+        action: () => withUndo(() => {
+          void removeRow(coords.x, coords.y);
+        }),
+      });
+    }
   }
 
   // v1.0.29: special-folder "Remove" is shown regardless of

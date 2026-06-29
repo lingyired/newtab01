@@ -236,4 +236,12 @@
 //          folder→parent relationship. createNewColumn (which adds
 //          a new column) is still gated by lockColumns. See
 //          context-menu.ts:179-255.
-export const VERSION = '1.1.1';
+// v1.1.2: skip the regular removeRow item for folders that are
+//          also in SHOW_KEY_MAP (bookmark bar / other bookmarks).
+//          Those folders get a "Remove" item from the special-folder
+//          branch (toggles a show* setting) — without this guard
+//          the user would see two items with the same label but
+//          different effects (removeRow = take folder out of column,
+//          show*=0 = hide the entire column). The show* action is
+//          the canonical one for these folders.
+export const VERSION = '1.1.2';

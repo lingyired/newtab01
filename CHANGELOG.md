@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.2] - 2026-06-29
+
+### Fixed
+- **特殊目录右键出现两个相同的「从列中移除文件夹」选项**。v1.0.26 把 `showBar` / `showOther` 加入 `SHOW_KEY_MAP` 后，收藏夹栏（ID '1'）和其他收藏夹（ID '2'）这两个根目录同时满足 `if (coords)`（它们有列坐标）和 `if (SHOW_KEY_MAP[node.id])`（它们有 show* 映射），所以右击时两个分支都各自 push 了一个同 label 的「从列中移除文件夹」菜单项 —— 第一个走 `removeRow`（把文件夹从当前列取出），第二个走 `updateSetting(showKey, 0)`（整列隐藏）。修复：在 [context-menu.ts:257-264](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/context-menu.ts#L257-L264) 给 `removeRow` 项加 `if (!SHOW_KEY_MAP[node.id])` 守卫 —— 特殊目录只走 `show*` 分支（canonical action），不再走 `removeRow`。`apps` / `top` / `recent` / `closed` / `devices` 这 5 个特殊目录没有列坐标，本来就不会进 `if (coords)` 分支，不受本次改动影响。
+
 ## [1.1.1] - 2026-06-29
 
 ### Changed
