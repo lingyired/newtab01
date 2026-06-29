@@ -15,11 +15,6 @@ const messages = {
   'settings.section.themeOverridesSummary': 'Apparence du thème actuel ({theme} · {mode})',
   'settings.section.themeOverridesSummaryDark': 'sombre',
   'settings.section.themeOverridesSummaryLight': 'clair',
-  // v0.2.19X : indication en bas de l'onglet Apparence. Cascade CSS
-  //  à 3 niveaux (en utilisant la police comme exemple) : surcharge
-  //  du thème personnalisé > global > thème par défaut. Laisser
-  //  « global » vide pour utiliser le thème par défaut.
-  'settings.section.fontCascadeHint': 'Cascade CSS (en utilisant la police comme exemple) : surcharge du thème personnalisé > global > thème par défaut. Laissez « global » vide pour utiliser le thème par défaut.',
   'settings.field.language': 'Langue',
   'settings.field.languageDesc': 'Change la langue de l\'interface de newtab01. « Suivre le navigateur » utilise la préférence de langue de Chrome ; si la langue n\'est pas dans la liste prise en charge, l\'anglais est utilisé comme solution de repli.',
   'settings.language.auto': 'Suivre le navigateur',
@@ -59,12 +54,7 @@ const messages = {
   'settings.field.fontSize': 'Taille de police',
   'settings.field.fontSizeDesc': 'Taille de la police des liens de favoris (en pixels).',
   'settings.field.fontWeight': 'Graisse de police',
-  'settings.field.fontWeightDesc': 'Graisse de la police des liens de favoris. Valeurs courantes : 400 normal, 500 medium, 600 semibold, 700 bold.',
-  // v0.2.19X : labels du niveau global avec le préfixe « Global »,
-  //  pour les distinguer des lignes du `<details>` par thème.
-  'settings.field.globalFont': 'Police globale',
-  'settings.field.globalFontSize': 'Taille de police globale',
-  'settings.field.globalFontWeight': 'Graisse de police globale',
+  'settings.field.fontWeightDesc': 'Graisse de police des liens de favoris. Valeurs courantes : 400 normal, 500 medium, 600 semibold, 700 bold.',
   'settings.field.fontColor': 'Couleur du texte',
   'settings.field.fontColorDesc': 'Couleur du texte du lien de favori dans son état par défaut.',
   'settings.field.backgroundColor': 'Couleur de fond du nouvel onglet',

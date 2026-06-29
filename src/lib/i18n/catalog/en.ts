@@ -20,11 +20,6 @@ const messages = {
   'settings.section.themeOverridesSummary': 'Current theme appearance ({theme} · {mode})',
   'settings.section.themeOverridesSummaryDark': 'dark',
   'settings.section.themeOverridesSummaryLight': 'light',
-  // v0.2.19X: bottom-of-appearance-tab hint explaining the 3-tier
-  //  font cascade (per-theme override > global > theme default).
-  //  Applies to font / fontSize / fontWeight — the new "global"
-  //  tier + the existing per-theme `<details>` block.
-  'settings.section.fontCascadeHint': 'CSS cascade (using font as example): per-theme override > global > theme default. Leave global empty to use the theme default.',
   // Settings panel — language row
   'settings.field.language': 'Language',
   'settings.field.languageDesc': 'Switch the newtab01 interface language. "Follow browser" uses the Chrome language preference; if the language is not in the supported list, English is used as the fallback.',
@@ -68,13 +63,6 @@ const messages = {
   'settings.field.fontSizeDesc': 'Font size of bookmark links (in pixels).',
   'settings.field.fontWeight': 'Font weight',
   'settings.field.fontWeightDesc': 'Font weight of bookmark links. Common values: 400 normal, 500 medium, 600 semibold, 700 bold.',
-  // v0.2.19X: global-tier labels for the appearance tab. The
-  //  Settings.font/.fontSize/.fontWeight keys above are reused for
-  //  the per-theme `<details>` rows (bucket keys), so the global
-  //  rows above need their own label keys with the 'Global' prefix.
-  'settings.field.globalFont': 'Global font',
-  'settings.field.globalFontSize': 'Global font size',
-  'settings.field.globalFontWeight': 'Global font weight',
   'settings.field.fontColor': 'Text color',
   'settings.field.fontColorDesc': 'Color of bookmark link text in its default state.',
   'settings.field.backgroundColor': 'New tab background color',

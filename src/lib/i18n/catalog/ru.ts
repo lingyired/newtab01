@@ -15,11 +15,6 @@ const messages = {
   'settings.section.themeOverridesSummary': 'Оформление текущей темы ({theme} · {mode})',
   'settings.section.themeOverridesSummaryDark': 'тёмная',
   'settings.section.themeOverridesSummaryLight': 'светлая',
-  // v0.2.19X: подсказка внизу вкладки «Внешний вид». 3-уровневый
-  //  CSS-каскад (на примере шрифта): переопределение пользовательской
-  //  темы > глобальное > тема по умолчанию. Оставьте «глобальное»
-  //  пустым, чтобы использовать тему по умолчанию.
-  'settings.section.fontCascadeHint': 'CSS-каскад (на примере шрифта): переопределение пользовательской темы > глобальное > тема по умолчанию. Оставьте «глобальное» пустым, чтобы использовать тему по умолчанию.',
   'settings.field.language': 'Язык',
   'settings.field.languageDesc': 'Переключает язык интерфейса newtab01. «Следовать за браузером» использует языковые настройки Chrome; если язык не входит в поддерживаемый список, в качестве запасного используется английский.',
   'settings.language.auto': 'Следовать за браузером',
@@ -60,11 +55,6 @@ const messages = {
   'settings.field.fontSizeDesc': 'Размер шрифта ссылок закладок (в пикселях).',
   'settings.field.fontWeight': 'Насыщенность шрифта',
   'settings.field.fontWeightDesc': 'Насыщенность шрифта ссылок закладок. Частые значения: 400 normal, 500 medium, 600 semibold, 700 bold.',
-  // v0.2.19X: метки глобального уровня с префиксом «Глобальный»,
-  //  чтобы отличать их от строк `<details>` по теме.
-  'settings.field.globalFont': 'Глобальный шрифт',
-  'settings.field.globalFontSize': 'Глобальный размер шрифта',
-  'settings.field.globalFontWeight': 'Глобальная толщина шрифта',
   'settings.field.fontColor': 'Цвет текста',
   'settings.field.fontColorDesc': 'Цвет текста ссылки закладки в обычном состоянии.',
   'settings.field.backgroundColor': 'Цвет фона новой вкладки',

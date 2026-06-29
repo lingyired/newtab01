@@ -83,26 +83,22 @@ let currentTab: SettingsTab = 'layout';
 // --- Per-theme per-mode option helpers (v0.2.97) ---
 
 /**
- * The 10 appearance-tab options that are per-theme per-mode.
+ * The 8 appearance-tab options that are per-theme per-mode.
  * `theme` / `darkMode` themselves are NOT in this set — they
  * control which bucket is read, so overwriting them per-theme
  * would be circular. `width` / `hPos` are intentionally global
  * per user decision (same reason the settings panel keeps them
- * in the global half of the appearance tab).
+ * in the global half of the appearance tab). `font` / `fontSize`
+ * / `fontWeight` are also global since v0.2.23X — per-theme
+ * font customization goes through the per-theme `customCss`
+ * textarea (the 3-row `<details>` per-theme override for fonts
+ * was deemed over-engineered for what users actually need).
  *
  * The keys must match `ThemeModeOverrides` in
  * `features/bookmarks/types.ts` — TS will surface a compile error
  * if they drift, thanks to the `satisfies` constraint.
- *
- * v0.2.19X: `font` / `fontSize` / `fontWeight` renamed to
- *  `globalFont` / `globalFontSize` / `globalFontWeight` to match
- *  the Settings rename in the global tier. The same keys are
- *  used as the per-theme bucket keys (`themeOverrides[theme][mode]`
- *  entries) and the global tier keys — see the `ThemeModeOverrides`
- *  docstring for why they share names.
  */
 const PER_THEME_KEYS = [
-  'globalFont', 'globalFontSize', 'globalFontWeight',
   'fontColor', 'backgroundColor', 'linkBgColor', 'highlightColor', 'highlightFontColor', 'shadowColor',
   'shadowBlur', 'highlightRound',
 ] as const satisfies ReadonlyArray<keyof ThemeModeOverrides>;
@@ -621,19 +617,19 @@ function refreshInputsFromSettings(): void {
     if (input.value !== nextStr) input.value = nextStr;
   }
 
-  // v0.2.19X: refresh the global font / fontSize / fontWeight
-  //  inputs on cross-tab storage sync. These three live in the
-  //  main flow of the appearance tab (above the per-theme
-  //  `<details>`) and use the standard global id scheme
-  //  (`sp-globalFont` etc.), so they aren't picked up by the
-  //  PER_THEME_KEYS loop above. Without this loop, a cross-tab
-  //  edit to one of these would leave the open panel showing
-  //  stale values until the user closed + reopened it. Same
-  //  one-line `if (input.value !== nextStr) input.value = nextStr`
+  // v0.2.23X: refresh the font / fontSize / fontWeight inputs
+  //  on cross-tab storage sync. These three live in the main flow
+  //  of the appearance tab (above the per-theme `<details>`) and
+  //  use the standard global id scheme (`sp-font` etc.), so they
+  //  aren't picked up by the PER_THEME_KEYS loop above (which
+  //  only covers the 8 per-theme override keys). Without this loop,
+  //  a cross-tab edit to one of these would leave the open panel
+  //  showing stale values until the user closed + reopened it.
+  //  Same one-line `if (input.value !== nextStr) input.value = nextStr`
   //  pattern as the per-theme loop — `next` is the raw
-  //  `getSetting(key)` value (empty / 0 = "no override",
-  //  same as the cascade semantics).
-  const GLOBAL_FONT_KEYS: ReadonlyArray<keyof Settings> = ['globalFont', 'globalFontSize', 'globalFontWeight'];
+  //  `getSetting(key)` value (defaults are non-empty so
+  //  storage round-trip is straightforward).
+  const GLOBAL_FONT_KEYS: ReadonlyArray<keyof Settings> = ['font', 'fontSize', 'fontWeight'];
   for (const key of GLOBAL_FONT_KEYS) {
     const input = document.getElementById(`sp-${key}`) as HTMLInputElement | null;
     if (!input) continue;
@@ -1047,15 +1043,9 @@ function createRow(
 
 function getDefaults(): Settings {
   return {
-    // v0.2.19X: rename font/fontSize/fontWeight → globalFont/... with
-    //  empty/0 defaults so the user can distinguish "no override" from
-    //  a real value. Same default shape as `lib/storage/settings.ts`
-    //  (the source of truth). The hardcoded fallback in
-    //  `resolveEffectiveSettings` (apply.ts) handles the cascade —
-    //  0 / '' correctly fall through.
-    globalFont: '',
-    globalFontSize: 0,
-    globalFontWeight: 0,
+    font: 'Sans-serif',
+    fontSize: 16,
+    fontWeight: 400,
     theme: 'default',
     darkMode: 'system',
     // The five palette fields are intentionally empty strings: see the
@@ -1316,17 +1306,15 @@ function createTextInput(key: keyof Settings, scope: InputScope = 'global'): HTM
 }
 
 /**
- * v0.2.19X: build the global-font text input. Wraps the standard
- * `createTextInput`. v0.2.22X removed the `'Sans-serif'` placeholder
- * because the default value (`'Sans-serif'` from `getDefaults()`)
- * already populates the input — keeping both would show the same
- * string twice (once as the value, once as a greyed-out placeholder
- * that only appears when the user clears the input), which is
- * confusing. The cascade hint at the bottom of the appearance tab
- * already explains "leave global empty to use the theme default".
+ * v0.2.23X: build the font-family text input. Wraps the standard
+ * `createTextInput`. Default value is 'Sans-serif' (from
+ * `getDefaults()`) — no placeholder needed; the input shows the
+ * actual default and the user can clear it to mean "use the
+ * theme default" (the `||` cascade in `resolveEffectiveSettings`
+ * falls through to the hardcoded fallback).
  */
-function createGlobalFontInput(): HTMLInputElement {
-  return createTextInput('globalFont');
+function createFontInput(): HTMLInputElement {
+  return createTextInput('font');
 }
 
 /**
@@ -1589,41 +1577,39 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   container.appendChild(createRow(t('settings.field.width'), createNumberInput('width'), 'width', t('settings.field.widthDesc')));
   container.appendChild(createRow(t('settings.field.hPos'), createNumberInput('hPos'), 'hPos', t('settings.field.hPosDesc')));
 
-  // v0.2.19X: global font / fontSize / fontWeight rows. Sit
-  //  between the other "global appearance" rows (width / hPos) and
-  //  the per-theme `<details>` block. The 3-tier cascade
-  //  (per-theme > global > theme default) is explained by the
-  //  hint at the bottom of the tab — see the `fontCascadeHint`
-  //  paragraph appended after `<details>` below.
+  // v0.2.23X: font / fontSize / fontWeight rows. These are now the
+  //  only font-related rows in the appearance tab (the per-theme
+  //  tier was removed). Sit between the other "global appearance"
+  //  rows (width / hPos) and the per-theme `<details>` block
+  //  (which now only handles 5 colors + linkBgColor + shadowBlur +
+  //  highlightRound + customCss — no font rows). The cascade hint
+  //  at the bottom of the tab is updated to point users to the
+  //  customCss textarea for per-theme font customization.
   //
-  //  Labels use the dedicated `settings.field.globalFont` /
-  //  `globalFontSize` / `globalFontWeight` keys (the bare
-  //  `settings.field.font` etc. are reused by the per-theme
-  //  rows in `<details>`, which have their own context — so a
-  //  「全局」prefix disambiguates the two tiers in the UI).
-  //  Descriptions are shared (`settings.field.fontDesc` etc.) —
-  //  the cascade hint at the bottom makes the tier difference
-  //  explicit. Defaults from `getDefaults()` are empty / 0 — the
-  //  `resolveEffectiveSettings` cascade in apply.ts treats those
-  //  as "no override" (falls through to the hardcoded fallback).
-  //  The placeholders show the hardcoded defaults so the user
-  //  sees what they're overriding.
+  //  Labels use the bare `settings.field.font` / `fontSize` /
+  //  `fontWeight` keys (no 「全局」prefix — there's only 1 tier
+  //  now). Descriptions stay shared with the original keys.
+  //  Defaults from `getDefaults()` are 'Sans-serif' / 16 / 400.
+  //  The `||` cascade in `resolveEffectiveSettings` (apply.ts)
+  //  treats '' / 0 as "no override" (falls through to the
+  //  hardcoded fallback), so the user can still clear the input
+  //  to mean "use the theme default".
   container.appendChild(createRow(
-    t('settings.field.globalFont'),
-    createGlobalFontInput(),
-    'globalFont',
+    t('settings.field.font'),
+    createFontInput(),
+    'font',
     t('settings.field.fontDesc'),
   ));
   container.appendChild(createRow(
-    t('settings.field.globalFontSize'),
-    createNumberInput('globalFontSize', '0.1'),
-    'globalFontSize',
+    t('settings.field.fontSize'),
+    createNumberInput('fontSize', '0.1'),
+    'fontSize',
     t('settings.field.fontSizeDesc'),
   ));
   container.appendChild(createRow(
-    t('settings.field.globalFontWeight'),
-    createNumberInput('globalFontWeight', '0.1'),
-    'globalFontWeight',
+    t('settings.field.fontWeight'),
+    createNumberInput('fontWeight', '0.1'),
+    'fontWeight',
     t('settings.field.fontWeightDesc'),
   ));
 
@@ -1669,14 +1655,15 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   //  the read/write paths go through the per-theme helpers
   //  above. Revert (↩) on these rows clears the current
   //  theme+mode override — see createRow.
-  // v0.2.19X: per-theme bucket keys renamed to globalFont/... to match
-  //  the Settings tier-2 rename. The UI labels (settings.field.font etc.)
-  //  stay the same — "字体" / "字号" / "字重" — because the cascade hint
-  //  below makes it clear these are the "per-theme override" tier. The
-  //  ID and storage bucket key are an internal detail.
-  details.appendChild(createRow(t('settings.field.font'), createTextInput('globalFont', 'perTheme'), 'globalFont', t('settings.field.fontDesc'), 'perTheme'));
-  details.appendChild(createRow(t('settings.field.fontSize'), createNumberInput('globalFontSize', '0.1', 'perTheme'), 'globalFontSize', t('settings.field.fontSizeDesc'), 'perTheme'));
-  details.appendChild(createRow(t('settings.field.fontWeight'), createNumberInput('globalFontWeight', '0.1', 'perTheme'), 'globalFontWeight', t('settings.field.fontWeightDesc'), 'perTheme'));
+  // v0.2.23X: per-theme font override rows removed. The font / fontSize /
+  //  fontWeight rows live in the main flow of the appearance tab above
+  //  (global tier only). Per-theme font customization goes through the
+  //  `customCss` textarea at the bottom of this `<details>` block.
+  //  Users who want e.g. "MX-Brutalist uses Inter, all others use
+  //  default" write `:root[data-theme="mx-brutalist"] #main a
+  //  { font-family: Inter; }` in the customCss textarea.
+  //  8 per-theme override rows remain (5 palette colors + linkBgColor +
+  //  shadowBlur + highlightRound). Matches `PER_THEME_KEYS`.
   details.appendChild(createRow(t('settings.field.backgroundColor'), createColorInput('backgroundColor', 'perTheme'), 'backgroundColor', t('settings.field.backgroundColorDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.fontColor'), createColorInput('fontColor', 'perTheme'), 'fontColor', t('settings.field.fontColorDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.linkBgColor'), createColorInput('linkBgColor', 'perTheme'), 'linkBgColor', t('settings.field.linkBgColorDesc'), 'perTheme'));
@@ -1713,17 +1700,13 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
 
   container.appendChild(details);
 
-  // v0.2.19X: cascade hint at the bottom of the appearance tab.
-  //  Explains the 3-tier font cascade (per-theme > global >
-  //  theme default) introduced by the new global font / fontSize
-  //  / fontWeight rows. Without this hint, users see "字体" twice
-  //  — once in the main flow (global) and once in the per-theme
-  //  `<details>` — and can't tell what overrides what. The hint
-  //  uses `.sp-hint` to match the custom-themes tab's import
-  //  hint style. Single sentence; no links / no interaction.
-  const fontCascadeHint = el('p', 'sp-hint');
-  fontCascadeHint.textContent = t('settings.section.fontCascadeHint');
-  container.appendChild(fontCascadeHint);
+  // v0.2.23X: no bottom hint needed. The 2-tier cascade (global
+  //  setting + hardcoded fallback in resolveEffectiveSettings) is
+  //  obvious from the input behavior — users who clear the field
+  //  see the font fall back to the theme default, and the input
+  //  shows the explicit value otherwise. Per-theme font
+  //  customization is mentioned in the customCss field's label /
+  //  description (see `settings.field.customCss`).
 
   return container;
 }
@@ -2238,11 +2221,10 @@ function renderAdvancedTab(): HTMLElement {
   //  write back stale values that `resolveEffectiveSettings` would
   //  then "win" over the user's actual per-theme overrides.
   const PER_THEME_APPEARANCE_KEYS: ReadonlySet<keyof Settings> = new Set([
-    // v0.2.19X: renamed font/fontSize/fontWeight → globalFont/... to
-    //  match the Settings rename in the global tier. These keys are
-    //  the 10 per-theme appearance fields whose storage lives under
+    // v0.2.23X: 8 per-theme appearance fields. font / fontSize /
+    //  fontWeight were removed from this set (no per-theme tier
+    //  for fonts). Storage for these fields lives under
     //  `themeOverrides[theme][mode]`.
-    'globalFont', 'globalFontSize', 'globalFontWeight',
     'fontColor', 'backgroundColor', 'linkBgColor', 'highlightColor', 'highlightFontColor', 'shadowColor',
     'shadowBlur', 'highlightRound',
   ]);

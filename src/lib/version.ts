@@ -177,4 +177,17 @@
 //          fills empty / 0 values for v1.0.20/21 upgraders. Per-theme
 //          <details> inputs automatically follow (they cascade to the
 //          global value when no override is set).
-export const VERSION = '1.0.22';
+// v1.0.23: simplification — remove the per-theme font override tier
+//          that v1.0.20-22 added. Users who want per-theme font
+//          customization write it in the per-theme customCss textarea.
+//          Renames globalFont / globalFontSize / globalFontWeight
+//          back to font / fontSize / fontWeight (only 1 tier now — the
+//          "global" prefix is misleading without a per-theme tier to
+//          distinguish from). PER_THEME_KEYS shrinks from 11 to 8
+//          fields. resolveEffectiveSettings cascade for font is now
+//          2-tier (global + hardcoded) instead of 3-tier (per-theme
+//          + global + hardcoded). settings.field.globalFont* and
+//          settings.section.fontCascadeHint MessageKeys removed (10
+//          catalogs reverted). Storage migration: copy globalFont*
+//          → font* on upgrade from v1.0.20-22.
+export const VERSION = '1.0.23';

@@ -15,11 +15,6 @@ const messages = {
   'settings.section.themeOverridesSummary': 'वर्तमान थीम का रूप ({theme} · {mode})',
   'settings.section.themeOverridesSummaryDark': 'डार्क',
   'settings.section.themeOverridesSummaryLight': 'लाइट',
-  // v0.2.19X: स्वरूप टैब के नीचे संकेत। 3-स्तरीय CSS कैस्केड
-  //  (फ़ॉन्ट को उदाहरण के रूप में): कस्टम थीम ओवरराइड > ग्लोबल
-  //  > थीम डिफ़ॉल्ट। थीम डिफ़ॉल्ट का उपयोग करने के लिए
-  //  «ग्लोबल» खाली छोड़ें।
-  'settings.section.fontCascadeHint': 'CSS कैस्केड (फ़ॉन्ट को उदाहरण के रूप में): कस्टम थीम ओवरराइड > ग्लोबल > थीम डिफ़ॉल्ट। थीम डिफ़ॉल्ट का उपयोग करने के लिए «ग्लोबल» खाली छोड़ें।',
   'settings.field.language': 'भाषा',
   'settings.field.languageDesc': 'newtab01 इंटरफ़ेस की भाषा बदलें। "ब्राउज़र का पालन करें" Chrome की भाषा प्राथमिकता का उपयोग करता है; यदि भाषा समर्थित सूची में नहीं है, तो अंग्रेज़ी फ़ॉलबैक के रूप में उपयोग की जाती है।',
   'settings.language.auto': 'ब्राउज़र का पालन करें',
@@ -60,12 +55,6 @@ const messages = {
   'settings.field.fontSizeDesc': 'बुकमार्क लिंक का फ़ॉन्ट आकार (पिक्सेल में)।',
   'settings.field.fontWeight': 'फ़ॉन्ट वज़न',
   'settings.field.fontWeightDesc': 'बुकमार्क लिंक का फ़ॉन्ट वज़न। सामान्य मान: 400 normal, 500 medium, 600 semibold, 700 bold।',
-  // v0.2.19X: ग्लोबल स्तर के लेबल «ग्लोबल» उपसर्ग के साथ,
-  //  ताकि उन्हें थीम-प्रति `<details>` पंक्तियों से अलग
-  //  पहचाना जा सके।
-  'settings.field.globalFont': 'ग्लोबल फ़ॉन्ट',
-  'settings.field.globalFontSize': 'ग्लोबल फ़ॉन्ट आकार',
-  'settings.field.globalFontWeight': 'ग्लोबल फ़ॉन्ट वज़न',
   'settings.field.fontColor': 'टेक्स्ट रंग',
   'settings.field.fontColorDesc': 'डिफ़ॉल्ट स्थिति में बुकमार्क लिंक टेक्स्ट का रंग।',
   'settings.field.backgroundColor': 'नए टैब की पृष्ठभूमि का रंग',

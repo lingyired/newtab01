@@ -95,8 +95,7 @@ const FONT_COLOR_EXTRA_VARS = ['--newtab-link-color'] as const;
  * silently keeping the stale `dynamic-styles` block.
  */
 const STYLE_KEYS: ReadonlySet<keyof Settings> = new Set<keyof Settings>([
-  // v0.2.19X: font/fontSize/fontWeight renamed to globalFont/...
-  'globalFont', 'globalFontSize', 'globalFontWeight',
+  'font', 'fontSize', 'fontWeight',
   'shadowBlur', 'highlightRound',
   'spacing', 'width', 'hPos', 'autoScale',
   'align',
@@ -104,18 +103,23 @@ const STYLE_KEYS: ReadonlySet<keyof Settings> = new Set<keyof Settings>([
 ]);
 
 /**
- * Resolve the 10 appearance-tab options for the *currently active*
- * theme + appearance mode. Theme/darkMode/width/hPos/align/spacing/
- * columnWidth/etc. are intentionally NOT resolved here — they remain
- * global (see `ThemeModeOverrides` in features/bookmarks/types.ts).
+ * Resolve the 8 per-theme override fields + 3 global font fields
+ * for the *currently active* theme + appearance mode. Theme/darkMode/
+ * width/hPos/align/spacing/columnWidth/etc. are intentionally NOT
+ * resolved here — they remain global (see `ThemeModeOverrides` in
+ * features/bookmarks/types.ts).
  *
  * Resolution order, per key:
- *   1. `themeOverrides[baseTheme][mode]?.[key]`  (per-theme per-mode override)
- *   2. `Settings[key]`                            (global value)
- *   3. hardcoded default in this function         (only for keys where
- *      the global `Settings` value might still be the v0.2.96 default
- *      that no longer makes sense — currently none, all 10 have a real
- *      Settings default).
+ *   - Palette / shadow fields (8): `themeOverrides[baseTheme][mode]?.[key]
+ *     ?? Settings[key]`. Empty string / 0 fall through to the
+ *     hardcoded default via `?? ''` / `?? 0` (the Settings default
+ *     is the "no override" sentinel — see CLAUDE.md §6.5 and the
+ *     5-color comment in applyUserColorOverride).
+ *   - Font fields (3, v0.2.23X): `Settings[key] || hardcoded`. The
+ *     per-theme tier is gone — font customization per theme goes
+ *     through the per-theme `customCss` textarea. `||` (not `??`)
+ *     is used so '' / 0 fall through to the hardcoded default
+ *     (preserves "user cleared → use theme default" semantic).
  *
  * `baseTheme` is the value of `Settings.theme` (no `-dark` suffix;
  * `applyTheme` already normalizes that). `mode` is the resolved
@@ -151,22 +155,12 @@ function resolveEffectiveSettings(): {
   const allOverrides = (getSetting('themeOverrides') ?? {}) as Record<string, { light?: ThemeModeOverrides; dark?: ThemeModeOverrides }>;
   const overrides = allOverrides[baseTheme]?.[mode];
 
-  // v0.2.19X: read the global values straight from storage — no
-  //  `?? default` here because we want 0 / '' to fall through to
-  //  the hardcoded tier (use `||` on the call site).
-  const globalFont = getSetting('globalFont');
-  const globalFontSize = getSetting('globalFontSize');
-  const globalFontWeight = getSetting('globalFontWeight');
-
   return {
-    // 3-tier cascade: perTheme > global > hardcoded fallback.
-    //  `overrides?.globalFont || globalFont || 'Sans-serif'` —
-    //  any falsy value (undefined / '' / 0) short-circuits to the
-    //  next tier. `0` is not a valid font family / size / weight,
-    //  so `||` semantics align with the user's "no override" intent.
-    font: String(overrides?.globalFont || globalFont || 'Sans-serif'),
-    fontSize: Number(overrides?.globalFontSize || globalFontSize || 16),
-    fontWeight: Number(overrides?.globalFontWeight || globalFontWeight || 400),
+    // v0.2.23X: font fields are global-only (no per-theme tier).
+    //  `||` so '' / 0 fall through to the hardcoded fallback.
+    font: String(getSetting('font') || 'Sans-serif'),
+    fontSize: Number(getSetting('fontSize') || 16),
+    fontWeight: Number(getSetting('fontWeight') || 400),
     fontColor: overrides?.fontColor ?? String(getSetting('fontColor') ?? ''),
     backgroundColor: overrides?.backgroundColor ?? String(getSetting('backgroundColor') ?? ''),
     // v1.0.16: linkBgColor — distinct from backgroundColor (page bg).

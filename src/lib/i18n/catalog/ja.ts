@@ -15,10 +15,6 @@ const messages = {
   'settings.section.themeOverridesSummary': '現在のテーマの外観（{theme} · {mode}）',
   'settings.section.themeOverridesSummaryDark': 'ダーク',
   'settings.section.themeOverridesSummaryLight': 'ライト',
-  // v0.2.19X: 外観タブ下部の説明。3 段階 CSS カスケード
-  //  （フォントを例に）：カスタムテーマフォント > グローバルフォント > テーマデフォルト。
-  //  グローバルを空にするとテーマデフォルトを使用。
-  'settings.section.fontCascadeHint': 'CSS 優先度（フォントを例に）：カスタムテーマフォント > グローバルフォント > テーマデフォルト。グローバルを空にするとテーマデフォルトを使用します。',
   'settings.field.language': '言語',
   'settings.field.languageDesc': 'newtab01 のインターフェース言語を切り替えます。「ブラウザに従う」は Chrome の言語設定を使用します。対応リストにない言語は英語がフォールバックとして使用されます。',
   'settings.language.auto': 'ブラウザに従う',
@@ -59,11 +55,6 @@ const messages = {
   'settings.field.fontSizeDesc': 'ブックマークリンクのフォントサイズ（ピクセル単位）。',
   'settings.field.fontWeight': 'フォントの太さ',
   'settings.field.fontWeightDesc': 'ブックマークリンクのフォントの太さ。一般的な値: 400 通常、500 中、600 やや太字、700 太字。',
-  // v0.2.19X: グローバルティアラベル。per-theme <details> の
-  //  「フォント」と区別するために「グローバル」接頭辞を付ける。
-  'settings.field.globalFont': 'グローバルフォント',
-  'settings.field.globalFontSize': 'グローバルフォントサイズ',
-  'settings.field.globalFontWeight': 'グローバルフォントの太さ',
   'settings.field.fontColor': 'テキスト色',
   'settings.field.fontColorDesc': '既定状態でのブックマークリンクのテキスト色。',
   'settings.field.backgroundColor': '新しいタブの背景色',
