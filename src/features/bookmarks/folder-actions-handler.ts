@@ -15,11 +15,25 @@ import * as debug from '../../lib/debug';
 /** `Settings.newtab` value type. 0 = current tab, 1 = new foreground, 2 = new background. */
 type NewtabMode = 0 | 1 | 2;
 
-/** Resolve the newtab mode for a folder action, honouring middle-click (always background). */
+/** Resolve the newtab mode for a folder action, honouring modifier
+ * clicks (middle-click, Ctrl/Cmd-click) which always open in the
+ * background. This matches the browser's native behaviour for
+ * `<a target="_blank">` links, which open in a new background tab
+ * on middle-click and on Ctrl/Cmd-click regardless of the
+ * document's defaults. */
 function resolveNewtabMode(event: MouseEvent): NewtabMode {
   if (event.button === 1) {
     // Middle-click always opens in the background, regardless of the
     // user's link newtab setting. Matches ordinary bookmark links.
+    return 2;
+  }
+  if (event.ctrlKey || event.metaKey) {
+    // Ctrl/Cmd + left click → background new tab. Matches the
+    // native modifier-click affordance of `<a target="_blank">`
+    // links (see link.ts:renderLink). Without this, folder action
+    // buttons would either navigate the current tab (newtab=0) or
+    // open in the foreground (newtab=1) on a Ctrl/Cmd-click —
+    // inconsistent with the rest of the bookmark tree.
     return 2;
   }
   const raw = Number(getSetting('newtab') ?? 2);
@@ -166,9 +180,15 @@ export async function openAsGroup(node: BookmarkNode, event: MouseEvent): Promis
  * - > SPLIT_VIEW_MAX links: show the floating picker so the user
  *   can hand-pick ≤ 4. A null result (cancel) returns without
  *   opening anything.
+ * - After picking, if the result is exactly 1 URL, the split view
+ *   is skipped and the URL opens as a normal tab (respecting the
+ *   newtab mode). A 1-URL split view is meaningless (half-empty
+ *   grid) and used to show the
+ *   "Invalid split view configuration: need 2-4 valid URLs" error.
  *
  * The split view's own tab is opened according to the user's
- * `newtab` link setting (or background for middle-click):
+ * `newtab` link setting (or background for middle-click /
+ * Ctrl/Cmd-click):
  * - mode 0 (current tab): the split view replaces the current tab.
  * - mode 1 (foreground): the split view opens as a new active tab.
  * - mode 2 (background): the split view opens in the background.
@@ -193,12 +213,28 @@ export async function openSplit(node: BookmarkNode, event: MouseEvent): Promise<
     pickedUrls = urlChildren.map((c) => c.url!);
   }
 
+  const newtabMode = resolveNewtabMode(event);
+
+  // v0.2.18X: 1 URL after picking → skip the split view wrapper and
+  // open the URL directly. A 1-URL split view would otherwise show
+  // the "Invalid split view configuration" error, which is jarring —
+  // the user just wants to open a single link from a 1-URL folder.
+  if (pickedUrls.length === 1) {
+    debug.log('folder-action', 'openSplit:singleUrl', {
+      folder: node.title,
+      url: pickedUrls[0],
+      newtabMode,
+      middleClick: event.button === 1,
+    });
+    await openUrlsInNewtabMode(pickedUrls, newtabMode);
+    return;
+  }
+
   // Pick layout by URL count (cap at SPLIT_VIEW_MAX)
   const mode: SplitLayout['mode'] =
     pickedUrls.length <= 2 ? '2h' : pickedUrls.length <= 3 ? '3H' : '4grid';
   const layout: SplitLayout = { mode };
 
-  const newtabMode = resolveNewtabMode(event);
   debug.log('folder-action', 'openSplit', {
     folder: node.title,
     urlCount: pickedUrls.length,

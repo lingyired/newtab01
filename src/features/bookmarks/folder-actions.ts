@@ -131,6 +131,13 @@ export function createFolderActions(node: BookmarkNode, bookmarkCount: number): 
     // Middle-click → always open in background (newtab=2), regardless
     // of the user's link newtab setting. Matches the behaviour of
     // ordinary bookmark links (see link.ts:renderLink).
+    //
+    // v0.2.18X: Ctrl/Cmd + left click is also routed to the background
+    // path. The `click` event already fires for modifier+left clicks,
+    // so `resolveNewtabMode` (in folder-actions-handler.ts) detects
+    // `e.ctrlKey || e.metaKey` and returns 2. The auxclick handler
+    // stays focused on the middle-button case to keep the behaviour
+    // explicit at the call site.
     btn.addEventListener('auxclick', (e) => {
       if (e.button === 1) {
         e.stopPropagation();

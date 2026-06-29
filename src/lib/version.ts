@@ -141,4 +141,10 @@
 //          intentionally not bumped in this commit (caught later —
 //          v1.0.15 above fixed the drift).
 // v1.0.13: store submission metadata — drop "Chrome" brand for Edge.
-export const VERSION = '1.0.18';
+// v1.0.19: popup Open Split button goes through t('popup.openSplit')
+//          instead of hardcoded English; single-URL split view now
+//          navigates to the URL (folder-actions-handler.ts → openSplit
+//          + split-view.ts → renderSplitView defence in depth); folder
+//          action icons honour Ctrl/Cmd + left click → background new
+//          tab via resolveNewtabMode.
+export const VERSION = '1.0.19';

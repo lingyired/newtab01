@@ -1,7 +1,7 @@
 {
   "name": "newtab01",
   "private": true,
-  "version": "1.0.18",
+  "version": "1.0.19",
   "type": "module",
   "scripts": {
     "dev": "vite",

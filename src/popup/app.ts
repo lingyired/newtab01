@@ -124,7 +124,7 @@ function render(root: HTMLElement): void {
   splitBtn.type = 'button';
   splitBtn.className = 'popup-split-btn';
   splitBtn.disabled = true;
-  splitBtn.textContent = 'Open Split';
+  splitBtn.textContent = t('popup.openSplit');
 
   splitBtn.addEventListener('click', async () => {
     const urls =
