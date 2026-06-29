@@ -54,6 +54,7 @@ export type MessageKey =
   | 'settings.section.themeOverridesSummary'
   | 'settings.section.themeOverridesSummaryDark'
   | 'settings.section.themeOverridesSummaryLight'
+  | 'settings.section.fontCascadeHint'
   // Settings panel — language row
   | 'settings.field.language'
   | 'settings.field.languageDesc'

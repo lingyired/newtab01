@@ -136,6 +136,7 @@
 //          padding-shrunk → hint-inline-inside-button → hint-floats-
 //          below). All kept in git history; only this final design is
 //          released as v1.0.15.
+// v1.0.13: store submission metadata — drop "Chrome" brand for Edge.
 // v1.0.14: Chrome Web Store listing translation support (default_locale
 //          + 10 _locales/<code>/messages.json). Version constant
 //          intentionally not bumped in this commit (caught later —
@@ -147,4 +148,15 @@
 //          + split-view.ts → renderSplitView defence in depth); folder
 //          action icons honour Ctrl/Cmd + left click → background new
 //          tab via resolveNewtabMode.
-export const VERSION = '1.0.19';
+// v1.0.20: context menu 'Create new column' / 'Remove folder' now go
+//          through t('contextMenu.createNewColumn') / t('contextMenu.removeFolder')
+//          instead of hardcoded English; 'Include layout' checkbox
+//          state in advanced tab persists to localStorage so it
+//          survives tab switches; Settings.font / fontSize / fontWeight
+//          renamed to globalFont / globalFontSize / globalFontWeight,
+//          defaults empty / 0, 3-tier cascade (per-theme > global >
+//          hardcoded fallback) implemented in resolveEffectiveSettings;
+//          new MessageKey settings.section.fontCascadeHint added to all
+//          10 catalogs with explanatory hint at the bottom of the
+//          appearance tab.
+export const VERSION = '1.0.20';

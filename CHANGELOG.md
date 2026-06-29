@@ -5,6 +5,22 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.20] - 2026-06-29
+
+### Fixed
+- **右键目录的「新建列」和「移除文件夹」菜单项走 i18n**。原来 `src/features/bookmarks/context-menu.ts:191` 和 `:238` 是裸英文硬编码，切到任何非英文 locale 仍然是英文。改成 `t('contextMenu.createNewColumn')` / `t('contextMenu.removeFolder')` 后跟 popup / settings panel 一样跟随用户 locale 切换。复用了 v0.2.117 已有的 2 个 key（10 个 catalog 全部已有翻译，无需新增 MessageKey）。
+- **「包含布局」复选框状态在切换 tab 时丢失**。原来 `renderAdvancedTab()` 每次重建 tab 都用 `includeLayoutCheckbox.checked = false` 创建新 checkbox，DOM state 没持久化 —— 用户勾选 → 切到其他 tab → 切回来，发现被取消勾选了。改成读 / 写 `localStorage['newtab01.advanced.includeLayout']`，跟同一个文件里 `newtab01.appearance.themeOverrides.open` 的现有 UI 状态 pattern 一致。localStorage 不是 chrome.storage.sync —— UI 状态不值得跨设备同步。
+
+### Changed
+- **外观 tab 引入 3 层 CSS 级联 for 字体 / 字号 / 字重**：per-theme 覆盖 > 全局 > 主题默认。
+  - **新增全局行**：外观 tab 主流程里在「水平位置」下面加 3 行（全局字体 / 全局字号 / 全局字重），默认留空（empty string / 0）。用户填了之后会覆盖主题默认字体，但被 per-theme `<details>` 里的覆盖项覆盖。
+  - **重命名字段**：`Settings.font` / `fontSize` / `fontWeight` → `globalFont` / `globalFontSize` / `globalFontWeight`，让全局级的字段名跟 UI 标签一致，语义清晰。`ThemeModeOverrides` 里的 bucket key 同步重命名（保持 `Pick<Settings, ...>` 类型绑定）。
+  - **底部说明**：外观 tab 最底部加一行 `.sp-hint` 文字明确写出 3 层 cascade 的顺序。新 MessageKey `settings.section.fontCascadeHint` 加到 10 个 catalog（en / zh / es / ar / hi / fr / pt / de / ja / ru）。
+  - **底层 fallback 保持硬编码**：`'Sans-serif'` / `16` / `400`，跟 CLAUDE.md §9 「YAGNI」一致 —— 没有去读 `var(--font-sans)` 等 CSS 变量。
+  - **`resolveEffectiveSettings` 改用 `||`（不是 `??`）**：让 0 / '' 的"no override"语义跟 5 个 palette 字段一致 —— falsy 值正确 fall through 到下一层。
+  - **storage 迁移**：pre-rename 用户 storage 里的 `font` / `fontSize` / `fontWeight` 在第一次启动新 build 时自动复制到 `globalFont` / `globalFontSize` / `globalFontWeight`（`initSettings` 里加了一段迁移逻辑），避免存量用户的字体设置突然消失。
+  - **per-theme `<details>` 里的 bucket key 也跟着重命名**：保持「per-theme bucket key」和「global Settings key」一致，让 `PER_THEME_KEYS` 的 `satisfies ReadonlyArray<keyof ThemeModeOverrides>` 约束继续生效。
+
 ## [1.0.19] - 2026-06-29
 
 ### Fixed

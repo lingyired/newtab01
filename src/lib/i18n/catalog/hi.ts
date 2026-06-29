@@ -15,6 +15,11 @@ const messages = {
   'settings.section.themeOverridesSummary': 'वर्तमान थीम का रूप ({theme} · {mode})',
   'settings.section.themeOverridesSummaryDark': 'डार्क',
   'settings.section.themeOverridesSummaryLight': 'लाइट',
+  // v0.2.19X: स्वरूप टैब के नीचे संकेत। 3-स्तरीय CSS कैस्केड
+  //  (फ़ॉन्ट को उदाहरण के रूप में): कस्टम थीम ओवरराइड > ग्लोबल
+  //  > थीम डिफ़ॉल्ट। थीम डिफ़ॉल्ट का उपयोग करने के लिए
+  //  «ग्लोबल» खाली छोड़ें।
+  'settings.section.fontCascadeHint': 'CSS कैस्केड (फ़ॉन्ट को उदाहरण के रूप में): कस्टम थीम ओवरराइड > ग्लोबल > थीम डिफ़ॉल्ट। थीम डिफ़ॉल्ट का उपयोग करने के लिए «ग्लोबल» खाली छोड़ें।',
   'settings.field.language': 'भाषा',
   'settings.field.languageDesc': 'newtab01 इंटरफ़ेस की भाषा बदलें। "ब्राउज़र का पालन करें" Chrome की भाषा प्राथमिकता का उपयोग करता है; यदि भाषा समर्थित सूची में नहीं है, तो अंग्रेज़ी फ़ॉलबैक के रूप में उपयोग की जाती है।',
   'settings.language.auto': 'ब्राउज़र का पालन करें',

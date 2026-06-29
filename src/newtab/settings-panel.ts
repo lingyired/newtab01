@@ -93,9 +93,16 @@ let currentTab: SettingsTab = 'layout';
  * The keys must match `ThemeModeOverrides` in
  * `features/bookmarks/types.ts` — TS will surface a compile error
  * if they drift, thanks to the `satisfies` constraint.
+ *
+ * v0.2.19X: `font` / `fontSize` / `fontWeight` renamed to
+ *  `globalFont` / `globalFontSize` / `globalFontWeight` to match
+ *  the Settings rename in the global tier. The same keys are
+ *  used as the per-theme bucket keys (`themeOverrides[theme][mode]`
+ *  entries) and the global tier keys — see the `ThemeModeOverrides`
+ *  docstring for why they share names.
  */
 const PER_THEME_KEYS = [
-  'font', 'fontSize', 'fontWeight',
+  'globalFont', 'globalFontSize', 'globalFontWeight',
   'fontColor', 'backgroundColor', 'linkBgColor', 'highlightColor', 'highlightFontColor', 'shadowColor',
   'shadowBlur', 'highlightRound',
 ] as const satisfies ReadonlyArray<keyof ThemeModeOverrides>;
@@ -161,14 +168,28 @@ function buildThemePickerRow(
 
 /** Read a per-theme per-mode value with global fallback.
  *  Returns the override if the current theme+mode has one,
- *  otherwise the global `Settings[key]`. */
-function readPerThemeValue<K extends PerThemeKey>(key: K): Settings[K] {
+ *  otherwise the global `Settings[key]`.
+ *
+ *  v0.2.19X: return type is `NonNullable<ThemeModeOverrides[K]>`
+ *   (was `Settings[K]`). Post-rename, the per-theme bucket keys
+ *   (`globalFont` / `globalFontSize` / `globalFontWeight`) are
+ *   also `keyof Settings`, so the type info is preserved —
+ *   `ThemeModeOverrides['globalFont']` ≡ `Settings['globalFont']`
+ *   ≡ `string`. Using `ThemeModeOverrides[K]` makes the function
+ *   self-describing about which "tier" it reads from. */
+function readPerThemeValue<K extends PerThemeKey>(key: K): NonNullable<ThemeModeOverrides[K]> {
   const t = currentBaseTheme();
   const m = currentMode();
   const all = (getSetting('themeOverrides') ?? {}) as Record<string, { light?: ThemeModeOverrides; dark?: ThemeModeOverrides }>;
-  const bucket = all[t]?.[m] as Partial<Settings> | undefined;
-  if (bucket && bucket[key] !== undefined) return bucket[key] as Settings[K];
-  return getSetting(key);
+  const bucket = all[t]?.[m];
+  if (bucket && bucket[key] !== undefined) return bucket[key] as NonNullable<ThemeModeOverrides[K]>;
+  // v0.2.19X: fall through to the global Settings tier. `getSetting`
+  //  returns `Settings[K]` which equals `NonNullable<ThemeModeOverrides[K]>`
+  //  for the renamed font/fontSize/fontWeight keys (post-rename the
+  //  bucket and Settings keys are aligned). For the 5 palette fields
+  //  + shadowBlur + highlightRound the bucket key still equals the
+  //  Settings key, so the cast is safe across all 10 PER_THEME_KEYS.
+  return getSetting(key) as NonNullable<ThemeModeOverrides[K]>;
 }
 
 /** Has the user explicitly overridden this key for the current
@@ -186,14 +207,19 @@ function hasPerThemeOverride<K extends PerThemeKey>(key: K): boolean {
  *  on each level so we never mutate the existing `themeOverrides`
  *  tree in place — that lets `chrome.storage.onChanged` and the
  *  panel's own refresh see a clean diff and not get tangled in
- *  an identity check. */
-function writePerThemeValue<K extends PerThemeKey>(key: K, value: Settings[K]): void {
+ *  an identity check.
+ *
+ *  v0.2.19X: signature matches the new bucket-key names; the
+ *   value type stays as `Settings[K]` because (post-rename) the
+ *   per-theme bucket key is also a Settings key, so the types
+ *   align exactly. */
+function writePerThemeValue<K extends PerThemeKey>(key: K, value: NonNullable<ThemeModeOverrides[K]>): void {
   const t = currentBaseTheme();
   const m = currentMode();
   const all = { ...(getSetting('themeOverrides') ?? {}) } as Record<string, { light?: ThemeModeOverrides; dark?: ThemeModeOverrides }>;
   const themeBucket = { ...(all[t] ?? {}) } as { light?: ThemeModeOverrides; dark?: ThemeModeOverrides };
-  const modeBucket = { ...(themeBucket[m] ?? {}) } as Partial<Settings>;
-  modeBucket[key] = value;
+  const modeBucket = { ...(themeBucket[m] ?? {}) } as Partial<ThemeModeOverrides>;
+  (modeBucket as Record<string, unknown>)[key] = value;
   themeBucket[m] = modeBucket as ThemeModeOverrides;
   all[t] = themeBucket;
   void updateSettings({ themeOverrides: all });
@@ -592,6 +618,26 @@ function refreshInputsFromSettings(): void {
       continue;
     }
     const nextStr = String(next);
+    if (input.value !== nextStr) input.value = nextStr;
+  }
+
+  // v0.2.19X: refresh the global font / fontSize / fontWeight
+  //  inputs on cross-tab storage sync. These three live in the
+  //  main flow of the appearance tab (above the per-theme
+  //  `<details>`) and use the standard global id scheme
+  //  (`sp-globalFont` etc.), so they aren't picked up by the
+  //  PER_THEME_KEYS loop above. Without this loop, a cross-tab
+  //  edit to one of these would leave the open panel showing
+  //  stale values until the user closed + reopened it. Same
+  //  one-line `if (input.value !== nextStr) input.value = nextStr`
+  //  pattern as the per-theme loop — `next` is the raw
+  //  `getSetting(key)` value (empty / 0 = "no override",
+  //  same as the cascade semantics).
+  const GLOBAL_FONT_KEYS: ReadonlyArray<keyof Settings> = ['globalFont', 'globalFontSize', 'globalFontWeight'];
+  for (const key of GLOBAL_FONT_KEYS) {
+    const input = document.getElementById(`sp-${key}`) as HTMLInputElement | null;
+    if (!input) continue;
+    const nextStr = String(getSetting(key) ?? '');
     if (input.value !== nextStr) input.value = nextStr;
   }
 
@@ -1001,9 +1047,15 @@ function createRow(
 
 function getDefaults(): Settings {
   return {
-    font: 'Sans-serif',
-    fontSize: 16,
-    fontWeight: 400,
+    // v0.2.19X: rename font/fontSize/fontWeight → globalFont/... with
+    //  empty/0 defaults so the user can distinguish "no override" from
+    //  a real value. Same default shape as `lib/storage/settings.ts`
+    //  (the source of truth). The hardcoded fallback in
+    //  `resolveEffectiveSettings` (apply.ts) handles the cascade —
+    //  0 / '' correctly fall through.
+    globalFont: '',
+    globalFontSize: 0,
+    globalFontWeight: 0,
     theme: 'default',
     darkMode: 'system',
     // The five palette fields are intentionally empty strings: see the
@@ -1260,6 +1312,23 @@ function createTextInput(key: keyof Settings, scope: InputScope = 'global'): HTM
     : getSetting(key);
   input.value = String(initial);
   input.addEventListener('change', () => saveSetting(key, scope));
+  return input;
+}
+
+/**
+ * v0.2.19X: build the global-font text input. Wraps the standard
+ * `createTextInput` so we can add a placeholder that hints at the
+ * hardcoded fallback ('Sans-serif') — when the field is empty, the
+ * cascade in `resolveEffectiveSettings` falls through to this default,
+ * but a plain empty `<input>` doesn't communicate that. The placeholder
+ * disappears as soon as the user types anything (browser-native UX).
+ *
+ * The default value (`''`) is already wired into the input via
+ * `createTextInput`'s `getSetting` call — no further work needed.
+ */
+function createGlobalFontInput(): HTMLInputElement {
+  const input = createTextInput('globalFont');
+  input.placeholder = 'Sans-serif';
   return input;
 }
 
@@ -1523,6 +1592,41 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   container.appendChild(createRow(t('settings.field.width'), createNumberInput('width'), 'width', t('settings.field.widthDesc')));
   container.appendChild(createRow(t('settings.field.hPos'), createNumberInput('hPos'), 'hPos', t('settings.field.hPosDesc')));
 
+  // v0.2.19X: global font / fontSize / fontWeight rows. Sit
+  //  between the other "global appearance" rows (width / hPos) and
+  //  the per-theme `<details>` block. The 3-tier cascade
+  //  (per-theme > global > theme default) is explained by the
+  //  hint at the bottom of the tab — see the `fontCascadeHint`
+  //  paragraph appended after `<details>` below.
+  //
+  //  The labels and descriptions reuse the existing
+  //  `settings.field.font` / `fontSize` / `fontWeight` keys (the
+  //  same text describes both the global row and the per-theme
+  //  row in the `<details>`; the cascade hint disambiguates them).
+  //  Defaults from `getDefaults()` are empty / 0 — the
+  //  `resolveEffectiveSettings` cascade in apply.ts treats those
+  //  as "no override" (falls through to the hardcoded fallback).
+  //  The placeholders show the hardcoded defaults so the user
+  //  sees what they're overriding.
+  container.appendChild(createRow(
+    t('settings.field.font'),
+    createGlobalFontInput(),
+    'globalFont',
+    t('settings.field.fontDesc'),
+  ));
+  container.appendChild(createRow(
+    t('settings.field.fontSize'),
+    createNumberInput('globalFontSize', '0.1'),
+    'globalFontSize',
+    t('settings.field.fontSizeDesc'),
+  ));
+  container.appendChild(createRow(
+    t('settings.field.fontWeight'),
+    createNumberInput('globalFontWeight', '0.1'),
+    'globalFontWeight',
+    t('settings.field.fontWeightDesc'),
+  ));
+
   // v0.2.97 per-theme per-mode block: 10 options whose values
   //  can be customized per (theme, light/dark) bucket. The
   //  <details> wraps them so the appearance tab's top half
@@ -1565,9 +1669,14 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   //  the read/write paths go through the per-theme helpers
   //  above. Revert (↩) on these rows clears the current
   //  theme+mode override — see createRow.
-  details.appendChild(createRow(t('settings.field.font'), createTextInput('font', 'perTheme'), 'font', t('settings.field.fontDesc'), 'perTheme'));
-  details.appendChild(createRow(t('settings.field.fontSize'), createNumberInput('fontSize', '0.1', 'perTheme'), 'fontSize', t('settings.field.fontSizeDesc'), 'perTheme'));
-  details.appendChild(createRow(t('settings.field.fontWeight'), createNumberInput('fontWeight', '0.1', 'perTheme'), 'fontWeight', t('settings.field.fontWeightDesc'), 'perTheme'));
+  // v0.2.19X: per-theme bucket keys renamed to globalFont/... to match
+  //  the Settings tier-2 rename. The UI labels (settings.field.font etc.)
+  //  stay the same — "字体" / "字号" / "字重" — because the cascade hint
+  //  below makes it clear these are the "per-theme override" tier. The
+  //  ID and storage bucket key are an internal detail.
+  details.appendChild(createRow(t('settings.field.font'), createTextInput('globalFont', 'perTheme'), 'globalFont', t('settings.field.fontDesc'), 'perTheme'));
+  details.appendChild(createRow(t('settings.field.fontSize'), createNumberInput('globalFontSize', '0.1', 'perTheme'), 'globalFontSize', t('settings.field.fontSizeDesc'), 'perTheme'));
+  details.appendChild(createRow(t('settings.field.fontWeight'), createNumberInput('globalFontWeight', '0.1', 'perTheme'), 'globalFontWeight', t('settings.field.fontWeightDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.backgroundColor'), createColorInput('backgroundColor', 'perTheme'), 'backgroundColor', t('settings.field.backgroundColorDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.fontColor'), createColorInput('fontColor', 'perTheme'), 'fontColor', t('settings.field.fontColorDesc'), 'perTheme'));
   details.appendChild(createRow(t('settings.field.linkBgColor'), createColorInput('linkBgColor', 'perTheme'), 'linkBgColor', t('settings.field.linkBgColorDesc'), 'perTheme'));
@@ -1603,6 +1712,18 @@ async function renderAppearanceTab(): Promise<HTMLElement> {
   details.appendChild(buildPerThemeCustomCssRow());
 
   container.appendChild(details);
+
+  // v0.2.19X: cascade hint at the bottom of the appearance tab.
+  //  Explains the 3-tier font cascade (per-theme > global >
+  //  theme default) introduced by the new global font / fontSize
+  //  / fontWeight rows. Without this hint, users see "字体" twice
+  //  — once in the main flow (global) and once in the per-theme
+  //  `<details>` — and can't tell what overrides what. The hint
+  //  uses `.sp-hint` to match the custom-themes tab's import
+  //  hint style. Single sentence; no links / no interaction.
+  const fontCascadeHint = el('p', 'sp-hint');
+  fontCascadeHint.textContent = t('settings.section.fontCascadeHint');
+  container.appendChild(fontCascadeHint);
 
   return container;
 }
@@ -2117,7 +2238,11 @@ function renderAdvancedTab(): HTMLElement {
   //  write back stale values that `resolveEffectiveSettings` would
   //  then "win" over the user's actual per-theme overrides.
   const PER_THEME_APPEARANCE_KEYS: ReadonlySet<keyof Settings> = new Set([
-    'font', 'fontSize', 'fontWeight',
+    // v0.2.19X: renamed font/fontSize/fontWeight → globalFont/... to
+    //  match the Settings rename in the global tier. These keys are
+    //  the 10 per-theme appearance fields whose storage lives under
+    //  `themeOverrides[theme][mode]`.
+    'globalFont', 'globalFontSize', 'globalFontWeight',
     'fontColor', 'backgroundColor', 'linkBgColor', 'highlightColor', 'highlightFontColor', 'shadowColor',
     'shadowBlur', 'highlightRound',
   ]);
@@ -2145,7 +2270,23 @@ function renderAdvancedTab(): HTMLElement {
   const includeLayoutCheckbox = document.createElement('input');
   includeLayoutCheckbox.type = 'checkbox';
   includeLayoutCheckbox.id = 'sp-include-layout';
-  includeLayoutCheckbox.checked = false;
+  // v0.2.19X: persist the checkbox state to localStorage so it
+  // survives tab switches inside the settings panel (the panel
+  // re-renders the whole tab on navigation, which would otherwise
+  // re-create this checkbox with `checked = false` and silently
+  // un-check whatever the user just ticked). Same pattern as the
+  // per-theme `<details>` open/closed state at L1538-1543 — UI
+  // state lives in localStorage, not chrome.storage.sync (UI
+  // state isn't worth cross-device syncing). Default remembered
+  // value is `'false'` to match the v0.2.107 design intent of
+  // "checkbox defaults unchecked" — see the comment block above
+  // for why.
+  const INCLUDE_LAYOUT_LS_KEY = 'newtab01.advanced.includeLayout';
+  const rememberedIncludeLayout = localStorage.getItem(INCLUDE_LAYOUT_LS_KEY);
+  includeLayoutCheckbox.checked = rememberedIncludeLayout === 'true';
+  includeLayoutCheckbox.addEventListener('change', () => {
+    localStorage.setItem(INCLUDE_LAYOUT_LS_KEY, String(includeLayoutCheckbox.checked));
+  });
   // v0.2.107: wrap the checkbox + label in a dedicated flex
   //  container with `align-items: center` so the box and the
   //  text are vertically aligned along their optical centers.

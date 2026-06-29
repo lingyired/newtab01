@@ -18,6 +18,11 @@ const messages = {
   'settings.section.themeOverridesSummary': 'مظهر السمة الحالية ({theme} · {mode})',
   'settings.section.themeOverridesSummaryDark': 'داكن',
   'settings.section.themeOverridesSummaryLight': 'فاتح',
+  // v0.2.19X: ملاحظة في أسفل علامة تبويب المظهر. تتالي CSS
+  //  من 3 مستويات (باستخدام الخط كمثال): تجاوز السمة المخصصة
+  //  > عام > السمة الافتراضية. اترك «عام» فارغًا لاستخدام
+  //  السمة الافتراضية.
+  'settings.section.fontCascadeHint': 'تتالي CSS (باستخدام الخط كمثال): تجاوز السمة المخصصة > عام > السمة الافتراضية. اترك «عام» فارغًا لاستخدام السمة الافتراضية.',
   'settings.field.language': 'اللغة',
   'settings.field.languageDesc': 'تبديل لغة واجهة newtab01. "متابعة المتصفح" تستخدم تفضيل لغة Chrome؛ إذا لم تكن اللغة في القائمة المدعومة، تُستخدم الإنجليزية كاحتياط.',
   'settings.language.auto': 'متابعة المتصفح',

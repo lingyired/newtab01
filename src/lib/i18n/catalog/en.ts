@@ -20,6 +20,11 @@ const messages = {
   'settings.section.themeOverridesSummary': 'Current theme appearance ({theme} · {mode})',
   'settings.section.themeOverridesSummaryDark': 'dark',
   'settings.section.themeOverridesSummaryLight': 'light',
+  // v0.2.19X: bottom-of-appearance-tab hint explaining the 3-tier
+  //  font cascade (per-theme override > global > theme default).
+  //  Applies to font / fontSize / fontWeight — the new "global"
+  //  tier + the existing per-theme `<details>` block.
+  'settings.section.fontCascadeHint': 'CSS cascade (using font as example): per-theme override > global > theme default. Leave global empty to use the theme default.',
   // Settings panel — language row
   'settings.field.language': 'Language',
   'settings.field.languageDesc': 'Switch the newtab01 interface language. "Follow browser" uses the Chrome language preference; if the language is not in the supported list, English is used as the fallback.',

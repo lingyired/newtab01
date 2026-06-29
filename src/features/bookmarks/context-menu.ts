@@ -188,7 +188,7 @@ export function getFolderMenuItems(node: { id: string; title?: string }): (MenuI
     items.push(null); // separator
 
     items.push({
-      label: 'Create new column',
+      label: t('contextMenu.createNewColumn'),
       action: () => withUndo(() => {
         void addColumn([node.id]);
       }),
