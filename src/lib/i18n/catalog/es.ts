@@ -16,11 +16,6 @@ const messages = {
   'settings.section.themeOverridesSummary': 'Apariencia del tema actual ({theme} · {mode})',
   'settings.section.themeOverridesSummaryDark': 'oscuro',
   'settings.section.themeOverridesSummaryLight': 'claro',
-  // v0.2.19X: nota al final de la pestaña Apariencia. Cascada CSS
-  //  de 3 niveles (usando la fuente como ejemplo): anulación del
-  //  tema personalizado > global > tema predeterminado. Deje
-  //  « global » vacío para usar el tema predeterminado.
-  'settings.section.fontCascadeHint': 'Cascada CSS (usando la fuente como ejemplo): anulación del tema personalizado > global > tema predeterminado. Deje « global » vacío para usar el tema predeterminado.',
   // Settings panel — language row
   'settings.field.language': 'Idioma',
   'settings.field.languageDesc': 'Cambia el idioma de la interfaz de newtab01. "Seguir al navegador" usa la preferencia de idioma de Chrome; si el idioma no está en la lista admitida, se usa inglés como respaldo.',
@@ -64,11 +59,6 @@ const messages = {
   'settings.field.fontSizeDesc': 'Tamaño de fuente de los enlaces de marcadores (en píxeles).',
   'settings.field.fontWeight': 'Peso de fuente',
   'settings.field.fontWeightDesc': 'Peso de la fuente de los enlaces de marcadores. Valores comunes: 400 normal, 500 medio, 600 seminegrita, 700 negrita.',
-  // v0.2.19X: etiquetas del nivel global con el prefijo «Global»,
-  //  para distinguirlas de las filas de `<details>` por tema.
-  'settings.field.globalFont': 'Fuente global',
-  'settings.field.globalFontSize': 'Tamaño de fuente global',
-  'settings.field.globalFontWeight': 'Peso de fuente global',
   'settings.field.fontColor': 'Color de texto',
   'settings.field.fontColorDesc': 'Color del texto del enlace de marcador en su estado predeterminado.',
   'settings.field.backgroundColor': 'Color de fondo de la nueva pestaña',

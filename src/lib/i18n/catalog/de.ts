@@ -15,11 +15,6 @@ const messages = {
   'settings.section.themeOverridesSummary': 'Aktuelles Design-Erscheinungsbild ({theme} · {mode})',
   'settings.section.themeOverridesSummaryDark': 'dunkel',
   'settings.section.themeOverridesSummaryLight': 'hell',
-  // v0.2.19X: Hinweis am Ende des Erscheinungsbild-Tabs. 3-stufige
-  //  CSS-Kaskade (am Beispiel Schriftart): benutzerdefiniertes
-  //  Theme > global > Theme-Standard. Global leer lassen, um den
-  //  Theme-Standard zu verwenden.
-  'settings.section.fontCascadeHint': 'CSS-Kaskade (am Beispiel Schriftart): benutzerdefiniertes Theme > global > Theme-Standard. Lassen Sie „global" leer, um den Theme-Standard zu verwenden.',
   'settings.field.language': 'Sprache',
   'settings.field.languageDesc': 'Wechselt die Anzeigesprache von newtab01. „Browser folgen" verwendet die Chrome-Spracheinstellung; ist die Sprache nicht in der unterstützten Liste, wird Englisch als Fallback verwendet.',
   'settings.language.auto': 'Browser folgen',
@@ -59,13 +54,7 @@ const messages = {
   'settings.field.fontSize': 'Schriftgröße',
   'settings.field.fontSizeDesc': 'Schriftgröße der Lesezeichen-Links (in Pixeln).',
   'settings.field.fontWeight': 'Schriftgewicht',
-  'settings.field.fontWeightDesc': 'Schriftgewicht der Lesezeichen-Links. Übliche Werte: 400 normal, 500 medium, 600 semibold, 700 bold.',
-  // v0.2.19X: Labels der globalen Ebene mit „Global"-Präfix,
-  //  um sie von den per-theme-<details>-Zeilen darunter zu
-  //  unterscheiden.
-  'settings.field.globalFont': 'Globale Schriftart',
-  'settings.field.globalFontSize': 'Globale Schriftgröße',
-  'settings.field.globalFontWeight': 'Globales Schriftgewicht',
+  'settings.field.fontWeightDesc': 'Schriftgewicht der Lesezeichen-Links. Häufige Werte: 400 normal, 500 medium, 600 semibold, 700 bold.',
   'settings.field.fontColor': 'Textfarbe',
   'settings.field.fontColorDesc': 'Farbe des Lesezeichen-Link-Texts im Standardzustand.',
   'settings.field.backgroundColor': 'Hintergrundfarbe des neuen Tabs',

@@ -5,6 +5,22 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.23] - 2026-06-29
+
+### Changed
+- **简化外观 tab 字体相关选项**。之前 v1.0.20-22 引入的 3 层 CSS 级联（per-theme > global > 主题默认）以及「全局」前缀被认定为 over-engineered。改回 2 层：
+  - **删除 per-theme `<details>` 里的 3 个字体选项**（字体 / 字号 / 字重）。`PER_THEME_KEYS` 从 11 个减到 8 个，`ThemeModeOverrides` 类型同步精简。
+  - **保留全局的 3 个字体选项**（在外观 tab 主流程），label 改回不带「全局」前缀的「字体 / 字号 / 字重」—— 因为现在没有 per-theme 对照项了。
+  - **`Settings.font` / `fontSize` / `fontWeight` 字段名 revert 回 v1.0.19 的原始名**（不再用 `globalFont` 等「global」前缀，因为没有 per-theme tier 了）。`STYLE_KEYS` 同步更新。
+  - **`resolveEffectiveSettings` cascade 简化**：字体字段直接 `getSetting('font') || 'Sans-serif'`，2 层。其他 8 个 palette/shadow 字段保留 per-theme tier 不变。
+  - **删除 `settings.field.fontCascadeHint` MessageKey**：2 层 cascade 自解释，不需要底部 hint 说明。
+  - **per-theme 字体定制**：用户在 per-theme 自定义 CSS textarea 里直接写（`:root[data-theme="mx-brutalist"] #main a { font-family: Inter; }`）。
+  - **删除 3 个 `settings.field.globalFont*` MessageKey**：不再需要。
+  - **`createGlobalFontInput` 改回 `createFontInput`**。
+
+### Migration
+- **v1.0.20-22 升级到 v1.0.23**：`globalFont` / `globalFontSize` / `globalFontWeight` 自动复制到 `font` / `fontSize` / `fontWeight`。保留用户的字体设置值。
+
 ## [1.0.22] - 2026-06-29
 
 ### Changed

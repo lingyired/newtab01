@@ -9,29 +9,17 @@ import * as debug from '../debug';
 const SETTINGS_KEY = 'settings';
 
 const defaults: Settings = {
-  // v0.2.19X: rename `font` → `globalFont`. Default 'Sans-serif'
-  //  matches the hardcoded fallback in `resolveEffectiveSettings` so
-  //  the global input shows the actual default value (instead of
-  //  empty + a placeholder hint). Empty string is still the "no
-  //  override" sentinel — the cascade uses `||` so an empty value
-  //  falls through to 'Sans-serif' (same hardcoded fallback), which
-  //  means the visible rendering is identical. Migration in
-  //  `initSettings` fills pre-v0.2.19X-era empty values with the
-  //  hardcoded defaults so upgraders see the same UI as new users.
-  globalFont: 'Sans-serif',
-  // v0.2.19X: rename `fontSize` → `globalFontSize`. Default 16
-  //  matches the hardcoded fallback in `resolveEffectiveSettings`.
-  //  The `||` cascade in the resolver treats 0 the same as unset
-  //  (falls through to 16) so the user can still clear the input
-  //  to mean "use the theme default". v0.2.98 originally set 16
-  //  as the default; v0.2.19X reverted to empty/0 briefly, then
-  //  v0.2.22X settled on 16 here so the input shows a real value
-  //  (matching user feedback: "也要加上默认值吧，不要留空").
-  globalFontSize: 16,
-  // v0.2.19X: rename `fontWeight` → `globalFontWeight`. Default
-  //  400 matches the hardcoded fallback. Same `||` cascade
-  //  semantics as globalFontSize.
-  globalFontWeight: 400,
+  font: 'Sans-serif',
+  // v0.2.98: 16px is the new global default for all themes. Pre-v0.2.97
+  //  the value was 18, which was a holdover from the 1.8em-on-62.5%-root
+  //  era (18 / 10 = 1.8). Now that fontSize is stored as raw px and
+  //  flows directly to `font-size: ${fontSize}px` on `#main a`, the
+  //  explicit "18" is one size too large for a typical 16px system
+  //  font scale and visually dominates the newtab. 16 is a
+  //  size-neutral default that respects the user's OS / Chrome zoom
+  //  (we use the inherited root font-size, not a hardcoded absolute).
+  fontSize: 16,
+  fontWeight: 400,
   theme: 'astrovista',
   darkMode: 'system',
   // The five palette fields are intentionally empty strings: `applyUserColorOverride`
@@ -164,9 +152,11 @@ const PRIOR_FONT_SIZE_DEFAULTS = new Set<number>([17.5, 19, 22]);
  */
 const LEGACY_KEY_MAP: Record<string, (raw: unknown) => [keyof Settings, unknown] | null> = {
   theme: (raw) => (typeof raw === 'string' ? ['theme', raw] : null),
-  // v0.2.19X: legacy bare-key `font` migrates to the renamed
-  //  Settings.globalFont (was Settings.font pre-rename).
-  font: (raw) => (typeof raw === 'string' ? ['globalFont', raw] : null),
+  // v0.2.23X: legacy bare-key `font` migrates back to the original
+  //  Settings.font name (was Settings.globalFont for v1.0.20-22,
+  //  renamed back to font in v1.0.23X when the per-theme font
+  //  override tier was removed).
+  font: (raw) => (typeof raw === 'string' ? ['font', raw] : null),
   textColor: (raw) => (typeof raw === 'string' ? ['fontColor', raw] : null),
   backgroundColor: (raw) => (typeof raw === 'string' ? ['backgroundColor', raw] : null),
   backgroundImage: (raw) => (typeof raw === 'string' ? ['backgroundImage', raw] : null),
@@ -267,97 +257,62 @@ export async function initSettings(): Promise<Settings> {
   const stored = await getSync<Settings>(SETTINGS_KEY);
   if (stored) {
     const merged: Settings = { ...defaults, ...stored };
-    // v0.2.19X: migrate the legacy `font` / `fontSize` / `fontWeight`
-    //  top-level fields to `globalFont` / `globalFontSize` /
-    //  `globalFontWeight`. Pre-rename users have these names in their
-    //  chrome.storage.sync — the unified Settings object reads them
-    //  via the spread above, but `fontSize` / etc. are no longer keys
-    //  on the Settings type, so the spread just puts them into
-    //  `merged` as orphan keys (TS happily accepts object literals
-    //  with extra fields). Without this migration, an existing user's
-    //  font setting would silently disappear on first launch of the
-    //  new build (the cascade falls through to 'Sans-serif' / 16 / 400
-    //  hardcoded fallbacks). Old per-theme bucket keys under
-    //  `themeOverrides[theme][mode].font` are intentionally NOT migrated
-    //  here — the per-theme `<details>` is rarely touched and the
-    //  cascade fallback is acceptable for that rare edge case.
+    // v0.2.23X: copy `globalFont` / `globalFontSize` / `globalFontWeight`
+    //  back to the original `font` / `fontSize` / `fontWeight` field
+    //  names (v1.0.20-22 used the `global*` prefix to disambiguate
+    //  the per-theme bucket keys from the global Settings keys; v1.0.23
+    //  removes the per-theme tier for fonts, so the `global*` prefix
+    //  is no longer meaningful). Always copies when the old key
+    //  exists in storage — covers both the default case (copies
+    //  'Sans-serif' over the new 'Sans-serif' default, no-op
+    //  visually) and the user-customized case (preserves the
+    //  user's value).
+    const storedExtra = stored as Settings & {
+      globalFont?: unknown;
+      globalFontSize?: unknown;
+      globalFontWeight?: unknown;
+    };
     let renamedFont = false;
-    if (typeof (merged as Settings & { font?: unknown }).font === 'string'
-      && typeof merged.globalFont !== 'string') {
-      const legacyFont = (merged as Settings & { font?: string }).font!;
-      if (legacyFont) {
-        merged.globalFont = legacyFont;
+    if (typeof storedExtra.globalFont === 'string') {
+      const oldVal = storedExtra.globalFont;
+      // Only write the new key if the new key isn't already set to
+      // a non-default value (the spread above already filled it
+      // from defaults — we don't want to overwrite a value the
+      // user has since migrated manually).
+      if (merged.font === defaults.font || merged.font === '') {
+        merged.font = oldVal;
         renamedFont = true;
       }
     }
-    if (typeof (merged as Settings & { fontSize?: unknown }).fontSize === 'number'
-      && typeof merged.globalFontSize !== 'number') {
-      const legacyFs = (merged as Settings & { fontSize?: number }).fontSize!;
-      merged.globalFontSize = legacyFs;
-      renamedFont = true;
+    if (typeof storedExtra.globalFontSize === 'number') {
+      const oldVal = storedExtra.globalFontSize;
+      if (merged.fontSize === defaults.fontSize || merged.fontSize === 0) {
+        merged.fontSize = oldVal;
+        renamedFont = true;
+      }
     }
-    if (typeof (merged as Settings & { fontWeight?: unknown }).fontWeight === 'number'
-      && typeof merged.globalFontWeight !== 'number') {
-      const legacyFw = (merged as Settings & { fontWeight?: number }).fontWeight!;
-      merged.globalFontWeight = legacyFw;
-      renamedFont = true;
+    if (typeof storedExtra.globalFontWeight === 'number') {
+      const oldVal = storedExtra.globalFontWeight;
+      if (merged.fontWeight === defaults.fontWeight || merged.fontWeight === 0) {
+        merged.fontWeight = oldVal;
+        renamedFont = true;
+      }
     }
     if (renamedFont) {
       await setSync(SETTINGS_KEY, merged);
-      debug.log('settings', 'migrate font → globalFont (legacy rename)', {
-        globalFont: merged.globalFont,
-        globalFontSize: merged.globalFontSize,
-        globalFontWeight: merged.globalFontWeight,
+      debug.log('settings', 'migrate globalFont → font (v1.0.23X revert rename)', {
+        font: merged.font,
+        fontSize: merged.fontSize,
+        fontWeight: merged.fontWeight,
       });
     }
-    // v0.2.22X: previous defaults for the 3 global font fields
-    //  were '' / 0 / 0 (matching the "no override" sentinel for
-    //  the cascade). New defaults are 'Sans-serif' / 16 / 400 to
-    //  match the hardcoded fallbacks. Migration: fill empty / 0
-    //  values with the hardcoded defaults so upgraders from
-    //  v1.0.20/21 see the same UI as new users (inputs not empty
-    //  by default). The cascade still treats '' / 0 as "no override"
-    //  for users who deliberately clear the input after upgrade —
-    //  the migration is one-time and only acts on the existing
-    //  stored value, not on subsequent user edits.
-    let filledDefaults = false;
-    if (merged.globalFont === '') {
-      merged.globalFont = 'Sans-serif';
-      filledDefaults = true;
-    }
-    if (merged.globalFontSize === 0) {
-      merged.globalFontSize = 16;
-      filledDefaults = true;
-    }
-    if (merged.globalFontWeight === 0) {
-      merged.globalFontWeight = 400;
-      filledDefaults = true;
-    }
-    if (filledDefaults) {
-      await setSync(SETTINGS_KEY, merged);
-      debug.log('settings', 'migrate font defaults → hardcoded fallbacks', {
-        globalFont: merged.globalFont,
-        globalFontSize: merged.globalFontSize,
-        globalFontWeight: merged.globalFontWeight,
-      });
-    }
-    // v0.2.19X: check the old `fontSize` field for legacy migration
-    //  (pre-rename users still have it in storage). `globalFontSize`
-    //  would be undefined for those users and the `typeof` check
-    //  below would not fire — we want the migration to run on
-    //  stored.fontSize so PRIOR_FONT_SIZE_DEFAULTS catches them.
-    //  After rename, new storage writes use `globalFontSize` directly.
-    const legacyFontSize = (stored as Settings & { fontSize?: number }).fontSize;
-    const storedFontSize = typeof stored.globalFontSize === 'number'
-      ? stored.globalFontSize
-      : (typeof legacyFontSize === 'number' ? legacyFontSize : undefined);
-    if (typeof storedFontSize === 'number') {
-      const isPriorDefault = PRIOR_FONT_SIZE_DEFAULTS.has(storedFontSize);
-      const isOutOfRange = storedFontSize < 12 || storedFontSize > 32;
+    if (typeof merged.fontSize === 'number') {
+      const isPriorDefault = PRIOR_FONT_SIZE_DEFAULTS.has(merged.fontSize);
+      const isOutOfRange = merged.fontSize < 12 || merged.fontSize > 32;
       if (isPriorDefault || isOutOfRange) {
-        merged.globalFontSize = defaults.globalFontSize;
+        merged.fontSize = defaults.fontSize;
         await setSync(SETTINGS_KEY, merged);
-        debug.log('settings', 'migrate globalFontSize', { from: storedFontSize, to: defaults.globalFontSize });
+        debug.log('settings', 'migrate fontSize', { from: merged.fontSize, to: defaults.fontSize });
       }
     }
     // v0.2.97: highlightRound unit changed from em-scale (0..2)

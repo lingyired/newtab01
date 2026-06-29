@@ -54,7 +54,6 @@ export type MessageKey =
   | 'settings.section.themeOverridesSummary'
   | 'settings.section.themeOverridesSummaryDark'
   | 'settings.section.themeOverridesSummaryLight'
-  | 'settings.section.fontCascadeHint'
   // Settings panel — language row
   | 'settings.field.language'
   | 'settings.field.languageDesc'
@@ -98,16 +97,6 @@ export type MessageKey =
   | 'settings.field.fontSizeDesc'
   | 'settings.field.fontWeight'
   | 'settings.field.fontWeightDesc'
-  // v0.2.19X: 'global' tier labels for the appearance tab. The
-  //  Settings.font / .fontSize / .fontWeight keys are now reused for
-  //  the per-theme `<details>` rows (bucket keys), so the global
-  //  rows above need their own label keys with the 「全局」prefix
-  //  baked in. Descriptions stay shared (`settings.field.fontDesc`
-  //  etc.) — the cascade hint at the bottom of the tab makes the
-  //  tier difference explicit.
-  | 'settings.field.globalFont'
-  | 'settings.field.globalFontSize'
-  | 'settings.field.globalFontWeight'
   | 'settings.field.fontColor'
   | 'settings.field.fontColorDesc'
   | 'settings.field.backgroundColor'

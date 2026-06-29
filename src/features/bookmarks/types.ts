@@ -31,25 +31,26 @@ export interface CoordMap {
 }
 
 /**
- * Per-theme per-appearance-mode overrides for the 10 appearance-tab
- * options (globalFont / globalFontSize / globalFontWeight / 5 colors /
- * shadowBlur / highlightRound) PLUS the per-theme per-mode `customCss`
- * field introduced in v0.2.102. Other settings (theme, darkMode,
- * width, hPos, align, spacing, columnWidth, ...) are intentionally
- * NOT in this set — they remain global.
+ * Per-theme per-appearance-mode overrides for the 8 appearance-tab
+ * options (5 colors / shadowBlur / highlightRound / linkBgColor)
+ * PLUS the per-theme per-mode `customCss` field introduced in
+ * v0.2.102. Other settings (theme, darkMode, width, hPos, align,
+ * spacing, columnWidth, font / fontSize / fontWeight, ...) are
+ * intentionally NOT in this set — they remain global.
+ *
+ * v0.2.23X: removed `font` / `fontSize` / `fontWeight` from the
+ *  bucket. The per-theme tier for fonts is gone — there's only one
+ *  global tier for fonts now. Users who want per-theme font
+ *  customization write it directly in the per-theme `customCss`
+ *  textarea (a font-family / font-size / font-weight override is
+ *  usually one line of CSS). 8 bucket fields is the simplest
+ *  viable scope; the previous 11-field design was over-engineered
+ *  for what most users actually need.
  *
  * Stored in `Settings.themeOverrides[themeId][light|dark]` (nested
- * map). Each entry is a `Partial<>` covering the 10 appearance
- * overrides so the user can override a single key (e.g. just
- * `globalFontSize`) without restating the other 9. Missing keys
- * fall back to the global `Settings[key]`.
- *
- * v0.2.19X: bucket keys are renamed to match the new global-tier
- *  Settings keys (`font` → `globalFont` etc.). The keys here are
- *  storage details — what the user sees on screen is still "字体"
- *  / "字号" / "字重" — but the rename keeps `PER_THEME_KEYS` and
- *  `Settings` keys aligned so `Pick<Settings, ...>` can stay in
- *  the type.
+ * map). Each entry is a `Partial<>` so the user can override a
+ * single key (e.g. just `highlightRound`) without restating the
+ * other 7. Missing keys fall back to the global `Settings[key]`.
  *
  * `customCss` is the only field in this bucket that does NOT mirror
  * a global `Settings` key — global CSS was removed in v0.2.102 in
@@ -63,9 +64,6 @@ export interface CoordMap {
  * separately by `rebuildUserThemeCss`.)
  */
 export type ThemeModeOverrides = Partial<{
-  globalFont: string;
-  globalFontSize: number;
-  globalFontWeight: number;
   fontColor: string;
   backgroundColor: string;
   linkBgColor: string;
@@ -81,6 +79,9 @@ export type ThemeModeOverrides = Partial<{
    * (theme, light/dark) bucket can have its own custom styles.
    * Injected into `<style id="user-theme-css">` by
    * `applySettingsToDOM`; empty string clears the override.
+   * This is also where users write per-theme font overrides
+   * (e.g. `:root[data-theme="mx-brutalist"] { --newtab-font-family:
+   * "Inter"; }`) since v0.2.23X.
    */
   customCss?: string;
 };
@@ -88,21 +89,20 @@ export type ThemeModeOverrides = Partial<{
 /** Settings configuration with defaults */
 export interface Settings {
   /**
-   * v0.2.19X: global font-family. Renamed from `font` (which is
-   * now reserved as a per-theme bucket key in `ThemeModeOverrides`).
-   * Cascade in `resolveEffectiveSettings`:
-   *   `themeOverrides[baseTheme][mode]?.globalFont
-   *    ?? Settings.globalFont
-   *    ?? 'Sans-serif'`
-   * Empty string (`''`) is the "no override" sentinel — falls
-   * through to the hardcoded fallback. Same pattern as the 5
-   * palette fields.
+   * Font family for bookmark links. Default 'Sans-serif' (also
+   * the hardcoded fallback in `resolveEffectiveSettings`). Empty
+   * string is the "no override" sentinel — falls through to the
+   * hardcoded fallback via the `||` cascade.
+   *
+   * v0.2.23X: per-theme font override removed — see
+   * `ThemeModeOverrides` docstring. Use the per-theme customCss
+   * textarea for per-theme font customization.
    */
-  globalFont: string;
-  /** v0.2.19X: global font-size (px). Renamed from `fontSize`. */
-  globalFontSize: number;
-  /** v0.2.19X: global font-weight. Renamed from `fontWeight`. */
-  globalFontWeight: number;
+  font: string;
+  /** Font size (px) for bookmark links. Default 16. */
+  fontSize: number;
+  /** Font weight for bookmark links. Default 400. */
+  fontWeight: number;
   theme: string;
   /**
    * Dark mode preference. Independent from `theme` — the rendered

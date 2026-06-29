@@ -18,11 +18,6 @@ const messages = {
   'settings.section.themeOverridesSummary': 'مظهر السمة الحالية ({theme} · {mode})',
   'settings.section.themeOverridesSummaryDark': 'داكن',
   'settings.section.themeOverridesSummaryLight': 'فاتح',
-  // v0.2.19X: ملاحظة في أسفل علامة تبويب المظهر. تتالي CSS
-  //  من 3 مستويات (باستخدام الخط كمثال): تجاوز السمة المخصصة
-  //  > عام > السمة الافتراضية. اترك «عام» فارغًا لاستخدام
-  //  السمة الافتراضية.
-  'settings.section.fontCascadeHint': 'تتالي CSS (باستخدام الخط كمثال): تجاوز السمة المخصصة > عام > السمة الافتراضية. اترك «عام» فارغًا لاستخدام السمة الافتراضية.',
   'settings.field.language': 'اللغة',
   'settings.field.languageDesc': 'تبديل لغة واجهة newtab01. "متابعة المتصفح" تستخدم تفضيل لغة Chrome؛ إذا لم تكن اللغة في القائمة المدعومة، تُستخدم الإنجليزية كاحتياط.',
   'settings.language.auto': 'متابعة المتصفح',
@@ -63,11 +58,6 @@ const messages = {
   'settings.field.fontSizeDesc': 'حجم خط روابط الإشارات (بالبكسل).',
   'settings.field.fontWeight': 'سماكة الخط',
   'settings.field.fontWeightDesc': 'سماكة خط روابط الإشارات. القيم الشائعة: 400 عادي، 500 متوسط، 600 شبه عريض، 700 عريض.',
-  // v0.2.19X: تسميات المستوى العام مع بادئة «عام» لتمييزها
-  //  عن صفوف `<details>` الخاصة بالسمة.
-  'settings.field.globalFont': 'الخط العام',
-  'settings.field.globalFontSize': 'حجم الخط العام',
-  'settings.field.globalFontWeight': 'وزن الخط العام',
   'settings.field.fontColor': 'لون النص',
   'settings.field.fontColorDesc': 'لون نص رابط الإشارة في حالته الافتراضية.',
   'settings.field.backgroundColor': 'لون خلفية الصفحة الرئيسية',
