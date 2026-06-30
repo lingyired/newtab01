@@ -5,6 +5,17 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.3] - 2026-06-30
+
+### Added
+- **「分组打开」目录时,记忆用户最后修改的 group 颜色和标题**。之前每次点目录的分组图标(`FolderPlus`)都以 folder.title 为标题、Chrome 默认色(grey)创建 group;用户在浏览器里手动改的 group color / title 关掉就丢。现在持久化到 `chrome.storage.local.tabGroupState[folderId]`,下次以分组形式打开同一目录时自动套用上次的颜色 + 标题。
+  - 入口:用户点「分组打开」→ [folder-actions-handler.ts:160-171](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/folder-actions-handler.ts#L160-L171) 读 `getSavedTabGroupState(node.id)` → 拼消息 `{ tabIds, title, color, folderId }` 发给 SW。
+  - SW 端:[background.ts:160-189](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/background.ts#L160-L189) 在 `groupTabs` 之后调 `tabGroups.update` 应用 color + title;`tabGroupFolderMap[groupId] = folderId` 先于 `update` 写入(否则初始 onUpdated 找不到 folder)。
+  - 监听:[background.ts:201-214](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/background.ts#L201-L214) 注册 `chrome.tabGroups.onUpdated` → 用 map 反查 folderId → 把当前 `{ color, title }` 持久化到 `tabGroupState[folderId]`。`onRemoved` 清理 map。
+  - 存储封装:新文件 [src/features/bookmarks/tab-group-state.ts](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/tab-group-state.ts) (~50 行) — `getSavedTabGroupState` / `setSavedTabGroupState` / `getGroupFolderMap` / `setGroupFolderMapEntry` / `removeGroupFolderMapEntry`。
+  - 消息 schema:[messages.ts](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/lib/chrome/messages.ts) 的 `createTabGroup` 加 `color?: TabGroupColor` + 必填的 `folderId: string`,`isValidMessage` 加 enum 校验。
+  - **SW 初始 set 也会触发 onUpdated**:我们不去区分「SW 自己 set 的」vs「用户改的」,都存(初始值 = 节点默认值,存了等于没存,行为正确)。多一次 chrome.storage.local 写入,代价 < 1ms。
+
 ## [1.1.2] - 2026-06-29
 
 ### Fixed

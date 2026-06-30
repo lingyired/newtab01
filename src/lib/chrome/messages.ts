@@ -5,8 +5,15 @@
 // Keep this file small and dependency-free. No zod, no runtime schema
 // lib (project_rules.md § 1) — the validator is a handwritten type guard.
 
+import type { TabGroupColor } from './tab-groups';
+
+/** Chrome's TabGroupColor enum (frozen at the API level). */
+const VALID_TAB_GROUP_COLORS: readonly TabGroupColor[] = [
+  'blue', 'cyan', 'green', 'grey', 'orange', 'pink', 'purple', 'red', 'yellow',
+];
+
 export type Message =
-  | { type: 'createTabGroup'; tabIds: number[]; title?: string }
+  | { type: 'createTabGroup'; tabIds: number[]; title?: string; color?: TabGroupColor; folderId: string }
   | { type: 'refreshDeclarativeNetRequest' }
   | { type: 'fetchThemeJson'; url: string };
 
@@ -23,6 +30,13 @@ export function isValidMessage(msg: unknown): msg is Message {
     if (!Array.isArray(m['tabIds'])) return false;
     if (!m['tabIds'].every((id) => typeof id === 'number' && Number.isFinite(id))) return false;
     if (m['title'] !== undefined && typeof m['title'] !== 'string') return false;
+    if (m['color'] !== undefined) {
+      if (typeof m['color'] !== 'string') return false;
+      if (!VALID_TAB_GROUP_COLORS.includes(m['color'] as TabGroupColor)) return false;
+    }
+    // folderId is required so the SW can map the created group back to
+    // the bookmark folder for onUpdated state tracking.
+    if (typeof m['folderId'] !== 'string' || m['folderId'] === '') return false;
     return true;
   }
 

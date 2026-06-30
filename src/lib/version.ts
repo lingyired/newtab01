@@ -244,4 +244,4 @@
 //          different effects (removeRow = take folder out of column,
 //          show*=0 = hide the entire column). The show* action is
 //          the canonical one for these folders.
-export const VERSION = '1.1.2';
+export const VERSION = '1.1.3';

@@ -9,6 +9,7 @@ import { splitManager } from '../split/manager';
 import type { SplitLayout } from '../split/types';
 import { getSetting } from '../../lib/storage/settings';
 import { showSplitPickerFromNodes, SPLIT_VIEW_MAX } from './split-picker';
+import { getSavedTabGroupState } from './tab-group-state';
 import { t } from '../../lib/i18n';
 import * as debug from '../../lib/debug';
 
@@ -152,11 +153,22 @@ export async function openAsGroup(node: BookmarkNode, event: MouseEvent): Promis
     return;
   }
 
-  const result = await sendMessage<{ ok: true; groupId: number } | { ok: false; error: string }>({
+  // Read the per-folder saved state (color + title) the user last set
+  // on the group for this folder. The SW applies it via
+  // chrome.tabGroups.update after groupTabs resolves, and any
+  // subsequent user edit is captured by the SW's tabGroups.onUpdated
+  // listener and persisted to chrome.storage.local.
+  const saved = await getSavedTabGroupState(node.id);
+  // Build the message with only the defined optional fields — exactOptionalPropertyTypes
+  // rejects `color: undefined` even though the schema types it as `?: TabGroupColor`.
+  const msg: Parameters<typeof sendMessage>[0] = {
     type: 'createTabGroup',
     tabIds,
-    title: node.title,
-  });
+    title: saved?.title ?? node.title,
+    folderId: node.id,
+  };
+  if (saved?.color) msg.color = saved.color;
+  const result = await sendMessage<{ ok: true; groupId: number } | { ok: false; error: string }>(msg);
   if (!result.ok) {
     debug.warn('folder-action', 'openAsGroup: createTabGroup failed', {
       folder: node.title,
