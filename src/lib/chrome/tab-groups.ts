@@ -1,6 +1,6 @@
 // Typed wrappers for chrome.tabGroups API
 
-type TabGroupColor = 'blue' | 'cyan' | 'green' | 'grey' | 'orange' | 'pink' | 'purple' | 'red' | 'yellow';
+export type TabGroupColor = 'blue' | 'cyan' | 'green' | 'grey' | 'orange' | 'pink' | 'purple' | 'red' | 'yellow';
 
 export async function groupTabs(tabIds: [number, ...number[]], options?: { title?: string; color?: TabGroupColor }): Promise<number> {
   return chrome.tabs.group({ tabIds, ...options });

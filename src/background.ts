@@ -1,6 +1,13 @@
 import { registerFrameHeaderRules } from './lib/chrome/declarative-net-request';
 import { isValidMessage, type Message } from './lib/chrome/messages';
-import { groupTabs, updateGroup } from './lib/chrome/tab-groups';
+import { groupTabs, updateGroup, type TabGroupColor } from './lib/chrome/tab-groups';
+import {
+  setGroupFolderMapEntry,
+  removeGroupFolderMapEntry,
+  getGroupFolderMap,
+  setSavedTabGroupState,
+  type TabGroupSavedState,
+} from './features/bookmarks/tab-group-state';
 
 // Background service worker
 // CLAUDE.md § 5.2: pure router + alarm tasks, no business state.
@@ -166,13 +173,51 @@ async function handleCreateTabGroup(
   }
   try {
     // chrome.tabs.group does not accept `title` in its options — set
-    // the title on the resulting group via tabGroups.update.
+    // the title + color on the resulting group via tabGroups.update.
     const groupId = await groupTabs([first, ...msg.tabIds.slice(1)]);
-    await updateGroup(groupId, { title: msg.title ?? 'New Group' });
+    // Register the mapping BEFORE the update so the onUpdated handler
+    // (which fires after updateGroup resolves) can find the folder.
+    await setGroupFolderMapEntry(groupId, msg.folderId);
+    const update: { title?: string; color?: TabGroupColor } = {
+      title: msg.title ?? 'New Group',
+    };
+    if (msg.color) update.color = msg.color;
+    await updateGroup(groupId, update);
     sendResponse({ ok: true, groupId });
   } catch (err) {
     sendResponse({ ok: false, error: err instanceof Error ? err.message : String(err) });
   }
+}
+
+// Persist user edits to tab groups we created.
+//
+// chrome.tabGroups.onUpdated fires for ANY group in the browser (not
+// just ours). We filter by checking whether the groupId is in our
+// tabGroupFolderMap (the active-groups registry). The SW's own
+// updateGroup call also fires onUpdated — we persist that too, but
+// the values written are exactly the ones we just applied, so the
+// stored state is identical to the in-memory state and there's no
+// observable difference. The only side effect is one extra
+// chrome.storage.local write per group creation.
+if (chrome.tabGroups?.onUpdated) {
+  chrome.tabGroups.onUpdated.addListener((group) => {
+    void (async () => {
+      const map = await getGroupFolderMap();
+      const folderId = map[group.id];
+      if (folderId === undefined) return;
+      // Build state object with only the defined fields — exactOptionalPropertyTypes
+      // rejects `title: undefined` even though Chrome types model it that way.
+      const state: TabGroupSavedState = { color: group.color };
+      if (group.title !== undefined) state.title = group.title;
+      await setSavedTabGroupState(folderId, state);
+    })();
+  });
+}
+
+if (chrome.tabGroups?.onRemoved) {
+  chrome.tabGroups.onRemoved.addListener((group) => {
+    void removeGroupFolderMapEntry(group.id);
+  });
 }
 
 async function handleRefreshDeclarativeNetRequest(
