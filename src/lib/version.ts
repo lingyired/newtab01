@@ -244,4 +244,88 @@
 //          different effects (removeRow = take folder out of column,
 //          show*=0 = hide the entire column). The show* action is
 //          the canonical one for these folders.
-export const VERSION = '1.1.3';
+// v1.1.6: skip the undo snapshot when a drop leaves the layout
+//          unchanged. The user could drag a folder back to its
+//          original position — most commonly, dragging a folder
+//          within its own multi-folder column to the slot it
+//          already occupied (addRow removes A from the source
+//          and re-inserts at the same position, so the columns
+//          array comes out structurally identical). Pushing
+//          that as an undo step was misleading: the undo badge
+//          ticked up but pressing undo did nothing. New
+//          `isSnapshotEqual(snapshot, columns, movedOut)` helper
+//          in history.ts compares both `columns` (length / per-
+//          column length / ids in order) and `movedOut` (keys /
+//          per-key id arrays in order). Wired into both push
+//          points in drop-handler.ts (the empty-column branch
+//          and the main addRow / addColumn branch) via a small
+//          `isLayoutUnchanged()` helper. Order matters in both
+//          fields — addRow / removeRow rely on the user-perceived
+//          order being preserved through the snapshot.
+// v1.1.5: disable HTML5 drag on bookmark link elements. <a href>
+//          elements have `draggable=true` in the browser's default UA
+//          stylesheet, which means grabbing a link fires a native
+//          link drag. The drag's `dragstart` bubbles up to the parent
+//          column div, whose `enableDragColumn` handler calls
+//          `setDragIds` with EVERY folder id in the column
+//          (drag-column.ts:26-28). The user is now dragging the whole
+//          column, not the link. On release the drop handler runs,
+//          finds nothing actually changed (the user dropped on the
+//          same column), and pushes a snapshot onto the undo stack —
+//          the user sees "undo shows a step but nothing reverts".
+//          Fix: set `a.draggable = false` in renderLink
+//          (link.ts:52) so neither the native link drag nor the
+//          bubble-to-column side effect can fire. The Apps special
+//          folder is the one link that should still be draggable, and
+//          it already re-enables draggable=true via
+//          `enableDragFolder` (link.ts:168-170) which also calls
+//          `event.stopPropagation()` in its dragstart handler — Apps
+//          behaves like a folder, not a regular link.
+// v1.1.4: two empty-state bug fixes.
+//          - Import: a settings JSON whose `layout` block was
+//            exported from a different Chrome (or earlier in this
+//            Chrome's lifetime) may contain ids that no longer
+//            point to a folder — the user deleted the folder, the
+//            user repurposed the id as a regular link, or the
+//            user re-organised bookmarks so the id is now a
+//            descendant. Previously the import accepted all
+//            non-empty string ids and tried to render them; the
+//            resulting column contained a node that didn't render
+//            and the column was effectively empty. Now we
+//            batch-validate every imported id against
+//            chrome.bookmarks.get (one round-trip) and drop any
+//            that resolve to a link or no longer exist. The
+//            dropped count is surfaced via window.alert so the
+//            user knows the layout was trimmed (new MessageKey
+//            settings.advanced.importLayoutDropped, all 10
+//            catalogs). Special folder ids (apps / top / recent /
+//            closed / devices / 1 / 2) are still always
+//            accepted — they are runtime stubs, not chrome
+//            bookmark ids. New getBookmarks(ids[]) wrapper in
+//            lib/chrome/bookmarks.ts (mirrors getBookmark).
+//          - Empty column: when the only folder in a column is
+//            deleted from Chrome bookmarks, the column div
+//            renders nothing and (more importantly) the
+//            column-level context menu is never attached, so
+//            the user can't right-click → remove the column or
+//            drag a new folder in. Previously board.ts's
+//            `col.length === 0 → false` filter hid the column
+//            entirely in the rare case the layout itself was
+//            empty. Fix: keep the column div in the DOM (the
+//            drop handler reads the column index off .column
+//            siblings, so this is required for drops to work),
+//            render a "Drop a folder here" placeholder
+//            (pointer-events: none so right-click still reaches
+//            the column), and attach the column-level context
+//            menu via a new renderEmptyColumnPlaceholder()
+//            helper in column.ts. The placeholder is reached
+//            from all three empty branches of renderColumn
+//            (rawIds empty / single-id showRoot-false resolves
+//            to null / multi-folder all resolve to null) so
+//            any combination of deleted-folder + hidden-special
+//            falls into the same UX. CSS: new
+//            .column--empty + .column-empty-placeholder rules
+//            in newtab.css — dashed border for the slot, muted
+//            color for the placeholder text. New MessageKey
+//            column.empty, all 10 catalogs.
+export const VERSION = '1.1.6';

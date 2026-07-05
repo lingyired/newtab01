@@ -30,13 +30,39 @@ export async function renderColumns(): Promise<void> {
   // board). `isSpecialVisible` is true for non-special IDs, so the
   // `some` returns true whenever a column has at least one
   // bookmark folder OR at least one visible special.
-  const visibleColumns = columns.filter((col) => {
-    if (col.length === 0) return false;
-    return col.some((id) => isSpecialVisible(id));
-  });
-  const renderedColumns = visibleColumns.length > 0 ? visibleColumns : [[]];
+  //
+  // v1.1.4: keep empty columns visible. v0.2.94's filter
+  //  `col.length === 0 → false` hid every column whose only
+  //  folder was later deleted in Chrome, leaving the user no way
+  //  to (a) right-click → remove the column, or (b) drag another
+  //  folder into the now-invisible slot. Both interactions
+  //  require the column div to be in the DOM (right-click reads
+  //  the column index off the target; drop handler resolves
+  //  `getDropX` by walking `.column` siblings). Now an empty
+  //  column renders as a slim placeholder (see column.ts →
+  //  renderColumn) so the user can right-click and drop into it.
+  //  Columns whose every id is a hidden special still hide —
+  //  those have no actionable content (the show* toggle is the
+  //  canonical way to deal with them, and the user did set
+  //  show*=0 intentionally).
+  //
+  // v1.1.4: iterate the ORIGINAL columns array (so the index
+  //  passed to enableDragColumn / renderColumn matches the
+  //  layout index used by drag-column.ts and the drop handler),
+  //  but skip columns whose every id is a hidden special. The
+  //  width divisor is the count of actually-rendered columns
+  //  (so the visible columns keep their equal-width 1/N
+  //  distribution regardless of how many were filtered).
+  const renderedIndices: number[] = [];
+  for (let idx = 0; idx < columns.length; idx++) {
+    const col = columns[idx] ?? [];
+    if (col.some((id) => isSpecialVisible(id))) {
+      renderedIndices.push(idx);
+    }
+  }
+  const renderedCount = renderedIndices.length > 0 ? renderedIndices.length : 1;
 
-  for (let i = 0; i < renderedColumns.length; i++) {
+  for (const i of renderedIndices) {
     const columnDiv = document.createElement('div');
     columnDiv.classList.add('column');
     columnDiv.dataset.columnIndex = String(i);
@@ -44,7 +70,7 @@ export async function renderColumns(): Promise<void> {
     // Set column width
     const columnWidth = getSetting('columnWidth');
     if (columnWidth === 'auto' || !columnWidth) {
-      columnDiv.style.width = `${(1 / renderedColumns.length) * 100}%`;
+      columnDiv.style.width = `${(1 / renderedCount) * 100}%`;
     } else {
       columnDiv.style.width = columnWidth;
     }
@@ -53,12 +79,23 @@ export async function renderColumns(): Promise<void> {
     enableDragColumn(i, columnDiv);
 
     main.appendChild(columnDiv);
-    await renderColumn(i, columnDiv, renderedColumns);
+    await renderColumn(i, columnDiv, columns);
+  }
+  // Edge case: the layout is empty (no columns at all) — render a
+  // single empty placeholder so the user can right-click to remove
+  // (no-op, only 1 column) and the board isn't a 0-height box.
+  if (renderedIndices.length === 0) {
+    const columnDiv = document.createElement('div');
+    columnDiv.classList.add('column', 'column--empty');
+    columnDiv.dataset.columnIndex = '0';
+    columnDiv.style.width = '100%';
+    main.appendChild(columnDiv);
+    await renderColumn(0, columnDiv, [[]]);
   }
 
   // Enable drag-drop on main
   enableDragDrop();
-  debug.log('render', 'renderColumns:done', { columnCount: renderedColumns.length });
+  debug.log('render', 'renderColumns:done', { columnCount: renderedCount });
 
   // v1.0.28 + v1.0.29: empty-state. v1.0.28 used the cheap filter
   //  path (`renderedColumns === [[]]`), which only triggers when the
@@ -73,31 +110,47 @@ export async function renderColumns(): Promise<void> {
   //  catches both "no columns" and "only empty folders" with a
   //  single post-render DOM scan — no model layer changes, no
   //  re-walk of the bookmark tree, runs once per renderColumns.
-  const lis = main.querySelectorAll('li');
-  let hasRealContent = false;
-  for (const li of lis) {
-    if (li.dataset['type'] !== 'empty') {
-      hasRealContent = true;
-      break;
+  //
+  // v1.1.4: also bail when at least one .column--empty placeholder
+  //  is in the DOM. The placeholders are <div>, not <li>, so the
+  //  v1.0.29 li scan alone would still treat a layout of all
+  //  deleted-folder columns (e.g. user deleted every folder) as
+  //  empty and show the "Show bookmark bar" onboarding message —
+  //  which is wrong, because the user has an explicit layout and
+  //  the placeholders are themselves the actionable UI (right-
+  //  click to remove, drag a folder in). The two "has content"
+  //  signals are OR'd: real <li> OR .column--empty placeholder.
+  //  The v1.0.29 "all folders exist but are empty" path still
+  //  triggers correctly (no placeholders, all <li data-type=empty>).
+  const hasPlaceholderColumn =
+    main.querySelector('.column--empty') !== null;
+  if (!hasPlaceholderColumn) {
+    const lis = main.querySelectorAll('li');
+    let hasRealContent = false;
+    for (const li of lis) {
+      if (li.dataset['type'] !== 'empty') {
+        hasRealContent = true;
+        break;
+      }
     }
-  }
-  if (!hasRealContent) {
-    const empty = document.createElement('div');
-    empty.className = 'board-empty';
-    const msg = document.createElement('p');
-    msg.textContent = t('board.empty');
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'board-empty-action';
-    btn.textContent = t('board.emptyAction');
-    btn.addEventListener('click', () => {
-      void updateSetting('showBar', 1).then(() => {
-        location.reload();
+    if (!hasRealContent) {
+      const empty = document.createElement('div');
+      empty.className = 'board-empty';
+      const msg = document.createElement('p');
+      msg.textContent = t('board.empty');
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'board-empty-action';
+      btn.textContent = t('board.emptyAction');
+      btn.addEventListener('click', () => {
+        void updateSetting('showBar', 1).then(() => {
+          location.reload();
+        });
       });
-    });
-    empty.appendChild(msg);
-    empty.appendChild(btn);
-    main.appendChild(empty);
+      empty.appendChild(msg);
+      empty.appendChild(btn);
+      main.appendChild(empty);
+    }
   }
 }
 

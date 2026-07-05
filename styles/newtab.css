@@ -392,6 +392,69 @@
   min-height: 300px;
 }
 
+/* v1.1.4: empty column. The column was originally created with
+   a folder the user has since deleted from Chrome bookmarks.
+   We need to keep the slot visible so the user can:
+     (a) right-click → remove the column entirely (otherwise
+         the column is a zombie that lingers forever), and
+     (b) drag another folder into the now-empty slot (the
+         drop handler resolves .column siblings to compute the
+         drop x, so the slot has to be in the DOM).
+   The dashed border gives the empty slot a drop-target
+   affordance without competing with the regular column
+   background.
+
+   v1.1.4 (revisions):
+   - Use `inline-flex`, NOT `flex`. The other columns are
+     `display: inline-block` and sit in a row by virtue of the
+     parent's inline layout. `display: flex` makes the outer
+     display block-level, which breaks the column out of the
+     row and stacks it alone below the rest. `inline-flex`
+     keeps the outer display inline-level so the column flows
+     in the row with its inline-block siblings.
+   - The placeholder is rendered as a `<a class="folder
+     folder--empty">` element so it inherits the same flexbox
+     + align-items: center + font-size: 1.8em / line-height:
+     1.4 layout that real folder headers use. The text is
+     guaranteed to land at the exact same y position as the
+     first folder in a regular column, without hard-coding a
+     margin offset that would drift on font-size changes.
+   - The dashed border is a 1px wrapper around the column
+     box (box-sizing: border-box so it doesn't add to the
+     computed width and break the 1/N column distribution).
+   - The min-height is kept smaller than the regular 300px so
+     the empty column doesn't look like a giant empty box;
+     the dashed border alone is enough to signal "this is a
+     drop target". */
+.column--empty {
+  display: inline-flex;
+  flex-direction: column;
+  min-height: 160px;
+  padding: 10px 8px 20px 8px;
+  border: 1px dashed color-mix(in oklch, var(--newtab-text) 18%, transparent);
+  border-radius: var(--radius, 6px);
+}
+
+/* v1.1.4: placeholder folder header. Inherits the regular
+   `a.folder` rule (font-size, line-height, flexbox + align
+   items center) so the text is vertically positioned at the
+   same y as a real folder header. `.folder--empty` only adds:
+   - no hover background (the placeholder is not interactive)
+   - muted color (it's a hint, not a real folder)
+   - cursor: default (not pointer)
+   - user-select: none (the user shouldn't be able to drag-
+     select the placeholder text) */
+a.folder.folder--empty {
+  color: color-mix(in oklch, var(--newtab-text) 45%, transparent);
+  cursor: default;
+  user-select: none;
+  pointer-events: none;
+  background: transparent;
+}
+a.folder.folder--empty:hover {
+  background: transparent;
+}
+
 /* ─── Drag states ─── */
 .dragstart {
   opacity: 0.5;

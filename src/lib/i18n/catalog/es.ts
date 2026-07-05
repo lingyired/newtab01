@@ -150,6 +150,7 @@ const messages = {
   'settings.advanced.importSuccess': 'Ajustes importados correctamente.',
   'settings.advanced.undo': 'Deshacer importación',
   'settings.advanced.undoHint': 'Vuelve al estado anterior a la importación. Disponible hasta la próxima edición del diseño.',
+  'settings.advanced.importLayoutDropped': 'Se omitieron {count} elemento(s) que ya no apuntan a una carpeta en este Chrome (renombrados, eliminados o convertidos en enlace).',
   // Special folder titles
   'specialFolder.top': 'Más visitados',
   'specialFolder.apps': 'Apps',
@@ -186,6 +187,7 @@ const messages = {
   'folderAction.currentFolder': 'esta carpeta',
   // Folder-level
   'folder.empty': 'Vacío',
+  'column.empty': 'Suelta una carpeta aquí',
   // Context menu
   'contextMenu.openAllInFolder': 'Abrir todos los enlaces de la carpeta',
   'contextMenu.openAsGroup': 'Abrir en grupo de pestañas',

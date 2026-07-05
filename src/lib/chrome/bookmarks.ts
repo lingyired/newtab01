@@ -18,6 +18,46 @@ export function getBookmark(id: string): Promise<chrome.bookmarks.BookmarkTreeNo
   });
 }
 
+/** Get multiple bookmark nodes by id. Order matches the input; missing
+ *  ids return as undefined slots. Used by the import-layout filter
+ *  (settings-panel.ts) to batch-validate every imported column id
+ *  against the current Chrome bookmark tree in a single round-trip. */
+export function getBookmarks(
+  ids: string[],
+): Promise<Array<chrome.bookmarks.BookmarkTreeNode | undefined>> {
+  return new Promise((resolve) => {
+    if (ids.length === 0) {
+      resolve([]);
+      return;
+    }
+    // `chrome.bookmarks.get`'s TS signature is
+    //  `string | [string, ...string[]]` — Chrome itself accepts any
+    //  string[] at runtime, but the type narrowing makes the cast
+    //  necessary. We already handled the empty case above so the
+    //  tuple shape is satisfied.
+    chrome.bookmarks.get(ids as [string, ...string[]], (results) => {
+      if (chrome.runtime.lastError) {
+        // Treat the whole lookup as missing on a callback error
+        // (e.g. the user revoked the bookmarks permission). The
+        // import filter will then drop every non-special id, which
+        // is the conservative correct behaviour — better to fail
+        // closed than to accept ids we couldn't verify.
+        resolve(ids.map(() => undefined));
+        return;
+      }
+      const out: Array<chrome.bookmarks.BookmarkTreeNode | undefined> = [];
+      for (let i = 0; i < ids.length; i++) {
+        // Chrome returns results in the same order as the input
+        // ids (per the API contract) when all ids resolve; missing
+        // ids are simply absent from the array. We pad with
+        // undefined to keep the caller's index arithmetic simple.
+        out[i] = results?.[i];
+      }
+      resolve(out);
+    });
+  });
+}
+
 /** Get sub-tree for a specific bookmark ID */
 export function getBookmarkSubTree(id: string): Promise<chrome.bookmarks.BookmarkTreeNode[] | undefined> {
   return new Promise((resolve) => {

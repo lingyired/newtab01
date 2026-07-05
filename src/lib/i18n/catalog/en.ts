@@ -154,6 +154,7 @@ const messages = {
   'settings.advanced.importSuccess': 'Settings imported successfully.',
   'settings.advanced.undo': 'Undo import',
   'settings.advanced.undoHint': 'Revert to the pre-import state. Available until the next layout edit.',
+  'settings.advanced.importLayoutDropped': 'Skipped {count} item(s) that no longer point to a folder in this Chrome (renamed, deleted, or moved to a link).',
   // Special folder titles
   'specialFolder.top': 'Most visited',
   'specialFolder.apps': 'Apps',
@@ -190,6 +191,7 @@ const messages = {
   'folderAction.currentFolder': 'this folder',
   // Folder-level
   'folder.empty': 'Empty',
+  'column.empty': 'Drop a folder here',
   // Context menu
   'contextMenu.openAllInFolder': 'Open all links in folder',
   'contextMenu.openAsGroup': 'Open in tab group',

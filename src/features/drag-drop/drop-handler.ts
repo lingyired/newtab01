@@ -3,7 +3,8 @@
 
 import { getDragIds, getDropTarget, setDropTarget } from './drag-state';
 import { getColumns, addRow, addColumn, getCoords } from './layout-ops';
-import { captureSnapshot, pushSnapshot } from './history';
+import { captureSnapshot, pushSnapshot, isSnapshotEqual, type HistorySnapshot } from './history';
+import { getMovedOut } from '../bookmarks/moved-out';
 import { getSetting } from '../../lib/storage/settings';
 import { showToast } from '../../lib/toast';
 import { t } from '../../lib/i18n';
@@ -58,6 +59,29 @@ function onDragOver(event: DragEvent): void {
         target.style.borderTop = borderCss;
         target.style.margin = '-4px 0 0 0';
       }
+    } else if (target.classList.contains('column--empty')) {
+      // v1.1.4: empty column is a drop TARGET, not a column-
+      //  structure boundary. The column's only folder was deleted
+      //  from Chrome; the user wants to drag a new folder INTO
+      //  the slot, not create a new column to the left/right of
+      //  the empty slot (which is the meaning of the regular
+      //  `.column` left/right-border feedback below). We need
+      //  this branch BEFORE the `.column` check because
+      //  `.column--empty` ALSO has the `.column` class — the
+      //  more specific case wins.
+      //
+      //  Visual: 4px solid border around the whole column,
+      //  overriding the 1px dashed placeholder border for the
+      //  duration of the drag. `clearDropTarget()` resets the
+      //  inline `border` to `''` which lets the CSS rule's
+      //  1px dashed border take over again. The dashed
+      //  placeholder border is purely cosmetic — overriding it
+      //  with a 4px solid drop indicator is the right call
+      //  because the dashed style and the solid drop-indicator
+      //  style would otherwise fight for the same property.
+      target.style.border = borderCss;
+      target.style.borderStyle = 'solid';
+      target.style.margin = '0';
     } else if (target.classList.contains('column')) {
       const rect = target.getBoundingClientRect();
       const relativeX = event.clientX - rect.left;
@@ -154,6 +178,46 @@ async function captureAndDrop(
   // Capture pre-drop snapshot (columns + movedOut, both cloned).
   const snapshot = await captureSnapshot();
 
+  // v1.1.4: empty column drop target. The empty column is a
+  //  drop TARGET, not a column-structure boundary. The user
+  //  wants the dropped folder to FILL the empty column, not
+  //  create a new column to its left/right (which is what the
+  //  column-structure branch below would do). Route to addRow
+  //  with y=0 (the column has no rows yet, so 0 = append).
+  //  This must be checked BEFORE the `dragIds.length === 1 &&
+  //  y !== null` branch because the empty column is the .column
+  //  div itself (not a LI/UL), so getDropY returns null for it
+  //  — the existing branch would fall through to the
+  //  column-structure code, which is exactly the wrong path.
+  //
+  //  Limitation: only single-folder drops are supported here.
+  //  Multi-folder drag from a folder-action toolbar / popup
+  //  onto an empty column is a niche case (you can only get
+  //  multi-dragIds from the popup split-picker, and the empty
+  //  column is a transient state). The fall-through to
+  //  addColumn would create a new column to the left/right of
+  //  the empty one, which is a reasonable degraded behavior —
+  //  the user can then drag the new folders in one by one.
+  if (target.classList.contains('column--empty') && dragIds.length === 1) {
+    debug.log('drop', 'captureAndDrop: empty column drop, routing to addRow', {
+      id: dragIds[0],
+      x,
+    });
+    await addRow(dragIds[0]!, x, 0);
+    // v1.1.5: skip the snapshot when the drop left the layout
+    //  unchanged (defensive — the empty-column path always removes
+    //  a folder from a non-empty source column, so a true no-op
+    //  shouldn't happen, but a user dragging from one empty slot
+    //  to a different empty slot could theoretically arrive at the
+    //  same state).
+    if (await isLayoutUnchanged(snapshot)) {
+      debug.log('drop', 'captureAndDrop: empty column drop was a no-op, skipping snapshot push');
+      return;
+    }
+    await pushSnapshot(snapshot);
+    return;
+  }
+
   if (dragIds.length === 1 && y !== null) {
     await addRow(dragIds[0]!, x, y);
   } else {
@@ -208,7 +272,29 @@ async function captureAndDrop(
     await addColumn(dragIds, finalX);
   }
 
+  // v1.1.5: diff check. The user can drag a folder back to its
+  //  original position (most common case: a folder dragged within
+  //  its own multi-folder column to the slot it already occupied).
+  //  addRow / addColumn still run — the folder is removed from
+  //  the source and re-inserted at the target — and the resulting
+  //  columns / movedOut end up structurally identical to the
+  //  snapshot. Pushing that as an undo step is misleading: the
+  //  undo badge ticks up but pressing undo does nothing. Skip the
+  //  push when the state is unchanged.
+  if (await isLayoutUnchanged(snapshot)) {
+    debug.log('drop', 'captureAndDrop: layout unchanged after drop, skipping snapshot push', {
+      dragIds, x, y,
+    });
+    return;
+  }
   pushSnapshot(snapshot);
+}
+
+/** Diff a captured snapshot against the current layout state.
+ *  v1.1.5: introduced so the drop handler can skip pushing
+ *  no-op undo entries (drop resolves to the same state as before). */
+async function isLayoutUnchanged(snapshot: HistorySnapshot): Promise<boolean> {
+  return isSnapshotEqual(snapshot, getColumns(), await getMovedOut());
 }
 
 /** Get the proper drop target element based on event coordinates */
