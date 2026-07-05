@@ -19,6 +19,8 @@ import { detectInputFormat, parseCssTheme } from '../features/themes/css-import'
 import { detectTweakcnUrl, toTweakcnJsonUrl } from '../features/themes/url-import';
 import { sendMessage } from '../lib/chrome/messages';
 import { applySettingChange } from '../features/settings/apply';
+import { getBookmarks } from '../lib/chrome/bookmarks';
+import { SHOW_KEY_MAP } from '../features/bookmarks/special-folders';
 import * as debug from '../lib/debug';
 import { renderColumns } from '../features/bookmarks/board';
 import { getColumns, setColumns, saveLayout } from '../features/drag-drop/layout-ops';
@@ -2443,7 +2445,24 @@ function renderAdvancedTab(): HTMLElement {
                 //  `verifyColumns` (existing behaviour, just
                 //  relies on the current
                 //  `chrome.bookmarks.getTree()` snapshot).
-                const nextColumns: string[][] = Array.isArray(imported.layout.columns)
+                //
+                // v1.1.4: each kept id must point to a real
+                //  FOLDER in the current Chrome bookmark tree.
+                //  Cross-environment imports (user A's JSON →
+                //  user B's Chrome) may have ids that are now
+                //  links (the user re-organised bookmarks, an
+                //  existing folder id got reused for a regular
+                //  bookmark, etc.) or that no longer exist at
+                //  all. The layout only ever stores folder ids
+                //  (folder drag is the only valid drag source —
+                //  the "drag" path on regular links was removed
+                //  in v0.2.108+), so anything resolving to a
+                //  link node is by definition stale and must be
+                //  dropped. Special folder ids (apps / top /
+                //  recent / closed / devices / 1 / 2) are
+                //  always accepted — they are runtime stubs,
+                //  not chrome.bookmarks ids.
+                const rawColumns: string[][] = Array.isArray(imported.layout.columns)
                   ? imported.layout.columns
                       .map((col) =>
                         Array.isArray(col)
@@ -2453,6 +2472,51 @@ function renderAdvancedTab(): HTMLElement {
                           : [],
                       )
                   : [];
+                const allIds = Array.from(new Set(rawColumns.flat()));
+                const nonSpecialIds = allIds.filter((id) => !(id in SHOW_KEY_MAP));
+                // Single round-trip lookup for all non-special ids.
+                // `getBookmarks` preserves order; missing ids come
+                // back as undefined slots.
+                const lookedUp = await getBookmarks(nonSpecialIds);
+                const validIds = new Set<string>(
+                  Object.keys(SHOW_KEY_MAP),
+                );
+                nonSpecialIds.forEach((id, i) => {
+                  const node = lookedUp[i];
+                  // A folder has no `url` field; a regular
+                  // bookmark always has one. We also need the
+                  // node to exist (undefined = deleted in the
+                  // user's Chrome since the export was taken).
+                  if (node && !node.url) {
+                    validIds.add(id);
+                  }
+                });
+                const dropped = allIds.filter((id) => !validIds.has(id));
+                if (dropped.length > 0) {
+                  debug.warn('settings', 'import-layout: dropped stale ids', {
+                    dropped,
+                    reason: 'not a folder (or deleted) in current Chrome',
+                  });
+                  // v1.1.4: surface a user-facing alert so the user
+                  //  knows the layout was trimmed. The id list
+                  //  itself is too noisy for the modal; the
+                  //  count + "no longer a folder" hint is enough
+                  //  for the user to investigate. We surface this
+                  //  BEFORE applying the layout (rather than
+                  //  after the async saveLayout/setLocal) so the
+                  //  alert is part of the same synchronous-feeling
+                  //  import flow — by the time the user dismisses
+                  //  the modal, the settings panel below is
+                  //  already showing the trimmed layout.
+                  window.alert(
+                    t('settings.advanced.importLayoutDropped', {
+                      count: dropped.length,
+                    }),
+                  );
+                }
+                const nextColumns: string[][] = rawColumns.map((col) =>
+                  col.filter((id) => validIds.has(id)),
+                );
                 // v0.2.107: movedOut is filtered against
                 //  `MOVED_OUT_SPECIAL_IDS` — these IDs are never
                 //  supposed to be in movedOut per the contract in
@@ -2591,6 +2655,11 @@ function renderAdvancedTab(): HTMLElement {
               const finalMap = await readCustomThemes();
               injectCustomThemesStyle(buildCustomThemesStyle(finalMap));
             }
+
+            // v1.1.4: if any imported column ids were dropped because
+            //  they no longer point to a folder in this Chrome
+            //  environment, the alert + debug.warn already fired
+            //  inside the try block above. Nothing more to do here.
 
             const content = document.getElementById('sp-content');
             if (content) renderContent(content);

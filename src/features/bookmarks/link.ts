@@ -17,12 +17,39 @@ export function renderLink(node: BookmarkNode, target: HTMLElement): HTMLLIEleme
   // v1.0.29: stamp the node type so the empty-state scanner in
   //  board.ts can tell real links from the `< Empty >` placeholder
   //  (BookmarkNode.type === 'empty', see folder.ts:243). No other
-  //  code path in the codebase reads li.dataset.type, so this is
-  //  the minimal surface to add.
+  //  code path in the codebase reads li.dataset.type, so this is the
+  //  minimal surface to add.
   if (node.type) {
     li.dataset.type = node.type;
   }
   const a = document.createElement('a');
+
+  // v1.1.4: disable HTML5 drag on link elements by default.
+  //  `<a>` with `href` has `draggable=true` in the browser's
+  //  default UA stylesheet, which has two nasty side effects in
+  //  this extension's drop model:
+  //    1. The browser fires a native link drag (the user can
+  //       drop the URL into the address bar / another tab). That
+  //       drag's `dragstart` bubbles to the parent column div,
+  //       whose `enableDragColumn` handler runs and calls
+  //       `setDragIds` with EVERY folder id in the column (see
+  //       drag-column.ts:26-28). The user is now dragging the
+  //       whole column, not the link. When they release on the
+  //       same column the layout doesn't change, but a snapshot
+  //       is still pushed onto the undo stack — the user sees
+  //       "undo shows a step but nothing reverts" (the bug
+  //       reported right after v1.1.3 shipped).
+  //    2. On a successful drop the whole column "moves" to
+  //       itself, which is harmless (no real change) but the
+  //       undo stack ends up with phantom entries that pollute
+  //       the history every time the user grabs a link.
+  //  Force `draggable=false` so neither side effect can fire.
+  //  The Apps special folder (the only link that should be
+  //  draggable) explicitly re-enables it via `enableDragFolder`
+  //  below, which sets `a.draggable = true` and also calls
+  //  `event.stopPropagation()` in its dragstart handler so the
+  //  column dragstart is suppressed — Apps behaves like a folder.
+  a.draggable = false;
 
   const url = node.url;
   if (url) {

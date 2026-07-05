@@ -155,6 +155,7 @@ const messages = {
   'settings.advanced.importSuccess': '设置导入成功。',
   'settings.advanced.undo': '撤销导入',
   'settings.advanced.undoHint': '恢复到导入前的状态。下次布局编辑前可用。',
+  'settings.advanced.importLayoutDropped': '已跳过 {count} 个项目（已重命名、删除或变为链接，不再是目录）。',
   // Special folder titles
   'specialFolder.top': '常用网站',
   'specialFolder.apps': '应用',
@@ -191,6 +192,7 @@ const messages = {
   'folderAction.currentFolder': '当前目录',
   // Folder-level
   'folder.empty': '空',
+  'column.empty': '将目录拖到这里',
   // Context menu
   'contextMenu.openAllInFolder': '打开目录中的全部链接',
   'contextMenu.openAsGroup': '以标签组方式打开',

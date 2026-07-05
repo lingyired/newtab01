@@ -71,6 +71,51 @@ export function pushSnapshot(snapshot: HistorySnapshot): void {
 }
 
 /**
+ * Check if a snapshot is structurally identical to a given layout
+ * state. Used by the drop handler to skip pushing a no-op snapshot
+ * — e.g. the user drags a folder back to its original position so
+ * the mutation re-renders to the same state. Recording that as an
+ * undo step is misleading: pressing undo would be a no-op too, and
+ * the undo button's count badge would tick up for nothing.
+ *
+ * Compares both `columns` (outer length, per-column length, ids
+ * in order) and `movedOut` (keys, per-key id arrays in order).
+ * Order matters for both — addRow / removeRow rely on the user-
+ * perceived order being preserved through the snapshot.
+ */
+export function isSnapshotEqual(
+  snapshot: HistorySnapshot,
+  currentColumns: Columns,
+  currentMovedOut: MovedOutMap,
+): boolean {
+  // columns: same outer length, same per-column length, same ids
+  //  in the same positions.
+  if (snapshot.columns.length !== currentColumns.length) return false;
+  for (let i = 0; i < snapshot.columns.length; i++) {
+    const a = snapshot.columns[i]!;
+    const b = currentColumns[i]!;
+    if (a.length !== b.length) return false;
+    for (let j = 0; j < a.length; j++) {
+      if (a[j] !== b[j]) return false;
+    }
+  }
+  // movedOut: same keys, same id arrays in the same order.
+  const snapKeys = Object.keys(snapshot.movedOut);
+  const curKeys = Object.keys(currentMovedOut);
+  if (snapKeys.length !== curKeys.length) return false;
+  for (const key of snapKeys) {
+    const a = snapshot.movedOut[key]!;
+    const b = currentMovedOut[key];
+    if (!b) return false;
+    if (a.length !== b.length) return false;
+    for (let i = 0; i < a.length; i++) {
+      if (a[i] !== b[i]) return false;
+    }
+  }
+  return true;
+}
+
+/**
  * Capture a fresh snapshot of the current column layout and moved-out map.
  * Caller is expected to:
  *   1. `const snapshot = await captureSnapshot();`

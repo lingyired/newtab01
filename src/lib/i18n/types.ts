@@ -192,6 +192,13 @@ export type MessageKey =
   | 'settings.advanced.importSuccess'
   | 'settings.advanced.undo'
   | 'settings.advanced.undoHint'
+  // v1.1.4: shown after a layout import if any of the imported
+  //  column ids no longer point to a folder in the current
+  //  Chrome environment (deleted or repurposed as a link). The
+  //  import itself still succeeds — we just want the user to
+  //  know the layout was trimmed. `{count}` is the number of
+  //  dropped ids.
+  | 'settings.advanced.importLayoutDropped'
   // Special folder titles
   | 'specialFolder.top'
   | 'specialFolder.apps'
@@ -228,6 +235,13 @@ export type MessageKey =
   | 'folderAction.currentFolder'
   // Folder-level
   | 'folder.empty'
+  // v1.1.4: empty column placeholder. Shown when a column's
+  //  only folder was deleted from Chrome bookmarks. The slot
+  //  stays in the DOM so the user can right-click to remove
+  //  the column or drag another folder in. The placeholder
+  //  text uses `pointer-events: none` so it doesn't intercept
+  //  right-click on the column itself.
+  | 'column.empty'
   // Context menu
   | 'contextMenu.openAllInFolder'
   | 'contextMenu.openAsGroup'

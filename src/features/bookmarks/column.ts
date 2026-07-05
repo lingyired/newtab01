@@ -8,6 +8,7 @@ import { getColumnMenuItems, renderMenu } from './context-menu';
 import { getSetting } from '../../lib/storage/settings';
 import { getBookmarkSubTree, chromeBookmarkToNode } from '../../lib/chrome/bookmarks';
 import * as debug from '../../lib/debug';
+import { t } from '../../lib/i18n';
 
 /** Render a single column at the given index into the target element */
 export async function renderColumn(index: number, target: HTMLElement, columns: string[][]): Promise<void> {
@@ -19,7 +20,28 @@ export async function renderColumn(index: number, target: HTMLElement, columns: 
   // special at the same position).
   const rawIds = columns[index] ?? [];
   const ids = rawIds.filter((id) => isSpecialVisible(id));
-  if (ids.length === 0) return;
+
+  // v1.1.4: empty column — two flavors.
+  //  1. `rawIds` is empty (the column had no ids at all — only
+  //     happens for the placeholder column the empty-layout
+  //     branch in board.ts creates; in practice verifyColumns
+  //     guarantees at least one id).
+  //  2. Every id is a hidden special (the user toggled show*=0
+  //     for every folder in the column). board.ts already
+  //     filters such columns out, so this branch only triggers
+  //     if the user disabled a special's show* AFTER the column
+  //     was queued for render.
+  //
+  // We still need to (a) attach the column-level context menu so
+  // the user can right-click → remove the column, and (b) show a
+  // placeholder so the slot is visually discoverable as droppable.
+  // The drag-drop handler resolves `.column` siblings to compute
+  // the drop x, so a present-but-empty column div is sufficient
+  // for the drop path.
+  if (ids.length === 0) {
+    renderEmptyColumnPlaceholder(target, index);
+    return;
+  }
   debug.log('render', 'renderColumn', { index, ids, showRoot: !!getSetting('showRoot') });
 
   const inBookmarkBarContext = ids.includes('1');
@@ -32,6 +54,15 @@ export async function renderColumn(index: number, target: HTMLElement, columns: 
       const ul = renderAllNodes(children, inBookmarkBarContext);
       target.appendChild(ul);
       addColumnContextMenu(target, index);
+    } else {
+      // v1.1.4: the only id in this column points to a folder
+      //  that was deleted in Chrome bookmarks. The id is still
+      //  in the layout array (verifyColumns doesn't know it
+      //  became invalid — see comments in board.ts about why we
+      //  don't auto-clean). Fall through to the empty-column
+      //  placeholder so the user can right-click to remove the
+      //  column or drag a fresh folder in.
+      renderEmptyColumnPlaceholder(target, index);
     }
     return;
   }
@@ -47,7 +78,68 @@ export async function renderColumn(index: number, target: HTMLElement, columns: 
     const ul = renderAllNodes(nodes, inBookmarkBarContext);
     target.appendChild(ul);
     addColumnContextMenu(target, index);
+  } else {
+    // v1.1.4: every id in this column resolved to null (i.e. the
+    //  user deleted every folder in the column from Chrome
+    //  bookmarks, or the column contained a mix of valid +
+    //  deleted ids and all valid ids were hidden). Same UX as
+    //  the ids.length === 0 case — show placeholder + column
+    //  context menu so the slot is still actionable.
+    renderEmptyColumnPlaceholder(target, index);
   }
+}
+
+/** v1.1.4: shared empty-column rendering. Builds the "Drop a
+ *  folder here" placeholder inside the column div and attaches
+ *  the column-level context menu so the user can right-click to
+ *  remove the column. Extracted to avoid duplicating the class
+ *  add + placeholder creation across the three empty branches in
+ *  renderColumn (rawIds empty / showRoot-false single id is
+ *  unresolved / multi-folder all unresolved).
+ *
+ *  v1.1.4: the placeholder is rendered as a `<a class="folder
+ *  folder--empty">` element so it inherits the same flexbox +
+ *  align-items: center + font-size: 1.8em / line-height: 1.4
+ *  layout that real folder headers use. The text is then
+ *  guaranteed to land at the exact same y position as the first
+ *  folder in a regular column, without us having to hard-code
+ *  a margin/padding offset that would drift the moment the
+ *  user's font size or theme line-height changes. The `a` is
+ *  used (not a `div`) so the same `#main a` rules apply, but
+ *  `tabIndex = -1` + `href` absent means it is not focusable
+ *  and not clickable (the click would otherwise bubble to the
+ *  column's right-click handler, etc.). `folder--empty` adds
+ *  the muted placeholder color + removes the icon / action
+ *  buttons that renderFolder normally appends. */
+function renderEmptyColumnPlaceholder(target: HTMLElement, index: number): void {
+  target.classList.add('column--empty');
+
+  // Wrap in a <ul> so the column's children match the same shape
+  //  as a regular column (one <ul> per column, holds <li> nodes).
+  //  Keeps the DOM structure consistent for downstream selectors
+  //  (e.g. the search indexer, the moved-out panel, the undo
+  //  snapshot). The <li> wraps the folder-like placeholder so
+  //  the layout mirrors a real folder row exactly.
+  const ul = document.createElement('ul');
+  const li = document.createElement('li');
+  li.dataset.depth = '0';
+  li.dataset.type = 'empty';
+
+  const header = document.createElement('a');
+  header.classList.add('folder', 'folder--empty');
+  header.tabIndex = -1;
+  // No `href` — see comment above. Prevents middle-click / ctrl-
+  //  click from accidentally opening a blank navigation.
+
+  const textWrap = document.createElement('span');
+  textWrap.className = 'link-text';
+  textWrap.textContent = t('column.empty');
+  header.appendChild(textWrap);
+
+  li.appendChild(header);
+  ul.appendChild(li);
+  target.appendChild(ul);
+  addColumnContextMenu(target, index);
 }
 
 /** Render an array of bookmark nodes into a ul */
