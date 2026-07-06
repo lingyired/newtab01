@@ -13,6 +13,20 @@ export function getBookmarkTree(): Promise<chrome.bookmarks.BookmarkTreeNode[]> 
 export function getBookmark(id: string): Promise<chrome.bookmarks.BookmarkTreeNode | undefined> {
   return new Promise((resolve) => {
     chrome.bookmarks.get(id, (results) => {
+      // v1.1.7: check `chrome.runtime.lastError` so Chrome's "Unchecked
+      //  runtime.lastError" console warning does not fire when the id
+      //  has been deleted from Chrome bookmarks (or the bookmarks
+      //  permission was revoked). The previous code just resolved with
+      //  `undefined` and left lastError dangling — Chrome then surfaces
+      //  the warning to the user in edge://newtab/ and chrome://newtab/
+      //  devtools. Resolving to `undefined` here is the right semantic:
+      //  the caller treats it as "id not found" (e.g. resolveNode in
+      //  column.ts returns null, the column falls through to the
+      //  v1.1.4 empty-column placeholder).
+      if (chrome.runtime.lastError) {
+        resolve(undefined);
+        return;
+      }
       resolve(results && results[0] ? results[0] : undefined);
     });
   });
@@ -62,6 +76,25 @@ export function getBookmarks(
 export function getBookmarkSubTree(id: string): Promise<chrome.bookmarks.BookmarkTreeNode[] | undefined> {
   return new Promise((resolve) => {
     chrome.bookmarks.getSubTree(id, (result) => {
+      // v1.1.7: same lastError guard as getBookmark above.
+      //  getSubTree is called from resolveNode in column.ts:221
+      //  for every column id on every re-render. When the user
+      //  deletes a folder from Chrome bookmarks, the id stays
+      //  in the layout (verifyColumns doesn't auto-clean — see
+      //  board.ts comments), so the next re-render hits
+      //  getSubTree with a now-missing id. Chrome returns
+      //  undefined and sets lastError; the wrapper used to
+      //  forward the undefined but leave lastError dangling,
+      //  which Chrome surfaces as the "Unchecked
+      //  runtime.lastError: Can't find bookmark for id."
+      //  warning the user reported. resolveNode already
+      //  handles the undefined result correctly (returns
+      //  null → renderColumn falls through to the empty-
+      //  column placeholder).
+      if (chrome.runtime.lastError) {
+        resolve(undefined);
+        return;
+      }
       resolve(result ?? undefined);
     });
   });

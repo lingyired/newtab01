@@ -244,6 +244,28 @@
 //          different effects (removeRow = take folder out of column,
 //          show*=0 = hide the entire column). The show* action is
 //          the canonical one for these folders.
+// v1.1.7: silence "Unchecked runtime.lastError: Can't find bookmark
+//          for id." console warning that fires on edge://newtab/ /
+//          chrome://newtab/ devtools after the user deletes a folder
+//          that had been dragged out into a column. Root cause: the
+//          `getBookmark(id)` and `getBookmarkSubTree(id)` wrappers in
+//          lib/chrome/bookmarks.ts called chrome.bookmarks.get /
+//          getSubTree but never read `chrome.runtime.lastError` in
+//          the callback. When Chrome's bookmarks layer can't find
+//          the id it sets lastError AND calls the callback with an
+//          empty/undefined payload; the previous code just resolved
+//          the promise and let lastError dangle, which Chrome then
+//          surfaces as the "Unchecked" warning. The data was
+//          already being handled correctly downstream —
+//          `recordMovedOutForIds` and `restoreMovedOutForRemovedId`
+//          wrap `getBookmark` in try/catch, and `resolveNode` in
+//          column.ts:221 returns null when `getBookmarkSubTree`
+//          returns undefined so renderColumn falls through to the
+//          v1.1.4 empty-column placeholder. The fix is purely in
+//          the wrappers: read `chrome.runtime.lastError` before
+//          resolving, and resolve to `undefined` so the semantics
+//          of "id not found" stay identical. No new MessageKey, no
+//          UI change.
 // v1.1.6: skip the undo snapshot when a drop leaves the layout
 //          unchanged. The user could drag a folder back to its
 //          original position — most commonly, dragging a folder
@@ -328,4 +350,4 @@
 //            in newtab.css — dashed border for the slot, muted
 //            color for the placeholder text. New MessageKey
 //            column.empty, all 10 catalogs.
-export const VERSION = '1.1.6';
+export const VERSION = '1.1.7';
