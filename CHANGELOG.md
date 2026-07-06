@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.7] - 2026-07-05
+
+### Fixed
+- **"Unchecked runtime.lastError: Can't find bookmark for id." console warning is gone**. When the user deletes a folder from Chrome bookmarks that had been dragged out into a column, every subsequent re-render triggered Chrome's "Unchecked runtime.lastError" console warning. Root cause: the [`getBookmark(id)`](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/lib/chrome/bookmarks.ts#L13-L33) and [`getBookmarkSubTree(id)`](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/lib/chrome/bookmarks.ts#L76-L101) wrappers in `lib/chrome/bookmarks.ts` called `chrome.bookmarks.get` / `getSubTree` but never read `chrome.runtime.lastError` in the callback. When Chrome's bookmarks layer can't find the id, it sets `lastError` AND calls the callback with an empty / undefined payload. The previous code just resolved the promise and let `lastError` dangle — Chrome then surfaces the "Unchecked" warning to the user in `edge://newtab/` and `chrome://newtab/` devtools. The data was already being handled correctly downstream — `recordMovedOutForIds` and `restoreMovedOutForRemovedId` wrap `getBookmark` in try/catch, and `resolveNode` in [column.ts:221](file:///Users/lingsmbp/Documents/aiwork/newtab01/src/features/bookmarks/column.ts#L221) returns `null` when `getBookmarkSubTree` returns `undefined` so `renderColumn` falls through to the v1.1.4 empty-column placeholder. The fix is purely in the wrappers: read `chrome.runtime.lastError` before resolving, and resolve to `undefined` so the "id not found" semantics stay identical. No new MessageKey, no UI change.
+
 ## [1.1.6] - 2026-07-05
 
 ### Fixed
