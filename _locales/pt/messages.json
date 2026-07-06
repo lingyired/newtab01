@@ -1,10 +1,10 @@
 {
   "appName": {
-    "message": "newtab01",
-    "description": "Nome da extensão exibido na barra de ferramentas do Chrome, em chrome://extensions e na página do Chrome Web Store."
+    "message": "newtab01: Nova aba baseada em marcadores",
+    "description": "Extension display name shown in the Chrome toolbar, chrome://extensions, and the Chrome Web Store listing."
   },
   "appDescription": {
-    "message": "Nova aba centrada em favoritos. Pastas como grupos de abas ou vista dividida. 12 temas + temas personalizados.",
-    "description": "Resumo breve exibido na página do Chrome Web Store e em chrome://extensions. Deve respeitar o limite de 132 caracteres da descrição do manifest do Chrome."
+    "message": "Nova aba baseada em marcadores. Abra pastas como grupos de abas ou em vista dividida. 12 temas + temas personalizados do tweakcn.",
+    "description": "Short summary shown in the Chrome Web Store listing and chrome://extensions. Must stay under Chrome's 132-character manifest description limit."
   }
 }

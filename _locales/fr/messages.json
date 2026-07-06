@@ -1,10 +1,10 @@
 {
   "appName": {
-    "message": "newtab01",
-    "description": "Nom de l'extension affiché dans la barre d'outils Chrome, chrome://extensions et la fiche Chrome Web Store."
+    "message": "newtab01: Nouvel onglet basé sur les favoris",
+    "description": "Extension display name shown in the Chrome toolbar, chrome://extensions, and the Chrome Web Store listing."
   },
   "appDescription": {
-    "message": "Nouvel onglet centré sur les favoris. Dossiers en groupes d'onglets ou en vue partagée. 12 thèmes + thèmes personnalisés.",
-    "description": "Court résumé affiché dans la fiche Chrome Web Store et dans chrome://extensions. Doit respecter la limite de 132 caractères de la description du manifest Chrome."
+    "message": "Nouvel onglet basé sur les favoris. Ouvrez les dossiers en groupes d'onglets ou en vue partagée. 12 thèmes + thèmes personnalisés de tweakcn.",
+    "description": "Short summary shown in the Chrome Web Store listing and chrome://extensions. Must stay under Chrome's 132-character manifest description limit."
   }
 }

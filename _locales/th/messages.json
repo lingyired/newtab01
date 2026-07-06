@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "newtab01: แท็บใหม่ที่ขับเคลื่อนด้วยบุ๊กมาร์ก",
+    "description": "Extension display name shown in the Chrome toolbar, chrome://extensions, and the Chrome Web Store listing."
+  },
+  "appDescription": {
+    "message": "แท็บใหม่ที่ขับเคลื่อนด้วยบุ๊กมาร์ก เปิดโฟลเดอร์เป็นกลุ่มแท็บหรือในมุมมองแบบแยก 12 ธีม + ธีมที่กำหนดเองจาก tweakcn",
+    "description": "Short summary shown in the Chrome Web Store listing and chrome://extensions. Must stay under Chrome's 132-character manifest description limit."
+  }
+}

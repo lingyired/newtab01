@@ -1,10 +1,10 @@
 {
   "appName": {
-    "message": "newtab01",
-    "description": "Erweiterungsname, angezeigt in der Chrome-Symbolleiste, unter chrome://extensions und im Chrome Web Store-Eintrag."
+    "message": "newtab01: Lesezeichenbasierte neue Tab-Seite",
+    "description": "Extension display name shown in the Chrome toolbar, chrome://extensions, and the Chrome Web Store listing."
   },
   "appDescription": {
-    "message": "Lesezeichenorientierter neuer Tab. Ordner als Tab-Gruppen oder geteilte Ansicht. 12 Designs + eigene Designs.",
-    "description": "Kurze Zusammenfassung im Chrome Web Store-Eintrag und unter chrome://extensions. Muss unter dem 132-Zeichen-Limit der Chrome-Manifest-Beschreibung bleiben."
+    "message": "Lesezeichenbasierte neue Tab-Seite. Ordner als Tab-Gruppen oder geteilte Ansicht öffnen. 12 Designs + benutzerdefinierte Designs von tweakcn.",
+    "description": "Short summary shown in the Chrome Web Store listing and chrome://extensions. Must stay under Chrome's 132-character manifest description limit."
   }
 }

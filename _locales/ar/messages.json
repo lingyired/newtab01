@@ -1,10 +1,10 @@
 {
   "appName": {
-    "message": "newtab01",
-    "description": "اسم الإضافة الذي يظهر في شريط أدوات Chrome، و chrome://extensions، وفي صفحة Chrome Web Store."
+    "message": "newtab01: علامة تبويب جديدة مدفوعة بالإشارات",
+    "description": "Extension display name shown in the Chrome toolbar, chrome://extensions, and the Chrome Web Store listing."
   },
   "appDescription": {
-    "message": "علامة تبويب جديدة قائمة على الإشارات. افتح المجلدات كمجموعات علامات تبويب أو في عرض مقسم. 12 سمة + سمات مخصصة.",
-    "description": "ملخص قصير يظهر في صفحة Chrome Web Store و chrome://extensions. يجب أن يبقى ضمن حد 132 حرفًا لوصف بيان Chrome."
+    "message": "علامة تبويب جديدة مدفوعة بالإشارات. افتح المجلدات كمجموعات علامات تبويب أو في عرض مقسم. 12 سمة + سمات مخصصة من tweakcn.",
+    "description": "Short summary shown in the Chrome Web Store listing and chrome://extensions. Must stay under Chrome's 132-character manifest description limit."
   }
 }

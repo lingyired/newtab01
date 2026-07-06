@@ -1,10 +1,10 @@
 {
   "appName": {
-    "message": "newtab01",
-    "description": "Имя расширения, отображаемое на панели инструментов Chrome, в chrome://extensions и в карточке Chrome Web Store."
+    "message": "newtab01: Новая вкладка на основе закладок",
+    "description": "Extension display name shown in the Chrome toolbar, chrome://extensions, and the Chrome Web Store listing."
   },
   "appDescription": {
-    "message": "Новая вкладка на основе закладок. Папки как группы вкладок или разделение экрана. 12 тем + свои темы.",
-    "description": "Краткое описание в карточке Chrome Web Store и в chrome://extensions. Должно укладываться в лимит 132 символа для описания manifest Chrome."
+    "message": "Новая вкладка на основе закладок. Открывайте папки как группы вкладок или в режиме разделения. 12 тем + пользовательские темы из tweakcn.",
+    "description": "Short summary shown in the Chrome Web Store listing and chrome://extensions. Must stay under Chrome's 132-character manifest description limit."
   }
 }

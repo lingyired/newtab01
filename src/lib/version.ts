@@ -420,4 +420,29 @@
 //          each separated by a double space. The `'auto'` option
 //          stays code-less (it means "follow the browser", not a
 //          specific region).
-export const VERSION = '1.2.0';
+// v1.2.1: extension name now reads "newtab01: bookmark-driven
+//          new tab page" (was "newtab01"), and the manifest
+//          description opens with "Bookmark-driven new tab page."
+//          in every locale — the same one-liner the user sees in
+//          the appName, so the Chrome Web Store / Edge Add-ons
+//          listing is consistent end-to-end. AppName is 38
+//          characters (well under the 75-char Chrome Web Store
+//          name limit); appDescription stays within the 132-char
+//          manifest description limit in all 37 locales.
+//          _locales/ expanded from 13 to 38 entries (13 existing
+//          + 25 new: ko / it / nl / pl / tr / vi / id / sv / da /
+//          fi / cs / el / hu / ro / th / nb / uk / bg / hr / sk
+//          / ca / he / fa / ur / ps) to mirror the 37-locale set
+//          in src/lib/i18n/. The legacy `zh` alias is kept
+//          pointing at the `zh_CN` content for bare-tag
+//          fallback. The `description` field on each
+//          `messages.json` key is left in English (it's developer
+//          metadata for the Chrome Web Store translation UI, not
+//          user-facing copy). The vite.config.ts `PUBLIC_NAME` /
+//          `PUBLIC_DESCRIPTION` fallbacks were updated to the
+//          same strings so dist/manifest.json stays in sync if
+//          anyone ever removes the `__MSG_appName__` i18n tokens
+//          from source manifest. No MessageKey added (this is
+//          Chrome's own `_locales/` system, separate from the
+//          src/lib/i18n/ application-level i18n).
+export const VERSION = '1.2.1';

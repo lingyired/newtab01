@@ -1,10 +1,10 @@
 {
   "appName": {
-    "message": "newtab01: 以书签驱动的新标签页",
+    "message": "newtab01: Нова вкладка на основі закладок",
     "description": "Extension display name shown in the Chrome toolbar, chrome://extensions, and the Chrome Web Store listing."
   },
   "appDescription": {
-    "message": "以书签驱动的新标签页。可将目录作为标签组或分屏视图打开。12 套主题 + 来自 tweakcn 的无限自定义主题。",
+    "message": "Нова вкладка на основі закладок. Відкривайте папки як групи вкладок або в режимі розділення. 12 тем + власні теми з tweakcn.",
     "description": "Short summary shown in the Chrome Web Store listing and chrome://extensions. Must stay under Chrome's 132-character manifest description limit."
   }
 }

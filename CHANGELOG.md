@@ -5,6 +5,21 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-07-06
+
+### Changed
+- **Extension name now reads "newtab01: bookmark-driven new tab page"** (was "newtab01"). The manifest description opens with the same "Bookmark-driven new tab page." one-liner, then continues with the existing feature summary. The 38-character appName is well under the Chrome Web Store 75-character name limit; the appDescription stays within the 132-character manifest description limit in all 37 locales. The new copy applies to the Chrome Web Store listing, Edge Add-ons listing, `chrome://extensions`, and the toolbar popup header.
+- **`_locales/` expanded from 13 → 38 entries**. 25 new locales added to match the 37-locale set in `src/lib/i18n/`: ko / it / nl / pl / tr / vi / id / sv / da / fi / cs / el / hu / ro / th / nb / uk / bg / hr / sk / ca / he / fa / ur / ps. The legacy `zh` alias is kept pointing at the `zh_CN` content for bare-tag fallback. The `description` field on each `messages.json` key stays in English (developer metadata for the Chrome Web Store translation UI, not user-facing copy).
+- **`vite.config.ts` `PUBLIC_NAME` / `PUBLIC_DESCRIPTION` fallbacks** updated to the same strings as the new `_locales/en/messages.json` entries — keeps `dist/manifest.json` in sync if anyone ever removes the `__MSG_appName__` i18n tokens from source manifest.
+
+### Internal
+- `vite.config.ts:49-50` updated with the new fallback copy.
+- 25 new `_locales/<code>/messages.json` files created. 13 existing ones updated with the new `appName` and `appDescription` strings (en / zh_CN / zh_HK / zh_TW / zh / es / ar / hi / fr / pt / de / ja / ru).
+- No `MessageKey` change — this is Chrome's own `_locales/` system, separate from `src/lib/i18n/`.
+
+### Bundle
+- newtab gzipped: unchanged (the `_locales/` directory is shipped as JSON files, not bundled into JS). The 25 new JSON files add ~12KB uncompressed to the extension package.
+
 ## [1.2.0] - 2026-07-06
 
 i18n 多语言扩张到 37 个 locale（覆盖 Chrome 应用商店 Top 30 + 港台繁中变体）、界面语言下拉新增 ISO 国家代码前缀、导入布局后自动展开第一层目录、修复 import-layout 误报"已跳过"问题、RTL 文字对齐精细化。**这是 v0.2.x → v1.x 的版本号跨越**，标志着 i18n 多语言完整周期的收官。详见下方 `v0.2.123` + `1.1.10 - 1.1.16` 各子段落。

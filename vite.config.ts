@@ -46,8 +46,8 @@ const stripSourceExt = (id: string | undefined): string => {
 // accurate on the Edge Add-ons store as well. The phrasing still works
 // on both stores because both Chrome and Edge expose the same
 // chrome.tabGroups API under that name.
-const PUBLIC_NAME = 'newtab01';
-const PUBLIC_DESCRIPTION = 'Bookmark-driven new tab. Open folders as tab groups or in split view. 12 built-in themes + unlimited custom themes.';
+const PUBLIC_NAME = 'newtab01: bookmark-driven new tab page';
+const PUBLIC_DESCRIPTION = 'Bookmark-driven new tab page. Open folders as tab groups or in split view. 12 built-in themes + unlimited custom themes.';
 
 function fixupDistManifest(): Plugin {
   return {

@@ -1,10 +1,10 @@
 {
   "appName": {
-    "message": "newtab01",
-    "description": "擴充功能名稱，顯示喺 Chrome 工具列、chrome://extensions 同 Chrome 網上應用程式商店商品詳情入面。"
+    "message": "newtab01: 以書籤驅動嘅新分頁",
+    "description": "Extension display name shown in the Chrome toolbar, chrome://extensions, and the Chrome Web Store listing."
   },
   "appDescription": {
-    "message": "以書籤為中心嘅新分頁。可將目錄作為分頁群組或分屏視圖打開。12 款主題 + 無限自訂主題。",
-    "description": "Chrome 網上應用程式商店商品詳情同 chrome://extensions 入面顯示嘅簡介，必須控制喺 Chrome manifest description 嘅 132 字元限制內。"
+    "message": "以書籤驅動嘅新分頁。可將目錄作為分頁群組或分屏檢視開啟。12 款主題 + 嚟自 tweakcn 嘅無限自訂主題。",
+    "description": "Short summary shown in the Chrome Web Store listing and chrome://extensions. Must stay under Chrome's 132-character manifest description limit."
   }
 }

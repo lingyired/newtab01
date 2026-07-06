@@ -1,0 +1,10 @@
+{
+  "appName": {
+    "message": "newtab01: Σελίδα νέας καρτέλας βασισμένη σε σελιδοδείκτες",
+    "description": "Extension display name shown in the Chrome toolbar, chrome://extensions, and the Chrome Web Store listing."
+  },
+  "appDescription": {
+    "message": "Σελίδα νέας καρτέλας βασισμένη σε σελιδοδείκτες. Ανοίξτε φακέλους ως ομάδες καρτελών ή σε διαχωρισμένη προβολή. 12 θέματα + tweakcn.",
+    "description": "Short summary shown in the Chrome Web Store listing and chrome://extensions. Must stay under Chrome's 132-character manifest description limit."
+  }
+}

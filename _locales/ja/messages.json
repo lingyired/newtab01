@@ -1,10 +1,10 @@
 {
   "appName": {
-    "message": "newtab01",
-    "description": "拡張機能名。Chrome ツールバー、chrome://extensions、Chrome ウェブストアの商品詳細に表示されます。"
+    "message": "newtab01: ブックマーク駆動の新しいタブ",
+    "description": "Extension display name shown in the Chrome toolbar, chrome://extensions, and the Chrome Web Store listing."
   },
   "appDescription": {
-    "message": "ブックマーク中心の新しいタブ。フォルダをタブグループまたは分割ビューで開けます。12 テーマ + カスタムテーマ。",
-    "description": "Chrome ウェブストアの商品詳細と chrome://extensions に表示される短い説明。Chrome manifest description の 132 文字制限を守る必要があります。"
+    "message": "ブックマーク駆動の新しいタブ。フォルダをタブグループまたは分割ビューで開く。12 テーマ + tweakcn からのカスタムテーマ。",
+    "description": "Short summary shown in the Chrome Web Store listing and chrome://extensions. Must stay under Chrome's 132-character manifest description limit."
   }
 }
