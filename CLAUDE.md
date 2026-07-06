@@ -32,6 +32,7 @@
 | `feat/import-export-cleanup-and-custom-themes` | 🗄 冻结 | 高级 tab 导出 JSON 移除已迁到 `themeOverrides` 的 10 个 per-theme 字段（font / fontSize / fontWeight / 5 颜色 / shadowBlur / highlightRound）+ import 同步静默丢弃；`CustomThemeEntry` 加 `sourceUrl?` 字段记录 URL 安装时的原始 URL；导出 `customThemes: [{ name, url }]` 数组（CSS paste 主题无 URL 跳过并 alert）；import 走 fetch + validate + install 路径重装 URL 主题（v0.2.104）+ 修 storage.onChanged 只在 theme 变化时调 applyTheme、忽略 darkMode 变化的 bug 导致 import 后 darkMode 必须刷新才生效（v0.2.105）| 见 git log |
 | `feat/import-export-layout-and-custom-themes` | 🗄 冻结 | 高级 tab 导出 settings JSON 加可选 `layout: { columns, movedOut }` 字段（UI 默认勾选 checkbox「包含布局」）+ import 自动检测并恢复 layout（剥 special-folder IDs 避免异环境 force-enable）+ 走 history snapshot 撤销栈可手动 undo + 只动 newtab 显示（不调 `chrome.bookmarks.*` API）（v0.2.106）+ 保留特殊文件夹 ID 默认不勾 checkbox 垂直对齐（v0.2.107）+ Apps UX 反复 4 次回归最终改回 link 视觉 + UA 检测 `chrome://apps` / `edge://apps` + Apps link 复用 `enableDragFolder` 显式 `stopPropagation` 单独拖（v0.2.108 → v0.2.116）| 见 git log |
 | `feat/i18n` | 🗄 冻结 | i18n 多语言支持完整周期：types/index/catalog 脚手架 + en/zh（v0.2.117）→ 全模块迁移（v0.2.118）→ 8 新 locale（es/ar/hi/fr/pt/de/ja/ru）+ Arabic RTL（v0.2.119）→ background SW 10 语言表（v0.2.120）→ import button 完整动作短语 + long-label 换行 + panel in-place 刷新（v0.2.121）→ 去掉 trailing 省略号（v0.2.122）。合并到 main 见 `bffc756`。| 见 git log |
+| `main` 上的 i18n 扩张（v0.2.123） | 🟢 正在 main | **Round 1**: locale 集 10 → 33：覆盖 Chrome Web Store Top 30 LTR 语言（按 Chrome 自身翻译支持度排序，排除 Arabic 已含 / Hebrew / Persian / Urdu / Pashto 等 RTL）+ 港台繁中变体 `zh-HK` / `zh-TW`。`'zh'` 重命名为 `'zh-CN'` 以便两个繁中变体作为兄弟节点存在；旧存储值由 `initSettings()` 迁移 + `i18n/index.ts → LEGACY_ALIAS` 兜底。**Round 2**: 33 → 37，加入 4 个 Chrome Top 30 RTL 语言 (`he` / `fa` / `ur` / `ps`)，`RTL_LOCALES` 同步扩展为 5 项；`<html dir="rtl">` 由 `setLocale()` 自动写，但 column 镜像 / 按钮图标等完整 bidi 布局留待后续调整。Bundle 预算：newtab gzipped 26.91KB → 29.87KB（仍 < 80KB）。直接在 main 上提交，commit 历史保留在 main。| 见 git log |
 
 **为什么 v0.2.57 是 `main` 的基线（而不是 v0.2.36 / v0.2.59）**
 
@@ -260,18 +261,19 @@ splitManager.register(new IframeSplitEngine());
 ### 6.5 i18n 多语言支持
 
 > v0.2.117 ~ v0.2.122 完整周期。**所有用户可见字符串必须走 `t()` 翻译**。详细开发文档见 [`docs/i18n.md`](docs/i18n.md)；新增/修改字符串前**必读**。
+> v0.2.123 扩 locale 集：10 → 33（Round 1，覆盖 Chrome 应用商店 Top 30 LTR 语言 + 港台繁中变体）→ 37（Round 2，加入 Hebrew / Persian / Urdu / Pashto 4 个 Chrome Top 30 RTL 语言；`RTL_LOCALES` 同步扩展为 5 项）。Round 1 同时把 `'zh'` 重命名为 `'zh-CN'` 以便 `zh-HK` / `zh-TW` 作为兄弟节点存在；旧存储值 `'zh'` 在 `initSettings()` 中迁移到 `'zh-CN'`，并由 `i18n/index.ts → LEGACY_ALIAS` 兜底。
 
-- **目录结构**：`src/lib/i18n/` —— `types.ts`（`MessageKey` 联合 + `SUPPORTED_LOCALES` / `RTL_LOCALES` 列表）、`index.ts`（`t()` / `setLocale()` / `initLocale()` / `getLocale()` / `resolveLocale()` / `subscribe()` / `listLocales()` 运行时）、`catalog/<code>.ts`（10 份 locale bundle：`en` / `zh` / `es` / `ar` / `hi` / `fr` / `pt` / `de` / `ja` / `ru`）
-- **零依赖 + 编译期完整**：catalog 用 `as const satisfies LocaleMessages` 模式 —— 任何 catalog 漏 key、typo key、参数不一致都**编译期报错**。`CATALOG` 类型从 v0.2.119 起是 `Record<LocaleCode, LocaleBundle>`（10 项全部到位，Partial 已淘汰）。
-- **fallback 链** `当前选 → navigator.language → 'en'`：用户选 `'auto'` 且浏览器语言不在 10 种里 → fallback `'en'`。解析算法：先精确匹配（`'zh-CN'` 不命中 `'zh'`），再主子标签（`'zh-CN' → 'zh'`），最后 `'en'`
+- **目录结构**：`src/lib/i18n/` —— `types.ts`（`MessageKey` 联合 + `SUPPORTED_LOCALES` / `RTL_LOCALES` 列表）、`index.ts`（`t()` / `setLocale()` / `initLocale()` / `getLocale()` / `resolveLocale()` / `subscribe()` / `listLocales()` 运行时）、`catalog/<code>.ts`（**37** 份 locale bundle）—— 按 SUPPORTED_LOCALES 顺序：`en` / `zh-CN` / `es` / `ar` / `hi` / `fr` / `pt` / `de` / `ja` / `ru` / `zh-HK` / `zh-TW` / `ko` / `it` / `nl` / `pl` / `tr` / `vi` / `id` / `sv` / `da` / `fi` / `cs` / `el` / `hu` / `ro` / `th` / `nb` / `uk` / `bg` / `hr` / `sk` / `ca` / `he` / `fa` / `ur` / `ps`
+- **零依赖 + 编译期完整**：catalog 用 `as const satisfies LocaleMessages` 模式 —— 任何 catalog 漏 key、typo key、参数不一致都**编译期报错**。`CATALOG` 类型是 `Record<LocaleCode, LocaleBundle>`（v0.2.123 round 2 全部 37 项到位，Partial 已淘汰）。
+- **fallback 链** `当前选 → navigator.language → 'en'`：用户选 `'auto'` 且浏览器语言不在 33 种里 → fallback `'en'`。解析算法：① `LEGACY_ALIAS`（v0.2.123 新增：`'zh'` → `'zh-CN'`，处理裸 tag）→ ② 精确匹配（`'zh-CN'` 不命中 `'zh'`；`'pt-BR'` 不命中 `'pt'`）→ ③ 主子标签（`'zh-CN' → 'zh'`、`'es-MX' → 'es'`）→ ④ `'en'`
 - **跨设备同步**：`Settings.language: 'auto' | LocaleCode` 字段存在 `chrome.storage.sync`。`apply.ts` 监听 `chrome.storage.onChanged` 调 `setLocale()` → `subscribe()` 通知所有 UI 模块 in-place 刷新
 - **live refresh（不刷新页面）**：`applyLocaleToDom()` 在 `newtab/main.ts` 安装，订阅 i18n 模块；切语言时一次性刷新 `topbar` / `appearance-toggle` / `undo` / `search footer` / `renderColumns()`（特殊目录 title 重新走 `t()`）/ `refreshSettingsPanelLocale()`（in-place 重画打开中的 settings panel —— 不要 close+open，否则会闪）
-- **background SW 独立表**：SW 是独立 build chunk，不能 import newtab 的 i18n 模块（会拉 chrome bookmarks shims）。`src/background.ts` 维护独立 `SETTINGS_MENU_TITLES: Record<string, string>` 查表 10 项；`chrome.storage.onChanged` 监听 `settings.language` 变化时 `removeAll` + 重建 context menu
+- **background SW 独立表**：SW 是独立 build chunk，不能 import newtab 的 i18n 模块（会拉 chrome bookmarks shims）。`src/background.ts` 维护独立 `SETTINGS_MENU_TITLES: Record<string, string>` 查表 33 项（同时保留 `'zh'` legacy key 与 `'zhCN'` 新 key，二者值相同）；`chrome.storage.onChanged` 监听 `settings.language` 变化时 `removeAll` + 重建 context menu
 - **Arabic RTL**：`<html dir="rtl">` 由 `setLocale()` 自动写；`styles/globals.css` 末尾的 `[dir="rtl"]` 规则强制 URL/hostname 显示节点（search-result-url / split-picker-url / picker-url / bookmark-url / search-result-host / sp-pill-url）走 LTR + `unicode-bidi: isolate`，search input 走 RTL + `text-align: right`。项目 CSS 全部用 `flex + gap`（CLAUDE.md §9.2），column 排布、topbar、settings panel 不需显式镜像
-- **bundle 预算**：10 个 locale × ~5KB unzipped ≈ 50KB，gzipped 后 ~16KB；newtab bundle 现在 26.91KB gzipped（含 i18n 全套），仍在 80KB 预算内
+- **bundle 预算**：v0.2.123 round 1 之前 10 个 locale × ~5KB unzipped ≈ 50KB，gzipped 后 ~16KB；v0.2.123 round 1 扩到 33 个 locale × ~5KB unzipped ≈ 165KB，gzipped 后 ~55KB；v0.2.123 round 2 扩到 37 个 locale × ~5KB unzipped ≈ 185KB，gzipped 后 ~60KB；newtab bundle 现在 29.87KB gzipped（含 37 个 i18n 全套），仍在 80KB 预算内
 - **修改规则**：
-  - 新增用户可见字符串：先在 `types.ts` 加 `MessageKey`，再在所有 10 个 catalog 补翻译（编译期强制）—— 漏一个就 build 不过
-  - 现有字符串改文案：改所有 10 个 catalog（grep `MessageKey` 反查也行 —— tsc 在 `'settings.xxx' = '...'` 处会因 `LocaleMessages` 联合报错）
+  - 新增用户可见字符串：先在 `types.ts` 加 `MessageKey`，再在所有 37 个 catalog 补翻译（编译期强制）—— 漏一个就 build 不过
+  - 现有字符串改文案：改所有 37 个 catalog（grep `MessageKey` 反查也行 —— tsc 在 `'settings.xxx' = '...'` 处会因 `LocaleMessages` 联合报错）
   - 静态结构里的 label / placeholder / title / aria-label 走 `t(key)` 现读现译 —— locale 切换时 in-place 更新
   - 静态配置对象里只放 `titleKey: MessageKey` / `labelKey: MessageKey`（参考 `folder-actions.ts` / `appearance-toggle.ts` / `layout-picker.ts` 的模式），不要放裸字符串
   - 动态拼接用户数据：用户提供的 URL、文件名、bookmark title 不进 catalog；只有**项目自有文案**进 catalog

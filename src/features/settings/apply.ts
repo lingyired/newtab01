@@ -551,10 +551,23 @@ export function installSettingsChangeListener(): void {
     //  refresh, special folder titles, etc.) re-paint the page
     //  without a reload. `setLocale` is a no-op when the resolved
     //  locale matches the current one, so this is cheap.
+    //
+    //  v0.2.123 fix: `oldValue` is `undefined` when the storage key
+    //  was just created (e.g. a brand-new install writing its first
+    //  settings, or a user re-installing the extension). The previous
+    //  `newValue && oldValue && newValue.language !== oldValue.language`
+    //  short-circuited on the `oldValue` truthiness check, silently
+    //  swallowing the first manual language switch — the dropdown
+    //  would update, `updateSetting` would persist to storage, but
+    //  `setLocale` was never called and the UI stayed on the
+    //  `auto`-resolved locale. Use `oldValue?.language` so the
+    //  undefined oldValue falls through to the comparison cleanly
+    //  (undefined !== 'en' is true, so the if-branch runs).
     if (
-      newValue && oldValue &&
-      newValue.language !== oldValue.language
+      newValue && newValue.language !== oldValue?.language
     ) {
+      // [DEBUG v0.2.123]
+      console.log('[i18n-debug] about to setLocale: resolveLocale(', JSON.stringify(newValue.language), ') =', JSON.stringify(resolveLocale(newValue.language)));
       setLocale(resolveLocale(newValue.language));
     }
     // If `theme` OR `darkMode` changed, re-apply the theme

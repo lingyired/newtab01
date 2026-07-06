@@ -218,6 +218,12 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* v1.1.11: small gap between the text and the icon. Uses logical
+   * `margin-inline-start` so the gap lands on the icon side in both
+   * LTR (icon on the left → gap is on the left of the text) and RTL
+   * (icon on the right → gap is on the right of the text). Plain
+   * physical `margin-left` would only fix one direction. */
+  margin-inline-start: 0.5em;
 }
 
 /* ─── Folder icons ─── */
@@ -1074,7 +1080,16 @@ a.folder.folder--empty:hover {
   text-align: left;
   cursor: pointer;
   transition: background-color 0.1s, color 0.1s;
-  white-space: nowrap;
+  /* v0.2.123: allow long labels to wrap rather than overflow
+   *  the 140px-wide nav column. Long German / Russian /
+   *  Portuguese tab labels were producing a horizontal scrollbar
+   *  on the nav before. `word-break: break-word` (rather than
+   *  `break-all`) preserves natural break points and keeps
+   *  shorter labels on a single line — `word-wrap: break-word`
+   *  is the same thing. The nav is fixed-width, so the
+   *  surrounding nav scrollbar is vertical only. */
+  white-space: normal;
+  word-break: break-word;
 }
 
 .sp-nav-item:hover {

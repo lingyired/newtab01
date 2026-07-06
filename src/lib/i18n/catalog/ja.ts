@@ -131,7 +131,7 @@ const messages = {
   'settings.field.debug': 'デバッグモード',
   'settings.field.debugDesc': 'レンダリング、ドラッグ、レイアウトの詳細ログをコンソールに出力します。',
   'settings.field.customCss': 'カスタム CSS',
-  'settings.field.customCssDesc': '新しいタブページに挿入される生の CSS。ルールはテーマ + 動的スタイルの cascade を上書きします。',
+  'settings.field.customCssDesc': '新しいタブページに挿入される生の CSS。ルールはテーマ + 動的スタイルよりも優先されます。',
   'settings.advanced.exportSettings': '設定をエクスポート',
   'settings.advanced.exportSettingsDesc': '現在の設定（および必要に応じて列レイアウト）を JSON ファイルに保存します。バックアップやブラウザー間の同期に使用します。',
   'settings.advanced.includeLayout': 'レイアウトを含める',

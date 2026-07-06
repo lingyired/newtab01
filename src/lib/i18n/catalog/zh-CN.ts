@@ -1,8 +1,8 @@
-// Chinese (Simplified) catalog. v0.2.117.
-// Matches the current user-visible UI text in newtab01 (the
-// default English install defaults to 中文 for zh-CN browsers
-// after the language picker lands; before v0.2.117 the UI is
-// always Chinese for Chinese users).
+// Chinese (Simplified, Mainland China) catalog. v0.2.123.
+// Renamed from `zh` → `zh-CN` so the two Traditional variants
+// (zh-HK, zh-TW) can live as siblings. The user-visible Chinese
+// strings are unchanged from v0.2.117; only the catalog code +
+// englishName are new.
 
 import type { LocaleBundle, LocaleMessages } from '../types';
 
@@ -251,9 +251,9 @@ const messages = {
   'about.extension.noLazyload': 'No lazyload 禁用图片懒加载',
 } as const satisfies LocaleMessages;
 
-export const zh: LocaleBundle = {
-  code: 'zh',
-  selfName: '中文',
-  englishName: 'Chinese (Simplified)',
+export const zhCN: LocaleBundle = {
+  code: 'zh-CN',
+  selfName: '中文（简体）',
+  englishName: 'Chinese (Simplified, China)',
   messages,
 };

@@ -35,41 +35,30 @@ export function getBookmark(id: string): Promise<chrome.bookmarks.BookmarkTreeNo
 /** Get multiple bookmark nodes by id. Order matches the input; missing
  *  ids return as undefined slots. Used by the import-layout filter
  *  (settings-panel.ts) to batch-validate every imported column id
- *  against the current Chrome bookmark tree in a single round-trip. */
+ *  against the current Chrome bookmark tree in a single round-trip.
+ *
+ *  v1.1.15: rewritten from a single `chrome.bookmarks.get(ids, ...)`
+ *  call to `Promise.all(ids.map(id => getBookmark(id)))`. The previous
+ *  batch form had a fatal flaw: when any one of the requested ids
+ *  doesn't exist in the current Chrome bookmark tree, the entire
+ *  batch call fails — `chrome.bookmarks.get()` returns
+ *  `results = undefined` and sets `chrome.runtime.lastError` to
+ *  "Can't find bookmark for id." rather than emitting a partial
+ *  result. The wrapper's lastError branch then mapped every
+ *  position to undefined, so a layout with 4 valid ids and 1
+ *  deleted id would have all 4 dropped, with the user-facing
+ *  alert "已跳过 5 个项目". Going through the single-id
+ *  `getBookmark` for each id lets each lookup succeed or fail
+ *  independently. `getBookmark` already reads
+ *  `chrome.runtime.lastError` and resolves to `undefined` for the
+ *  "id not found" case (v1.1.7), so the per-id behaviour is
+ *  unchanged. Order is preserved because `Promise.all` resolves
+ *  in the input-array order. */
 export function getBookmarks(
   ids: string[],
 ): Promise<Array<chrome.bookmarks.BookmarkTreeNode | undefined>> {
-  return new Promise((resolve) => {
-    if (ids.length === 0) {
-      resolve([]);
-      return;
-    }
-    // `chrome.bookmarks.get`'s TS signature is
-    //  `string | [string, ...string[]]` — Chrome itself accepts any
-    //  string[] at runtime, but the type narrowing makes the cast
-    //  necessary. We already handled the empty case above so the
-    //  tuple shape is satisfied.
-    chrome.bookmarks.get(ids as [string, ...string[]], (results) => {
-      if (chrome.runtime.lastError) {
-        // Treat the whole lookup as missing on a callback error
-        // (e.g. the user revoked the bookmarks permission). The
-        // import filter will then drop every non-special id, which
-        // is the conservative correct behaviour — better to fail
-        // closed than to accept ids we couldn't verify.
-        resolve(ids.map(() => undefined));
-        return;
-      }
-      const out: Array<chrome.bookmarks.BookmarkTreeNode | undefined> = [];
-      for (let i = 0; i < ids.length; i++) {
-        // Chrome returns results in the same order as the input
-        // ids (per the API contract) when all ids resolve; missing
-        // ids are simply absent from the array. We pad with
-        // undefined to keep the caller's index arithmetic simple.
-        out[i] = results?.[i];
-      }
-      resolve(out);
-    });
-  });
+  if (ids.length === 0) return Promise.resolve([]);
+  return Promise.all(ids.map((id) => getBookmark(id)));
 }
 
 /** Get sub-tree for a specific bookmark ID */

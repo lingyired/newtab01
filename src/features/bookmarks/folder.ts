@@ -42,6 +42,29 @@ function createFolderIcon(): HTMLSpanElement {
 /** Track open folder state in storage */
 const OPEN_PREFIX = 'open.';
 
+/** v1.1.16: one-shot override set used by the settings panel
+ *  import flow to expand every top-level folder on the first
+ *  render after a layout import. `checkOpenState` consumes
+ *  (deletes) the id the first time it sees it, so a subsequent
+ *  page reload / re-render falls back to the normal path:
+ *  storage entry if any, else the `rememberOpen` default. The
+ *  user can still manually fold a folder the import expanded —
+ *  the override is read-once, then it's gone, and the user's
+ *  toggle persists via the existing `open.col.<id>` storage
+ *  write. This sits at module scope so it survives across
+ *  renderColumns calls within the same session; the import
+ *  flow only re-populates it on a fresh import. */
+const importExpandOverride = new Set<string>();
+
+/** v1.1.16: mark a set of folder ids to expand on the next
+ *  render. Called from the settings panel's import flow with
+ *  the top-level (column-resident) non-special folder ids from
+ *  the imported layout. Pairs with `importExpandOverride` in
+ *  `checkOpenState`. */
+export function markFoldersExpandedOnce(ids: string[]): void {
+  for (const id of ids) importExpandOverride.add(id);
+}
+
 /** Scope the open-state key so a folder in the bookmarks bar and a copy
  * of the same folder in a custom column can be expanded independently. */
 function openKey(nodeId: string, inBookmarkBarContext: boolean): string {
@@ -280,6 +303,18 @@ async function checkOpenState(
   node: BookmarkNode,
   inBookmarkBarContext: boolean,
 ): Promise<boolean> {
+  // v1.1.16: consume the import-time expand override once. See
+  //  `importExpandOverride` / `markFoldersExpandedOnce` above
+  //  for the full contract. The deletion here is the key
+  //  behaviour: after this render, the id is gone from the set
+  //  and the user's `rememberOpen` setting + storage entry take
+  //  over normally. A page refresh that re-renders after a
+  //  successful toggle will read the user's storage entry (true
+  //  or removed), not the override.
+  if (importExpandOverride.has(node.id)) {
+    importExpandOverride.delete(node.id);
+    return true;
+  }
   if (!getSetting('rememberOpen')) return false;
   const stored = await getLocal<boolean>(openKey(node.id, inBookmarkBarContext));
   return stored === true;

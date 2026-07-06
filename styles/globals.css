@@ -174,6 +174,24 @@ html, body {
   text-align: right;
 }
 
+/* v1.1.10: in RTL the text inside `.link-text` should hug the icon
+ * (which sits at the right edge of the row). The natural RTL flex
+ * layout puts the icon on the right and the `.link-text` span to
+ * its left with `flex: 1`, so the text should be right-aligned
+ * within that span to touch the icon's left edge. The default
+ * `text-align: start` should map to right in RTL (the parent
+ * `<a>` inherits `direction: rtl` from `<html dir="rtl">`), but
+ * in practice the `flex: 1` + `text-align: start` combo lands the
+ * text in the middle of the span rather than at the right edge —
+ * explicitly pinning to `right` here. Applies to both bookmark
+ * links (link.ts) and folder headers (folder.ts) — both use the
+ * same `.link-text` span for the title. The flex order itself
+ * (icon at the right, actions at the left) is unchanged from the
+ * natural RTL mirror. */
+[dir="rtl"] .link-text {
+  text-align: right;
+}
+
 /* Settings panel: in RTL the body of the panel (nav + content) is
  * laid out as `display: flex` with `flex-direction: row` (the original
  * CSS uses `flex-direction: row` rather than `row-reverse`, so the

@@ -9,13 +9,20 @@
 // The catalog is imported eagerly in the module top-level — TS
 // tree-shaking keeps the unused locale bundles out of the
 // production bundle via `import { en } from './catalog/en'`
-// (not a dynamic require), and the total size is small enough
-// (~5KB per locale × 10 = 50KB max, well under the 80KB
-// gzipped budget) that we don't bother with locale code-splitting.
+// (not a dynamic require). v0.2.123 round 1 grew the catalog
+// from 10 → 33 locales; round 2 (Hebrew / Persian / Urdu /
+// Pashto) brought it to 37 (~5KB per locale × 37 ≈ 185KB
+// unzipped / ~60KB gzipped). The gzipped figure stays well
+// under the 80KB budget (CLAUDE.md §7); the unzipped figure
+// is a static-import cost that Vite tree-shakes for any locale
+// the user never selects. We do NOT code-split the catalog
+// because that would force an async flash on first locale
+// switch.
 
 import {
   SUPPORTED_LOCALES,
   RTL_LOCALES,
+  LOCALE_REGION_CODES,
   type LocaleCode,
   type LocaleBundle,
   type LocaleMessages,
@@ -23,7 +30,7 @@ import {
   type LanguagePref,
 } from './types';
 import { en } from './catalog/en';
-import { zh } from './catalog/zh';
+import { zhCN } from './catalog/zh-CN';
 import { es } from './catalog/es';
 import { ar } from './catalog/ar';
 import { hi } from './catalog/hi';
@@ -32,16 +39,63 @@ import { pt } from './catalog/pt';
 import { de } from './catalog/de';
 import { ja } from './catalog/ja';
 import { ru } from './catalog/ru';
+// v0.2.123: Traditional Chinese variants (HK + TW) live as
+// siblings of the renamed `zh-CN` (formerly `zh`).
+import { zhHK } from './catalog/zh-HK';
+import { zhTW } from './catalog/zh-TW';
+// Tier 1 — high ROI
+import { ko } from './catalog/ko';
+import { it } from './catalog/it';
+import { nl } from './catalog/nl';
+import { pl } from './catalog/pl';
+import { tr } from './catalog/tr';
+import { vi } from './catalog/vi';
+import { id } from './catalog/id';
+// Tier 2 — mid ROI
+import { sv } from './catalog/sv';
+import { da } from './catalog/da';
+import { fi } from './catalog/fi';
+import { cs } from './catalog/cs';
+import { el } from './catalog/el';
+import { hu } from './catalog/hu';
+import { ro } from './catalog/ro';
+import { th } from './catalog/th';
+// Tier 3 — long-tail
+import { nb } from './catalog/nb';
+import { uk } from './catalog/uk';
+import { bg } from './catalog/bg';
+import { hr } from './catalog/hr';
+import { sk } from './catalog/sk';
+import { ca } from './catalog/ca';
+// RTL additions — Hebrew / Persian / Urdu / Pashto. UI rendering
+//  is partially polished (see globals.css for `[dir="rtl"]` rules);
+//  full bidi layout work is tracked separately.
+import { he } from './catalog/he';
+import { fa } from './catalog/fa';
+import { ur } from './catalog/ur';
+import { ps } from './catalog/ps';
 
-// v0.2.119: all 10 supported locales are now present, so the
-// CATALOG can be typed as a full Record<LocaleCode, LocaleBundle>
-// (down from `Partial` in v0.2.117/118). t()'s fallback path
-// is preserved as a defensive measure — adding an 11th locale
-// and forgetting to import it will still produce English rather
-// than a missing-key error at runtime, while tsc catches the
-// missing-import at build time.
+// v0.2.119: all 10 supported locales were present, so the
+// CATALOG was typed as a full Record<LocaleCode, LocaleBundle>
+// (down from `Partial` in v0.2.117/118). v0.2.123 round 1
+// kept that with 33 locales; round 2 (he/fa/ur/ps) brings it
+// to 37. t()'s fallback path is preserved as a defensive
+// measure: adding a 38th locale and forgetting to import it
+// will still produce English rather than a missing-key error
+// at runtime, while tsc catches the missing-import at build
+// time.
+// v0.2.123: `zhCN` is the camelCased variable name (imported from
+//  the file `./catalog/zh-CN`). In the CATALOG object literal the
+//  *key* must be the actual locale code string `'zh-CN'` (per
+//  `Record<LocaleCode, LocaleBundle>`); the variable on the
+//  right-hand side is the bundle.
 const CATALOG: Record<LocaleCode, LocaleBundle> = {
-  en, zh, es, ar, hi, fr, pt, de, ja, ru,
+  en, 'zh-CN': zhCN, es, ar, hi, fr, pt, de, ja, ru,
+  'zh-HK': zhHK, 'zh-TW': zhTW,
+  ko, it, nl, pl, tr, vi, id,
+  sv, da, fi, cs, el, hu, ro, th,
+  nb, uk, bg, hr, sk, ca,
+  he, fa, ur, ps,
 };
 
 let currentLocale: LocaleCode = 'en';
@@ -49,12 +103,42 @@ const listeners = new Set<(locale: LocaleCode) => void>();
 let initialized = false;
 
 /**
+ * v0.2.123: bare-tag legacy aliases. The original `'zh'` code
+ * was renamed to `'zh-CN'` so the two Traditional variants
+ * (`zh-HK`, `zh-TW`) can live as siblings. We still want the
+ * bare `'zh'` tag to resolve to `'zh-CN'` so:
+ *   - pre-rename users with a stored `'zh'` setting keep working
+ *   - browsers (and OSes) that report the generic `'zh'` tag
+ *     (rare, but exists — e.g. some Linux distros default to
+ *     `LANG=zh`) get the right locale.
+ * Mapped at the entry of `resolveLocale`; the rest of the
+ * algorithm is unchanged.
+ */
+const LEGACY_ALIAS: Record<string, LocaleCode> = {
+  zh: 'zh-CN',
+};
+
+/**
  * Resolve a `LanguagePref` (`'auto' | LocaleCode`) to a concrete
  * LocaleCode. When pref is `'auto'` we read `navigator.language`
  * (the browser's preferred UI language). For tag matching:
- * 1. Exact match (`'zh'` → `'zh'`, `'zh-CN'` does NOT match `'zh'`)
- * 2. Primary subtag match (`'zh-CN'` → `'zh'`, `'es-MX'` → `'es'`)
- * 3. Fallback `'en'`
+ * 1. Legacy alias (`'zh'` → `'zh-CN'`)  (v0.2.123)
+ * 2. Case-insensitive exact match (`'zh-CN'` matches `'zh-cn'`,
+ *    `'pt-BR'` matches `'pt-br'`)
+ * 3. Primary subtag match (`'zh-CN'` → `'zh'`, `'es-MX'` → `'es'`)
+ * 4. Fallback `'en'`
+ *
+ * v0.2.123 added BCP 47-style codes with region subtags
+ * (`zh-CN`, `zh-HK`, `zh-TW`). Per BCP 47, region subtags are
+ * case-insensitive (conventionally uppercase). The previous
+ * `tag.toLowerCase()` step would normalize `'zh-CN'` → `'zh-cn'`,
+ * but `SUPPORTED_LOCALES` carries the canonical casing (`'zh-CN'`).
+ * A naive `Array.includes` then fails the exact match and falls
+ * through to the primary-subtag branch, where `'zh'` is also not
+ * in `SUPPORTED_LOCALES` (it was renamed in v0.2.123). The net
+ * effect: a stored `'zh-CN'` setting silently resolves to `'en'`
+ * at boot and at every `setLocale` call — language switching
+ * stops working.
  *
  * Works in both browser tabs (newtab/popup) and the service worker
  * (background) — `navigator.language` is also defined in the SW
@@ -67,17 +151,49 @@ export function resolveLocale(pref: LanguagePref | string | undefined | null): L
   } else {
     tag = String(pref);
   }
-  const normalized = tag.toLowerCase().replace('_', '-');
-  // 1. Exact match
-  if ((SUPPORTED_LOCALES as readonly string[]).includes(normalized)) {
-    return normalized as LocaleCode;
+  // BCP 47: language + region subtags are both case-insensitive
+  //  (conventionally the region is uppercase, the language is
+  //  lowercase, e.g. `'zh-CN'`). We keep a `tag` (original casing)
+  //  for the return value when we do a primary-subtag match, and
+  //  use `normalized` only for membership tests.
+  const normalized = tag.replace('_', '-');
+  const lower = normalized.toLowerCase();
+  // Pre-compute the lowercased SUPPORTED_LOCALES once. The set
+  //  has 33 entries — linear scan on each call is fine — but
+  //  using a Set gives O(1) lookup and a single lowercase per
+  //  call site rather than N lowercases per `includes` call.
+  const SUPPORTED_LOWER: ReadonlySet<string> = new Set(
+    SUPPORTED_LOCALES.map((c) => c.toLowerCase()),
+  );
+  // 1. Legacy alias — handles bare `zh` (pre-rename / generic).
+  //  Look up in the lowercased alias map (single entry, but keep
+  //  the lowercased contract consistent with the rest of the
+  //  function).
+  const LEGACY_ALIAS_LOWER: Readonly<Record<string, LocaleCode>> = Object.fromEntries(
+    Object.entries(LEGACY_ALIAS).map(([k, v]) => [k.toLowerCase(), v]),
+  );
+  const alias = LEGACY_ALIAS_LOWER[lower];
+  if (alias) return alias;
+  // 2. Case-insensitive exact match. The return value is the
+  //  canonical (mixed-case) code from `SUPPORTED_LOCALES`, not
+  //  the lowercased input, so downstream `setLocale(locale)`
+  //  receives the right key.
+  const exactIdx = SUPPORTED_LOCALES.findIndex((c) => c.toLowerCase() === lower);
+  if (exactIdx >= 0) {
+    return SUPPORTED_LOCALES[exactIdx] as LocaleCode;
   }
-  // 2. Primary subtag match
-  const primary = normalized.split('-')[0] ?? '';
-  if (primary && (SUPPORTED_LOCALES as readonly string[]).includes(primary)) {
-    return primary as LocaleCode;
+  // 3. Primary subtag match. Lowercase comparison because the
+  //  language subtag is canonically lowercase.
+  const primary = lower.split('-')[0] ?? '';
+  if (primary && SUPPORTED_LOWER.has(primary)) {
+    // Return the canonical (mixed-case) LocaleCode that has
+    //  this primary. There's at most one (e.g. `'zh'` → `'zh-CN'`;
+    //  no plain `'zh'` exists in SUPPORTED_LOCALES). Using
+    //  `find` to get the right casing.
+    const found = SUPPORTED_LOCALES.find((c) => c.toLowerCase().startsWith(primary + '-') || c.toLowerCase() === primary);
+    if (found) return found as LocaleCode;
   }
-  // 3. Fallback
+  // 4. Fallback.
   return 'en';
 }
 
@@ -191,4 +307,4 @@ export function listLocales(): readonly LocaleBundle[] {
 /** Type-only re-export so consumers don't have to drill into
  *  `./types` to import `MessageKey` / `LocaleCode`. */
 export type { LocaleCode, LocaleBundle, LocaleMessages, MessageKey, LanguagePref };
-export { SUPPORTED_LOCALES, RTL_LOCALES };
+export { SUPPORTED_LOCALES, RTL_LOCALES, LOCALE_REGION_CODES };

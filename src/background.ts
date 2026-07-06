@@ -30,9 +30,24 @@ const OPEN_SETTINGS_MENU_ID = 'newtab01-open-settings';
 // Each value is the localized translation of `actionMenu.openSettings`
 // from src/lib/i18n/catalog/<code>.ts. Keep in sync when adding a
 // new locale.
+// v0.2.123: 33 locales. The bare `'zh'` key is intentionally
+// kept alongside `'zhCN'` as a backward-compat alias for users
+// whose stored `Settings.language` is still `'zh'` (the pre-
+// rename code) and for browsers that report the generic `'zh'`
+// tag. The settings-storage migration in
+// `lib/storage/settings.ts → initSettings` rewrites `'zh'` →
+// `'zh-CN'` on first load, so this is the only SW-side fallback
+// path. Each value mirrors the `actionMenu.openSettings` string
+// in src/lib/i18n/catalog/<code>.ts. Keep in sync when adding
+// a new locale.
 const SETTINGS_MENU_TITLES: Record<string, string> = {
+  // Originally supported (10)
   en: 'Open Settings',
+  // `zh` was renamed to `zhCN` in v0.2.123; keep `zh` as a
+  // bare-tag fallback for pre-rename users / generic-Chinese
+  // browser locales.
   zh: '打开设置',
+  zhCN: '打开设置',
   es: 'Abrir ajustes',
   ar: 'فتح الإعدادات',
   hi: 'सेटिंग्स खोलें',
@@ -41,6 +56,38 @@ const SETTINGS_MENU_TITLES: Record<string, string> = {
   de: 'Einstellungen öffnen',
   ja: '設定を開く',
   ru: 'Открыть настройки',
+  // Traditional Chinese variants (2)
+  zhHK: '開啟設定',
+  zhTW: '開啟設定',
+  // Tier 1 — high ROI (7)
+  ko: '설정 열기',
+  it: 'Apri impostazioni',
+  nl: 'Instellingen openen',
+  pl: 'Otwórz ustawienia',
+  tr: 'Ayarları aç',
+  vi: 'Mở cài đặt',
+  id: 'Buka Pengaturan',
+  // Tier 2 — mid ROI (8)
+  sv: 'Öppna inställningar',
+  da: 'Åbn indstillinger',
+  fi: 'Avaa asetukset',
+  cs: 'Otevřít nastavení',
+  el: 'Άνοιγμα ρυθμίσεων',
+  hu: 'Beállítások megnyitása',
+  ro: 'Deschide setările',
+  th: 'เปิดการตั้งค่า',
+  // Tier 3 — long-tail (6)
+  nb: 'Åpne innstillinger',
+  uk: 'Відкрити налаштування',
+  bg: 'Отваряне на настройки',
+  hr: 'Otvori postavke',
+  sk: 'Otvoriť nastavenia',
+  ca: 'Obre la configuració',
+  // RTL additions — v0.2.123 round 2
+  he: 'פתח את ההגדרות',
+  fa: 'باز کردن تنظیمات',
+  ur: 'ترتیبات کھولیں',
+  ps: 'تنظیمات پرانیستل',
 };
 
 function pickOpenSettingsTitle(): string {

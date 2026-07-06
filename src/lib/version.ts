@@ -350,4 +350,74 @@
 //            in newtab.css — dashed border for the slot, muted
 //            color for the placeholder text. New MessageKey
 //            column.empty, all 10 catalogs.
-export const VERSION = '1.1.7';
+// v1.1.15: fix import-layout false positive. `getBookmarks(ids)`
+//          in src/lib/chrome/bookmarks.ts was calling the native
+//          `chrome.bookmarks.get(ids, callback)` batch API. That
+//          API has a fatal behaviour: when ANY one of the
+//          requested ids doesn't exist (or is a leaf, etc.), the
+//          entire call fails — `results = undefined`,
+//          `chrome.runtime.lastError = "Can't find bookmark for
+//          id."`. The wrapper's lastError branch mapped every
+//          position to undefined, so a layout JSON with 4 valid
+//          ids + 1 deleted id (e.g. 1753 in the test case) had
+//          ALL 5 ids reported as "已跳过 5 个项目" — even the 4
+//          that were perfectly valid. Fix: rewrite `getBookmarks`
+//          to `Promise.all(ids.map(id => getBookmark(id)))` —
+//          each id now succeeds or fails independently. The
+//          single-id `getBookmark` wrapper already reads
+//          `chrome.runtime.lastError` and resolves to `undefined`
+//          for the "id not found" case (v1.1.7), so per-id
+//          behaviour is unchanged. Order is preserved because
+//          `Promise.all` resolves in the input-array order.
+// v1.1.14: drop the v1.1.12 flag emoji from the language
+//          dropdown — keep only the 2-letter ISO code prefix
+//          introduced in v1.1.13. Rationale: (1) flag emoji
+//          rendering is platform-dependent and some
+//          (Chrome/macOS) combinations render 🇭🇰 / 🇹🇼
+//          ambiguously, leaving the user unable to tell the
+//          three Chinese variants apart visually; (2) the
+//          distinction between the three Chinese variants is
+//          politically sensitive in some regions, and shipping
+//          a flag emoji opens the project up to that whole
+//          debate. A 2-letter ISO code is unambiguous, renders
+//          identically everywhere, and stays out of it. Code
+//          change summary: removed the `LOCALE_FLAGS` map and
+//          its re-export from src/lib/i18n/types.ts and
+//          src/lib/i18n/index.ts; removed the `flag` import +
+//          usage from createLanguageSelect in
+//          src/newtab/settings-panel.ts. The 'auto' option
+//          stays code-less. Final layout per option is now
+//          `HK  中文（香港） (Chinese (Hong Kong))`.
+// v1.1.12: language dropdown now prefixes each option with the
+//          locale's region flag (e.g. `🇺🇸 English`,
+//          `🇨🇳 中文 (Chinese, Simplified)`, `🇭🇰 中文
+//          (Chinese, Hong Kong)`, `🇹🇼 中文 (Chinese,
+//          Traditional)`). The flags live in a new
+//          `LOCALE_FLAGS: Record<LocaleCode, string>` map at
+//          src/lib/i18n/types.ts — keyed by `LocaleCode` so
+//          TypeScript catches any missing flag at the moment a
+//          38th locale is added. Each flag is a pair of Unicode
+//          Regional Indicator Symbols (e.g. 🇺🇸 = U+1F1FA +
+//          U+1F1F8) — zero-asset, no SVG, no bundle weight.
+//          Origin-country convention for regionless locales
+//          (en → 🇺🇸, pt → 🇵🇹, ar → 🇸🇦); ca (Catalan) falls
+//          back to 🇪🇸 since there's no Catalonia country code;
+//          ps (Pashto) → 🇦🇫.
+// v1.1.13: language dropdown also prefixes each option with the
+//          ISO 3166-1 alpha-2 country code (`HK` / `TW` / `CN` /
+//          ...) right after the flag emoji. The flag emoji is a
+//          pair of Unicode Regional Indicator Symbols, which not
+//          every platform renders reliably — some Chrome emoji
+//          fonts render 🇭🇰 / 🇹🇼 ambiguously or skip them
+//          entirely. The 2-letter code is a textual fallback that
+//          always displays, so the user can tell zh-HK / zh-TW /
+//          zh-CN apart even on platforms where the flags look
+//          wrong. New LOCALE_REGION_CODES map in
+//          src/lib/i18n/types.ts (Record<LocaleCode, string>,
+//          same lockstep-with-LOCALE_FLAGS constraint). create-
+//          LanguageSelect in settings-panel.ts now joins up to 4
+//          parts per option: flag + code + selfName + englishName,
+//          each separated by a double space. The `'auto'` option
+//          stays code-less (it means "follow the browser", not a
+//          specific region).
+export const VERSION = '1.2.0';

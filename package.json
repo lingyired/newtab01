@@ -1,7 +1,7 @@
 {
   "name": "newtab01",
   "private": true,
-  "version": "1.1.7",
+  "version": "1.2.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -11,6 +11,7 @@
   },
   "devDependencies": {
     "@types/chrome": "^0.1.43",
+    "tsx": "^4.23.0",
     "typescript": "^5.8.3",
     "vite": "^6.3.5"
   },

@@ -32,7 +32,8 @@ import {
 } from '../features/bookmarks/moved-out';
 import { setLocal } from '../lib/storage';
 import { captureSnapshot, pushSnapshot } from '../features/drag-drop/history';
-import { t, listLocales, type LocaleCode } from '../lib/i18n';
+import { markFoldersExpandedOnce } from '../features/bookmarks/folder';
+import { t, listLocales, LOCALE_REGION_CODES, type LocaleCode } from '../lib/i18n';
 import { renderAboutTab } from './about-tab';
 
 /** Theme id → display label. Built-in theme names come from
@@ -788,9 +789,23 @@ function setActiveTab(tab: SettingsTab): void {
  *  panel itself is NOT torn down (no close + reopen), so the user sees
  *  a smooth repaint of the labels/tab names/placeholders while the
  *  panel position, scroll, and focus state are preserved. No-op if
- *  the panel is closed (panelEl absent). */
+ *  the panel is closed (panelEl absent).
+ *
+ *  v0.2.123: also re-assert the header's `t()` strings. The header
+ *  (`.sp-title` + `.sp-close` aria-label) is created once when the
+ *  panel first opens (createSettingsPanel) and was previously never
+ *  re-touched — its text froze at the locale-at-open-time, so a user
+ *  who changed language with the panel open saw the title stay in
+ *  the old language (e.g. "设置" persisting after switching to
+ *  English). Querying + reassigning `textContent` / `aria-label` is
+ *  cheaper than tearing down the entire panel and avoids any
+ *  scroll / focus jump. */
 export function refreshSettingsPanelLocale(): void {
   if (!panelEl) return;
+  const title = panelEl.querySelector('.sp-title');
+  if (title) title.textContent = t('settings.title');
+  const closeBtn = panelEl.querySelector('.sp-close') as HTMLButtonElement | null;
+  if (closeBtn) closeBtn.setAttribute('aria-label', t('settings.close'));
   const nav = panelEl.querySelector('.sp-nav') as HTMLElement | null;
   if (nav) renderNav(nav);
   const content = document.getElementById('sp-content');
@@ -1536,7 +1551,19 @@ function renderLayoutTab(): HTMLElement {
  *  `listLocales()` ordered as the catalog ships. The
  *  `selfName (englishName)` format lets a multilingual user
  *  pick the right one even if their own native language isn't
- *  the active UI language. */
+ *  the active UI language.
+ *
+ *  v1.1.12 — v1.1.13 also prepended a flag emoji + 2-letter ISO
+ *  code. v1.1.14 drops the flag emoji and keeps only the ISO
+ *  code: flag rendering is platform-dependent and the
+ *  distinction between the three Chinese variants
+ *  (`zh-CN` / `zh-HK` / `zh-TW`) is politically sensitive in
+ *  some regions. A 2-letter ISO code is unambiguous, always
+ *  renders identically on every platform, and sidesteps the
+ *  issue entirely. Final layout per option:
+ *  `HK  中文（香港） (Chinese (Hong Kong))`. The `'auto'` option
+ *  is intentionally code-less — it means "follow the browser",
+ *  not a specific region. */
 function createLanguageSelect(): HTMLSelectElement {
   const select = document.createElement('select');
   select.id = 'sp-language';
@@ -1547,7 +1574,15 @@ function createLanguageSelect(): HTMLSelectElement {
   for (const bundle of listLocales()) {
     const opt = document.createElement('option');
     opt.value = bundle.code;
-    opt.textContent = `${bundle.selfName} (${bundle.englishName})`;
+    const code = LOCALE_REGION_CODES[bundle.code];
+    const label = `${bundle.selfName} (${bundle.englishName})`;
+    // Visual start side: 2-letter ISO code + selfName +
+    // englishName. Joined with a double space so the code
+    // visually anchors to the label as a single group.
+    const parts: string[] = [];
+    if (code) parts.push(code);
+    parts.push(label);
+    opt.textContent = parts.join('  ');
     select.appendChild(opt);
   }
   const current = String(getSetting('language') ?? 'auto');
@@ -2563,9 +2598,43 @@ function renderAdvancedTab(): HTMLElement {
                 //  mutation in the codebase.
                 setColumns(nextColumns);
                 setMovedOutCache(nextMovedOut);
+                // v1.1.16: auto-expand the first level of imported
+                //  folders. After the layout is committed, write
+                //  `open.col.<id> = true` for every non-special id
+                //  sitting in `nextColumns` (i.e. the top-level
+                //  folders — exactly the "first level" the user
+                //  asked for). The sub-tree inside each folder is
+                //  not touched; their open state stays whatever it
+                //  was, defaulting to collapsed for the
+                //  `rememberOpen` setting. The id set is built from
+                //  `nextColumns` (post-filter, so dropped ids don't
+                //  re-appear as ghost open entries) and deduped to
+                //  avoid redundant writes when the same folder id
+                //  sits in more than one column (which is rejected
+                //  by `verifyColumns` later, but at this point
+                //  `nextColumns` is still pre-verify — a stray dup
+                //  would otherwise write the key twice).
+                const openIds = Array.from(
+                  new Set(
+                    nextColumns
+                      .flat()
+                      .filter((id) => !(id in SHOW_KEY_MAP)),
+                  ),
+                );
+                // v1.1.16: also seed the one-shot import-expand
+                //  override so the top-level folders expand on
+                //  the first render after the import — regardless
+                //  of whether the user has `rememberOpen` on.
+                //  `markFoldersExpandedOnce` + `checkOpenState`
+                //  consume the override once and then let
+                //  `rememberOpen` + storage take over, so a
+                //  page refresh after the import returns to the
+                //  user's normal fold/unfold state.
+                markFoldersExpandedOnce(openIds);
                 await Promise.all([
                   saveLayout(),
                   setLocal('movedOut', nextMovedOut),
+                  ...openIds.map((id) => setLocal(`open.col.${id}`, true)),
                 ]);
                 // Force a full re-render of the board so the
                 //  new columns + new movedOut filter take

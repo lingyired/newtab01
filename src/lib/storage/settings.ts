@@ -395,6 +395,27 @@ export async function initSettings(): Promise<Settings> {
     }
     currentSettings = cssMigrated.next;
   }
+  // v0.2.123: `'zh'` was renamed to `'zh-CN'` so the two
+  //  Traditional variants (`zh-HK`, `zh-TW`) could live as
+  //  siblings in `SUPPORTED_LOCALES`. Users with a stored
+  //  `language: 'zh'` from pre-v0.2.123 builds would otherwise
+  //  fall through to the `'en'` fallback in `resolveLocale`
+  //  (because `'zh'` is not a key in `SUPPORTED_LOCALES` and
+  //  the primary-subtag match returns the primary, `'zh'`,
+  //  which is also not a key). Migrate here so the user's
+  //  chosen language persists across the upgrade. The bare
+  //  `'zh'` tag in `i18n/index.ts → LEGACY_ALIAS` is a second
+  //  line of defense for users who hit a different code path
+  //  (e.g. brand-new install, never persisted before).
+  // The cast is necessary: `LanguagePref = 'auto' | LocaleCode`
+  //  no longer includes the bare `'zh'` tag (v0.2.123 renamed it
+  //  to `'zh-CN'`), so the comparison needs an explicit string
+  //  literal. The runtime check is exactly what we want.
+  if ((currentSettings.language as string) === 'zh') {
+    currentSettings.language = 'zh-CN';
+    await setSync(SETTINGS_KEY, currentSettings);
+    debug.log('settings', 'migrate language "zh" → "zh-CN" (v0.2.123 rename)');
+  }
   initialized = true;
   // v0.2.117: initialize the i18n module with the persisted
   //  preference. Uses `initLocale` (not `setLocale`) so the document

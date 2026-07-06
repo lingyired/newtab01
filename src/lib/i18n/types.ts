@@ -9,10 +9,22 @@
 // exhaustiveness checks for free.
 
 /** All locales the extension ships with. Order is the order
- *  shown in the settings panel's "Language" dropdown. */
+ *  shown in the settings panel's "Language" dropdown.
+ *
+ *  v0.2.123: expanded from 10 → 33 locales. The new entries cover
+ *  the Chrome Web Store top-30 LTR languages (Arabic / Hebrew /
+ *  Persian / Urdu / Pashto explicitly excluded — those need RTL
+ *  support and are tracked separately) plus explicit Traditional
+ *  Chinese variants for Hong Kong (zh-HK) and Taiwan (zh-TW).
+ *  Simplified Chinese was also renamed `zh` → `zh-CN` so the
+ *  two Traditional variants can coexist as siblings. A
+ *  backward-compat alias in `resolveLocale` (lib/i18n/index.ts)
+ *  still accepts the bare `zh` tag (rare generic-Chinese browsers,
+ *  pre-rename users) and maps it to `zh-CN`. */
 export const SUPPORTED_LOCALES = [
+  // Originally supported (10)
   'en',
-  'zh',
+  'zh-CN',
   'es',
   'ar',
   'hi',
@@ -21,6 +33,47 @@ export const SUPPORTED_LOCALES = [
   'de',
   'ja',
   'ru',
+  // Traditional Chinese variants (2)
+  'zh-HK',
+  'zh-TW',
+  // Tier 1 — high ROI (7)
+  'ko',
+  'it',
+  'nl',
+  'pl',
+  'tr',
+  'vi',
+  'id',
+  // Tier 2 — mid ROI (8)
+  'sv',
+  'da',
+  'fi',
+  'cs',
+  'el',
+  'hu',
+  'ro',
+  'th',
+  // Tier 3 — long-tail (6) (NB chosen over generic `no` per BCP 47)
+  'nb',
+  'uk',
+  'bg',
+  'hr',
+  'sk',
+  'ca',
+  // RTL additions (4) — v0.2.123 round 2.
+  // Arabic (`ar`) is already in the LTR block above and is the
+  //  first RTL locale the extension shipped with (v0.2.119). The
+  //  four new RTL entries — Hebrew, Persian, Urdu, Pashto — are
+  //  the remaining Chrome Web Store top-30 RTL languages. Their
+  //  UI rendering is only partially polished (`<html dir="rtl">`
+  //  is set automatically via the `RTL_LOCALES` set below, and
+  //  search-result URLs / search input direction are handled in
+  //  styles/globals.css), but full bidirectional layout work
+  //  (column reversal, button icons, etc.) is tracked separately.
+  'he',
+  'fa',
+  'ur',
+  'ps',
 ] as const;
 
 export type LocaleCode = (typeof SUPPORTED_LOCALES)[number];
@@ -29,12 +82,82 @@ export type LocaleCode = (typeof SUPPORTED_LOCALES)[number];
  *  <html> at runtime. The CSS file (globals.css) has matching
  *  rules to keep search-result URLs LTR and link text rendering
  *  correctly within an RTL document. */
-export const RTL_LOCALES = new Set<LocaleCode>(['ar']);
+export const RTL_LOCALES = new Set<LocaleCode>(['ar', 'he', 'fa', 'ur', 'ps']);
 
 /** The `Settings.language` field is a union: `'auto'` (follow
  *  the browser) OR an explicit LocaleCode. `'auto'` is the
  *  default; resolution happens in `resolveLocale`. */
 export type LanguagePref = 'auto' | LocaleCode;
+
+/** v1.1.14: ISO 3166-1 alpha-2 country code for each locale, used
+ *  as the primary visual region hint in the language `<option>`
+ *  text. The previous v1.1.12/v1.1.13 design also prepended a
+ *  Unicode Regional Indicator flag emoji (e.g. `🇭🇰` / `🇹🇼` /
+ *  `🇨🇳`); that was dropped in v1.1.14 because flag emoji
+ *  rendering is platform-dependent and the visual distinction
+ *  between the three Chinese variants is a political landmine
+ *  in some regions. A 2-letter ISO code is unambiguous, always
+ *  renders, and stays out of that whole debate.
+ *
+ *  Selection rules:
+ *  - Locale has a region subtag (`zh-CN` / `zh-HK` / `zh-TW`) → that
+ *    region's code. The whole point of splitting `zh` into 3
+ *    variants is so the user can pick by region, so the code is
+ *    the primary visual cue.
+ *  - Locale has no region subtag → the "origin country" code by
+ *    convention: `en` → `US` (matches Chrome's own UI), `pt` →
+ *    `PT` (Portugal, the language's origin — not `BR` Brazil),
+ *    `ar` → `SA` (Saudi Arabia, the Modern Standard Arabic
+ *    reference region).
+ *  - `ca` (Catalan) → `ES` fallback (no country code exists for
+ *    the Catalonia region; Chrome uses the same fallback).
+ *  - `ps` (Pashto) → `AF` (Afghanistan, where Pashto is a
+ *    national language).
+ *
+ *  The code is prepended to the `<option>` text content. Since
+ *  the browser lays out `<option>` text according to the document
+ *  `direction`, the code lands on the visual start side
+ *  automatically (left in LTR, right in RTL) — no CSS mirroring
+ *  needed. */
+export const LOCALE_REGION_CODES: Record<LocaleCode, string> = {
+  en: 'US',
+  'zh-CN': 'CN',
+  es: 'ES',
+  ar: 'SA',
+  hi: 'IN',
+  fr: 'FR',
+  pt: 'PT',
+  de: 'DE',
+  ja: 'JP',
+  ru: 'RU',
+  'zh-HK': 'HK',
+  'zh-TW': 'TW',
+  ko: 'KR',
+  it: 'IT',
+  nl: 'NL',
+  pl: 'PL',
+  tr: 'TR',
+  vi: 'VN',
+  id: 'ID',
+  sv: 'SE',
+  da: 'DK',
+  fi: 'FI',
+  cs: 'CZ',
+  el: 'GR',
+  hu: 'HU',
+  ro: 'RO',
+  th: 'TH',
+  nb: 'NO',
+  uk: 'UA',
+  bg: 'BG',
+  hr: 'HR',
+  sk: 'SK',
+  ca: 'ES',
+  he: 'IL',
+  fa: 'IR',
+  ur: 'PK',
+  ps: 'AF',
+};
 
 /** All message keys. Each locale's `messages` map must have one
  *  string for every key. Adding a new key here forces every
