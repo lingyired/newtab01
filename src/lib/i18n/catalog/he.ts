@@ -196,6 +196,7 @@ export const he: LocaleBundle = {
     // Folder-level
     'folder.empty': 'ריקה',
     'column.empty': 'גרור תיקייה לכאן',
+    'column.emptyHint': 'גרור תיקיות לכאן מסרגל הסימניות. עמודה אחת יכולה להכיל מספר תיקיות.',
     // Context menu
     'contextMenu.openAllInFolder': 'פתח את כל הקישורים בתיקייה',
     'contextMenu.openAsGroup': 'פתח בקבוצת כרטיסיות',

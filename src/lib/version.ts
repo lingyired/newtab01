@@ -420,29 +420,39 @@
 //          each separated by a double space. The `'auto'` option
 //          stays code-less (it means "follow the browser", not a
 //          specific region).
-// v1.2.1: extension name now reads "newtab01: bookmark-driven
-//          new tab page" (was "newtab01"), and the manifest
-//          description opens with "Bookmark-driven new tab page."
-//          in every locale — the same one-liner the user sees in
-//          the appName, so the Chrome Web Store / Edge Add-ons
-//          listing is consistent end-to-end. AppName is 38
-//          characters (well under the 75-char Chrome Web Store
-//          name limit); appDescription stays within the 132-char
-//          manifest description limit in all 37 locales.
-//          _locales/ expanded from 13 to 38 entries (13 existing
-//          + 25 new: ko / it / nl / pl / tr / vi / id / sv / da /
-//          fi / cs / el / hu / ro / th / nb / uk / bg / hr / sk
-//          / ca / he / fa / ur / ps) to mirror the 37-locale set
-//          in src/lib/i18n/. The legacy `zh` alias is kept
-//          pointing at the `zh_CN` content for bare-tag
-//          fallback. The `description` field on each
-//          `messages.json` key is left in English (it's developer
-//          metadata for the Chrome Web Store translation UI, not
-//          user-facing copy). The vite.config.ts `PUBLIC_NAME` /
-//          `PUBLIC_DESCRIPTION` fallbacks were updated to the
-//          same strings so dist/manifest.json stays in sync if
-//          anyone ever removes the `__MSG_appName__` i18n tokens
-//          from source manifest. No MessageKey added (this is
-//          Chrome's own `_locales/` system, separate from the
-//          src/lib/i18n/ application-level i18n).
-export const VERSION = '1.2.1';
+// v1.2.2: fresh-install onboarding redesign. Three changes
+//          surface only when the user has no stored layout (= new
+//          install or explicit reset). Returning users with a
+//          stored layout skip every new code path entirely.
+//          - 3-column default layout (was 2). col 0 is now an
+//            empty placeholder slot instead of being auto-filled
+//            with the built-in bookmark bar + other bookmarks.
+//            col 1 holds the bookmark bar (id='1'), col 2 holds
+//            the other-bookmarks root (id='2') + 5 special
+//            folders. New path: `verifyColumns()` default branch
+//            in src/features/drag-drop/layout-ops.ts. Settings-
+//            gated: `showBar=0` / `showOther=0` / `showXxx=0`
+//            still drop the corresponding folder from its column.
+//          - The bookmark bar (id='1') is default-expanded on
+//            fresh install. Uses the existing
+//            `markFoldersExpandedOnce(['1'])` one-shot override
+//            (consumed on the first render) + a persistent
+//            `setLocal('open.col.1', true)` write so subsequent
+//            page refreshes keep it expanded until the user
+//            manually collapses it. Mirrors the import flow in
+//            src/newtab/settings-panel.ts:2634-2638. Other
+//            folders (id='2', specials) are NOT auto-expanded.
+//          - Empty column placeholder now shows a 2-line hint.
+//            Main row (the existing 'column.empty' MessageKey)
+//            stays as the primary call to action; new
+//            'column.emptyHint' MessageKey renders a dimmer
+//            second line with "Drag folders here from the
+//            bookmark bar. One column can hold many." in 37
+//            locales. New `.column--empty .column-empty-hint`
+//            rule in styles/newtab.css — 0.9em / 35% text
+//            opacity / `pointer-events: none` (so right-click
+//            still reaches the column's context menu).
+//          No Settings schema change, no new permission, no new
+//          chrome.* API call. Bundle delta: ~0.5KB new i18n +
+//          ~20 lines CSS/JS (negligible).
+export const VERSION = '1.2.2';

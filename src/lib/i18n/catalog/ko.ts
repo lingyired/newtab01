@@ -193,6 +193,7 @@ const messages = {
   // Folder-level
   'folder.empty': '비어 있음',
   'column.empty': '여기에 폴더를 놓으세요',
+  'column.emptyHint': '북마크 바에서 폴더를 여기로 끌어오세요. 한 열에 여러 개를 넣을 수 있습니다.',
   // Context menu
   'contextMenu.openAllInFolder': '폴더의 모든 링크 열기',
   'contextMenu.openAsGroup': '탭 그룹으로 열기',

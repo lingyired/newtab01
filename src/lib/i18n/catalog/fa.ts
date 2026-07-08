@@ -191,7 +191,8 @@ const messages = {
   'folderAction.currentFolder': 'این پوشه',
   // Folder-level
   'folder.empty': 'خالی',
-  'column.empty': 'یک پوشه را اینجا رها کنید',
+  'column.empty': 'یک پوشه اینجا رها کنید',
+  'column.emptyHint': 'پوشه‌ها را از نوار نشانک‌ها به اینجا بکشید. یک ستون می‌تواند چند پوشه داشته باشد.',
   // Context menu
   'contextMenu.openAllInFolder': 'باز کردن همهٔ پیوندهای پوشه',
   'contextMenu.openAsGroup': 'باز کردن در گروه برگه',

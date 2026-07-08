@@ -174,6 +174,7 @@ const messages = {
   'folderAction.currentFolder': 'эта папка',
   'folder.empty': 'Пусто',
   'column.empty': 'Перетащите папку сюда',
+  'column.emptyHint': 'Перетащите папки сюда из панели закладок. В одном столбце помещается несколько.',
   'contextMenu.openAllInFolder': 'Открыть все ссылки в папке',
   'contextMenu.openAsGroup': 'Открыть в группе вкладок',
   'contextMenu.openInSplit': 'Открыть в разделённом виде',

@@ -191,6 +191,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Gol',
   'column.empty': 'Trageți un folder aici',
+  'column.emptyHint': 'Trage foldere aici din bara de marcaje. O coloană poate conține mai multe.',
   // Context menu
   'contextMenu.openAllInFolder': 'Deschide toate linkurile din folder',
   'contextMenu.openAsGroup': 'Deschide în grup de file',

@@ -56,7 +56,22 @@ export async function renderColumns(): Promise<void> {
   const renderedIndices: number[] = [];
   for (let idx = 0; idx < columns.length; idx++) {
     const col = columns[idx] ?? [];
-    if (col.some((id) => isSpecialVisible(id))) {
+    // Render this column if EITHER:
+    //   (a) it has at least one visible id (existing behaviour —
+    //       hides columns whose every id is a hidden special), OR
+    //   (b) it is empty (v1.2.2: show the "drop a folder here"
+    //       placeholder for the intentional empty col 0 from the
+    //       fresh-install default, AND for any user-driven empty
+    //       column — v1.1.4 design intent).
+    //
+    // Without the `col.length === 0` short-circuit, an empty
+    // column falls through `col.some(...)` as false (vacuous
+    // truth) and gets filtered out — the v1.1.4 changelog said
+    // "keep empty columns visible" but the filter never grew that
+    // branch. The new v1.2.2 default branch in layout-ops.ts
+    // (`columns.push([])` for col 0) means this filter is now hit
+    // on every fresh install, not just on user-driven empties.
+    if (col.length === 0 || col.some((id) => isSpecialVisible(id))) {
       renderedIndices.push(idx);
     }
   }

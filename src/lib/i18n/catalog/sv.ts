@@ -191,6 +191,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Tom',
   'column.empty': 'Släpp en mapp här',
+  'column.emptyHint': 'Dra mappar hit från bokmärkesfältet. En kolumn kan rymma flera.',
   // Context menu
   'contextMenu.openAllInFolder': 'Öppna alla länkar i mapp',
   'contextMenu.openAsGroup': 'Öppna i flikgrupp',

@@ -174,6 +174,7 @@ const messages = {
   'folderAction.currentFolder': 'यह फ़ोल्डर',
   'folder.empty': 'खाली',
   'column.empty': 'यहाँ एक फ़ोल्डर छोड़ें',
+  'column.emptyHint': 'बुकमार्क बार से फ़ोल्डर यहाँ खींचें। एक कॉलम में कई फ़ोल्डर हो सकते हैं।',
   'contextMenu.openAllInFolder': 'फ़ोल्डर में सभी लिंक खोलें',
   'contextMenu.openAsGroup': 'टैब समूह में खोलें',
   'contextMenu.openInSplit': 'विभाजित दृश्य में खोलें',

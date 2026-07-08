@@ -191,6 +191,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Κενό',
   'column.empty': 'Σύρετε έναν φάκελο εδώ',
+  'column.emptyHint': 'Σύρετε φακέλους εδώ από τη γραμμή σελιδοδεικτών. Μια στήλη χωράει πολλούς.',
   // Context menu
   'contextMenu.openAllInFolder': 'Άνοιγμα όλων των συνδέσμων στον φάκελο',
   'contextMenu.openAsGroup': 'Άνοιγμα σε ομάδα καρτελών',

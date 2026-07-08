@@ -192,6 +192,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Trống',
   'column.empty': 'Thả thư mục vào đây',
+  'column.emptyHint': 'Kéo thư mục từ thanh dấu trang vào đây. Một cột có thể chứa nhiều.',
   // Context menu
   'contextMenu.openAllInFolder': 'Mở tất cả liên kết trong thư mục',
   'contextMenu.openAsGroup': 'Mở trong nhóm tab',

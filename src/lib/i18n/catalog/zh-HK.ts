@@ -194,6 +194,7 @@ const messages = {
   // Folder-level
   'folder.empty': '空白',
   'column.empty': '拖放資料夾至此',
+  'column.emptyHint': '從書籤列將資料夾拖曳至此處。一列可以放多個資料夾。',
   // Context menu
   'contextMenu.openAllInFolder': '開啟資料夾中所有連結',
   'contextMenu.openAsGroup': '以分頁群組開啟',

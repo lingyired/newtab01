@@ -191,6 +191,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Prazno',
   'column.empty': 'Ispustite mapu ovdje',
+  'column.emptyHint': 'Povucite ovdje mape iz trake oznaka. Jedan stupac može sadržavati više.',
   // Context menu
   'contextMenu.openAllInFolder': 'Otvori sve poveznice u mapi',
   'contextMenu.openAsGroup': 'Otvori u grupi kartica',

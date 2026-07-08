@@ -196,6 +196,7 @@ export const ps: LocaleBundle = {
     // Folder-level
     'folder.empty': 'خالي',
     'column.empty': 'دلته یو فولډر درکوزئ',
+    'column.emptyHint': 'دنګرنو له دلته نښان پټې څخه راکاږئ. یو کالم کولی شي څو ډنګرونه وساتي.',
     // Context menu
     'contextMenu.openAllInFolder': 'په فولډر کې ټول لینکونه خلاص کړئ',
     'contextMenu.openAsGroup': 'په ټب ګروپ کې خلاص کړئ',

@@ -190,7 +190,8 @@ const messages = {
   'folderAction.currentFolder': 'ez a mappa',
   // Folder-level
   'folder.empty': 'Üres',
-  'column.empty': 'Húzzon ide egy mappát',
+  'column.empty': 'Húzz ide egy mappát',
+  'column.emptyHint': 'Húzz ide mappákat a könyvjelzősávról. Egy oszlop többet is elbír.',
   // Context menu
   'contextMenu.openAllInFolder': 'Mappa összes hivatkozásának megnyitása',
   'contextMenu.openAsGroup': 'Megnyitás lapcsoportban',

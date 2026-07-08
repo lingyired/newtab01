@@ -192,6 +192,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Kosong',
   'column.empty': 'Letakkan folder di sini',
+  'column.emptyHint': 'Seret folder dari bilah bookmark ke sini. Satu kolom dapat memuat banyak.',
   // Context menu
   'contextMenu.openAllInFolder': 'Buka semua tautan di folder',
   'contextMenu.openAsGroup': 'Buka di grup tab',

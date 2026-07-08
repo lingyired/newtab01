@@ -5,6 +5,7 @@ import type { Columns, CoordMap } from '../bookmarks/types';
 import { getLocal, setLocal } from '../../lib/storage';
 import { isSpecialVisible } from '../bookmarks/special-folders';
 import { renderColumns } from '../bookmarks/board';
+import { markFoldersExpandedOnce } from '../bookmarks/folder';
 import { recordMovedOutForIds, unmarkMovedOut, SPECIAL_IDS as MOVED_OUT_SPECIAL_IDS, DEFAULT_ROOT_IDS } from '../bookmarks/moved-out';
 import { getBookmark } from '../../lib/chrome/bookmarks';
 import * as debug from '../../lib/debug';
@@ -65,6 +66,39 @@ export async function loadLayout(): Promise<void> {
   }
 
   verifyColumns();
+
+  // v1.2.2: on first sight of a layout that contains the bookmark
+  //  bar (col 1+), default-expand it so the user can see its
+  //  contents immediately. The trigger is the **absence** of
+  //  `open.bar.1`, not the absence of a stored layout — that way
+  //  BOTH fresh installs (no stored layout) AND users upgrading
+  //  from 1.2.1 (stored layout exists but `open.bar.1` was never
+  //  written, because 1.2.1 used the wrong key `open.col.1` for
+  //  the bar) get the same onboarding behaviour. Once the user
+  //  manually toggles the bar (open or closed), `open.bar.1` is
+  //  written by the folder toggle handler and the gating key
+  //  check skips the auto-expand on every subsequent page load.
+  //  Mirrors the import flow in settings-panel.ts:2633-2638.
+  //
+  //  Storage key MUST be `open.bar.1` (not `open.col.1`): when
+  //  the bookmark bar lives in its own column, `column.ts:47`
+  //  sets `inBookmarkBarContext = ids.includes('1')` and the
+  //  open-state key resolves through `openKey()` to
+  //  `open.bar.${id}`. Writing `open.col.1` would be a no-op
+  //  for the bookmark bar — the user's `rememberOpen`-gated
+  //  read would see the missing key and return false. The
+  //  one-shot override above still covers the very first
+  //  render (since the override is consulted before the
+  //  storage read in `checkOpenState`), but the persistent
+  //  write needs the right key for the next refresh.
+  if (columns.some((col) => col.includes('1'))) {
+    const existing = await getLocal<boolean>('open.bar.1');
+    if (existing === undefined) {
+      markFoldersExpandedOnce(['1']);
+      void setLocal('open.bar.1', true);
+    }
+  }
+
   debug.log('layout', 'loadLayout', { fromStorage: stored ? stored.length : 0, columns: columns.map(c => c.length) });
 }
 
@@ -78,11 +112,23 @@ export async function saveLayout(): Promise<void> {
 
 /** Verify and fix column layout — ensure root folders are included */
 export function verifyColumns(): void {
-  // Default layout if empty
+  // v1.2.2: 3-column fresh-install layout.
+  //   col 0: empty placeholder (teaches the user "drop folders here")
+  //   col 1: bookmark bar (id='1') — auto-expanded on first render + persisted
+  //   col 2: other bookmarks (id='2') + 5 special folders
+  // Only triggers when `columns.length === 0`, i.e. no stored layout
+  // (= new install or layout was reset by the user). Existing users
+  // with a stored layout skip this branch entirely. `isSpecialVisible`
+  // filters by the user's `show*` settings, so a user with
+  // `showBar=0` ends up with a second empty column (the bookmark bar
+  // is hidden), and `showXxx=0` removes the matching special from
+  // col 2. The post-loop "missing root" sweep has nothing to do
+  // because '1' and '2' are now explicitly placed in col 1 and col 2.
   if (columns.length === 0) {
-    columns.push([]);
-    const specialVisible = SPECIAL_IDS.filter((id) => isSpecialVisible(id));
-    columns.push(specialVisible);
+    columns.push([]);                                                // col 0: empty (drop target)
+    columns.push(['1'].filter((id) => isSpecialVisible(id)));        // col 1: bookmark bar
+    const thirdCol = ['2', ...SPECIAL_IDS].filter((id) => isSpecialVisible(id));
+    columns.push(thirdCol);                                          // col 2: other + specials
   }
 
   // Find missing root items
@@ -118,8 +164,16 @@ export function verifyColumns(): void {
       if (id === undefined) continue;
       coords[id] = { x, y };
     }
-    // Remove empty columns (keep at least 1)
-    if (col.length === 0 && columns.length > 1) {
+    // Remove empty columns (keep at least 1) — BUT v1.2.2: exempt
+    // col 0. The first column is the intentional "drop a folder
+    // here" placeholder slot created by the fresh-install default
+    // branch. Removing it would (a) drop the v1.2.2 onboarding
+    // hint on first launch, AND (b) shift all subsequent
+    // columns down by one — which breaks `loadLayout`'s
+    // `columns[1]?.includes('1')` check that auto-expands the
+    // bookmark bar. Other empty columns (x > 0) are still
+    // auto-removed, preserving the v0.x cleanup behaviour.
+    if (col.length === 0 && columns.length > 1 && x !== 0) {
       columns.splice(x, 1);
       x--;
     }

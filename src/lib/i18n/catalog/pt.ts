@@ -174,6 +174,7 @@ const messages = {
   'folderAction.currentFolder': 'esta pasta',
   'folder.empty': 'Vazia',
   'column.empty': 'Solte uma pasta aqui',
+  'column.emptyHint': 'Arraste pastas aqui da barra de favoritos. Uma coluna pode conter várias.',
   'contextMenu.openAllInFolder': 'Abrir todos os links da pasta',
   'contextMenu.openAsGroup': 'Abrir em grupo de abas',
   'contextMenu.openInSplit': 'Abrir em visualização dividida',

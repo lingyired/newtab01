@@ -188,6 +188,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Vacío',
   'column.empty': 'Suelta una carpeta aquí',
+  'column.emptyHint': 'Arrastra carpetas aquí desde la barra de marcadores. Una columna admite varias.',
   // Context menu
   'contextMenu.openAllInFolder': 'Abrir todos los enlaces de la carpeta',
   'contextMenu.openAsGroup': 'Abrir en grupo de pestañas',

@@ -191,6 +191,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Празно',
   'column.empty': 'Пуснете папка тук',
+  'column.emptyHint': 'Плъзнете папки тук от лентата с отметки. Една колона може да побере няколко.',
   // Context menu
   'contextMenu.openAllInFolder': 'Отвори всички връзки в папката',
   'contextMenu.openAsGroup': 'Отвори в група раздели',

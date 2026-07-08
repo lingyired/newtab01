@@ -365,6 +365,14 @@ export type MessageKey =
   //  text uses `pointer-events: none` so it doesn't intercept
   //  right-click on the column itself.
   | 'column.empty'
+  // v1.2.2: secondary hint line under the empty column placeholder
+  //  header. Carries the "drag from bookmark bar" + "one column can
+  //  hold many" onboarding info without bloating the main header
+  //  line (which stays short to fit narrow columns and to match
+  //  the visual weight of real folder headers). All 37 catalogs
+  //  must include a translation; tsc enforces via
+  //  `as const satisfies LocaleMessages`.
+  | 'column.emptyHint'
   // Context menu
   | 'contextMenu.openAllInFolder'
   | 'contextMenu.openAsGroup'
