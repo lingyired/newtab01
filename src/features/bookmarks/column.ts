@@ -137,6 +137,19 @@ function renderEmptyColumnPlaceholder(target: HTMLElement, index: number): void 
   header.appendChild(textWrap);
 
   li.appendChild(header);
+
+  // v1.2.2: secondary hint line under the placeholder header. Sits
+  //  OUTSIDE the `<a class="folder folder--empty">` so it inherits
+  //  the `pointer-events: none` protection automatically (right-
+  //  click still reaches the column's context menu). Styled by
+  //  `.column--empty .column-empty-hint` in newtab.css — smaller
+  //  + dimmer than the header so the "Drop a folder here" message
+  //  still reads as the primary call to action.
+  const hint = document.createElement('p');
+  hint.className = 'column-empty-hint';
+  hint.textContent = t('column.emptyHint');
+  li.appendChild(hint);
+
   ul.appendChild(li);
   target.appendChild(ul);
   addColumnContextMenu(target, index);

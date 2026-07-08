@@ -174,6 +174,7 @@ const messages = {
   'folderAction.currentFolder': 'dieser Ordner',
   'folder.empty': 'Leer',
   'column.empty': 'Ordner hierher ziehen',
+  'column.emptyHint': 'Ordner hierher aus der Lesezeichenleiste ziehen. Eine Spalte kann mehrere enthalten.',
   'contextMenu.openAllInFolder': 'Alle Links im Ordner öffnen',
   'contextMenu.openAsGroup': 'In Tab-Gruppe öffnen',
   'contextMenu.openInSplit': 'In geteilter Ansicht öffnen',

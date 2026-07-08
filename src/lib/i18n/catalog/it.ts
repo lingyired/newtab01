@@ -193,6 +193,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Vuoto',
   'column.empty': 'Trascina una cartella qui',
+  'column.emptyHint': 'Trascina qui le cartelle dalla barra dei segnalibri. Una colonna può contenerne diverse.',
   // Context menu
   'contextMenu.openAllInFolder': 'Apri tutti i link nella cartella',
   'contextMenu.openAsGroup': 'Apri in gruppo di schede',

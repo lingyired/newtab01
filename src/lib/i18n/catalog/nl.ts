@@ -191,6 +191,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Leeg',
   'column.empty': 'Zet hier een map neer',
+  'column.emptyHint': 'Sleep mappen hierheen vanuit de bladwijzerbalk. Eén kolom kan er meerdere bevatten.',
   // Context menu
   'contextMenu.openAllInFolder': 'Open alle links in map',
   'contextMenu.openAsGroup': 'Open in tabgroep',

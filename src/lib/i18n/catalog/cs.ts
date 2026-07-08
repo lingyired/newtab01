@@ -191,6 +191,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Prázdné',
   'column.empty': 'Přetáhněte sem složku',
+  'column.emptyHint': 'Přetáhněte sem složky z panelu záložek. Jeden sloupec pojme více složek.',
   // Context menu
   'contextMenu.openAllInFolder': 'Otevřít všechny odkazy ve složce',
   'contextMenu.openAsGroup': 'Otevřít ve skupině karet',

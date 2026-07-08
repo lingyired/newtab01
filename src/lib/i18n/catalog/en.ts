@@ -192,6 +192,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Empty',
   'column.empty': 'Drop a folder here',
+  'column.emptyHint': 'Drag folders here from the bookmark bar. One column can hold many.',
   // Context menu
   'contextMenu.openAllInFolder': 'Open all links in folder',
   'contextMenu.openAsGroup': 'Open in tab group',

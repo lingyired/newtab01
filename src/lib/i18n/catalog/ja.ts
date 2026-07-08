@@ -174,6 +174,7 @@ const messages = {
   'folderAction.currentFolder': 'このフォルダ',
   'folder.empty': '空',
   'column.empty': 'フォルダーをここにドロップ',
+  'column.emptyHint': 'ブックマークバーからフォルダーをここにドラッグ。1 つの列に複数入れられます。',
   'contextMenu.openAllInFolder': 'フォルダ内のすべてのリンクを開く',
   'contextMenu.openAsGroup': 'タブグループで開く',
   'contextMenu.openInSplit': '分割ビューで開く',

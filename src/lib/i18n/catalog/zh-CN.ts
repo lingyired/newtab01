@@ -193,6 +193,7 @@ const messages = {
   // Folder-level
   'folder.empty': '空',
   'column.empty': '将目录拖到这里',
+  'column.emptyHint': '从书签栏把目录拖到这里。一列可以放多个目录。',
   // Context menu
   'contextMenu.openAllInFolder': '打开目录中的全部链接',
   'contextMenu.openAsGroup': '以标签组方式打开',

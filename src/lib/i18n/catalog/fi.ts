@@ -192,6 +192,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Tyhjä',
   'column.empty': 'Pudota kansio tähän',
+  'column.emptyHint': 'Vedä kansioita tähän kirjanmerkkipalkista. Yksi sarake voi sisältää useita.',
   // Context menu
   'contextMenu.openAllInFolder': 'Avaa kaikki kansion linkit',
   'contextMenu.openAsGroup': 'Avaa välilehtiryhmässä',

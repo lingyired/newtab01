@@ -193,7 +193,8 @@ const messages = {
   'folderAction.currentFolder': 'aquesta carpeta',
   // Folder-level
   'folder.empty': 'Buit',
-  'column.empty': 'Deixa anar una carpeta aquí',
+  'column.empty': 'Deixa una carpeta aquí',
+  'column.emptyHint': 'Arrossega carpetes aquí des de la barra de marcadors. Una columna pot contenir-ne diverses.',
   // Context menu
   'contextMenu.openAllInFolder': 'Obre tots els enllaços de la carpeta',
   'contextMenu.openAsGroup': 'Obre en un grup de pestanyes',

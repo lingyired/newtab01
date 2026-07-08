@@ -177,6 +177,7 @@ const messages = {
   'folderAction.currentFolder': 'هذا المجلد',
   'folder.empty': 'فارغ',
   'column.empty': 'أفلت مجلدًا هنا',
+  'column.emptyHint': 'اسحب المجلدات إلى هنا من شريط الإشارات المرجعية. يمكن للعمود الواحد استيعاب عدة مجلدات.',
   'contextMenu.openAllInFolder': 'فتح جميع الروابط في المجلد',
   'contextMenu.openAsGroup': 'فتح في مجموعة علامات تبويب',
   'contextMenu.openInSplit': 'فتح في عرض مقسم',

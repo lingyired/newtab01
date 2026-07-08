@@ -191,6 +191,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Порожньо',
   'column.empty': 'Перетягніть сюди теку',
+  'column.emptyHint': 'Перетягніть теки сюди з панелі закладок. Один стовпець вміщує кілька.',
   // Context menu
   'contextMenu.openAllInFolder': 'Відкрити всі посилання в теці',
   'contextMenu.openAsGroup': 'Відкрити у групі вкладок',

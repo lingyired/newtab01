@@ -461,6 +461,29 @@ a.folder.folder--empty:hover {
   background: transparent;
 }
 
+/* v1.2.2: secondary hint line under the empty column placeholder
+   header. Sits inside the `<li>` as a sibling of the `<a
+   class="folder folder--empty">` so the column's flex + gap layout
+   handles vertical spacing naturally. Smaller than the folder
+   header (1.8em) and dimmer than the header (45% opacity) so the
+   primary "Drop a folder here" message still reads as the
+   dominant element. Same `user-select: none` / `pointer-events:
+   none` discipline as the header so right-clicks still reach the
+   column's context menu. `overflow-wrap: break-word` lets long
+   hint text wrap inside narrow columns without overflowing the
+   dashed border box. */
+.column--empty .column-empty-hint {
+  font-size: 0.9em;
+  line-height: 1.4;
+  color: color-mix(in oklch, var(--newtab-text) 35%, transparent);
+  margin: 6px 0 0 0;
+  padding-inline-start: 0;
+  user-select: none;
+  pointer-events: none;
+  overflow-wrap: break-word;
+  word-break: normal;
+}
+
 /* ─── Drag states ─── */
 .dragstart {
   opacity: 0.5;

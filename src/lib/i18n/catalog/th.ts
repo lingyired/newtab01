@@ -191,6 +191,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'ว่างเปล่า',
   'column.empty': 'ลากโฟลเดอร์มาที่นี่',
+  'column.emptyHint': 'ลากโฟลเดอร์จากแถบบุ๊กมาร์กมาที่นี่ คอลัมน์เดียวบรรจุได้หลายโฟลเดอร์',
   // Context menu
   'contextMenu.openAllInFolder': 'เปิดลิงก์ทั้งหมดในโฟลเดอร์',
   'contextMenu.openAsGroup': 'เปิดในกลุ่มแท็บ',

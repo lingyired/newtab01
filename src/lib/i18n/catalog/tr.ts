@@ -191,6 +191,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Boş',
   'column.empty': 'Buraya bir klasör bırakın',
+  'column.emptyHint': 'Yer imleri çubuğundan klasörleri buraya sürükleyin. Bir sütun birden fazla tutabilir.',
   // Context menu
   'contextMenu.openAllInFolder': 'Klasördeki tüm bağlantıları aç',
   'contextMenu.openAsGroup': 'Sekme grubunda aç',

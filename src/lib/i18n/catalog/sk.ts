@@ -191,6 +191,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Prázdne',
   'column.empty': 'Presuňte sem priečinok',
+  'column.emptyHint': 'Potiahnite sem priečinky z panela záložiek. Jeden stĺpec pojme viacero.',
   // Context menu
   'contextMenu.openAllInFolder': 'Otvoriť všetky odkazy v priečinku',
   'contextMenu.openAsGroup': 'Otvoriť v skupine kariet',

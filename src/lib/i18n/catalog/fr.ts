@@ -174,6 +174,7 @@ const messages = {
   'folderAction.currentFolder': 'ce dossier',
   'folder.empty': 'Vide',
   'column.empty': 'Déposez un dossier ici',
+  'column.emptyHint': 'Glissez des dossiers ici depuis la barre de favoris. Une colonne peut en contenir plusieurs.',
   'contextMenu.openAllInFolder': 'Ouvrir tous les liens du dossier',
   'contextMenu.openAsGroup': 'Ouvrir en groupe d\'onglets',
   'contextMenu.openInSplit': 'Ouvrir en vue partagée',

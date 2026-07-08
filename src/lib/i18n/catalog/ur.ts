@@ -192,6 +192,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'خالی',
   'column.empty': 'یہاں فولڈر ڈراپ کریں',
+  'column.emptyHint': 'بُک مارک بار سے فولڈرز یہاں کھینچیں۔ ایک کالم میں کئی فولڈر آ سکتے ہیں۔',
   // Context menu
   'contextMenu.openAllInFolder': 'فولڈر کے تمام لنکس کھولیں',
   'contextMenu.openAsGroup': 'ٹیب گروپ میں کھولیں',

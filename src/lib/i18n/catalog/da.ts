@@ -191,6 +191,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Tom',
   'column.empty': 'Slip en mappe her',
+  'column.emptyHint': 'Træk mapper hertil fra bogmærkebjælken. En kolonne kan rumme flere.',
   // Context menu
   'contextMenu.openAllInFolder': 'Åbn alle links i mappe',
   'contextMenu.openAsGroup': 'Åbn i fanegruppe',

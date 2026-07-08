@@ -5,6 +5,27 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-07-08
+
+### Changed
+- **Fresh-install layout redesigned for onboarding** (3 columns instead of 2). The new default only applies when `chrome.storage.local.layout` is empty (= new install or explicit reset). Returning users with a stored layout skip this branch entirely.
+  - col 0: empty placeholder slot. Renders the "Drop a folder here" placeholder with a new secondary hint line below ("Drag folders here from the bookmark bar. One column can hold many."). Designed to make the "drop a folder into a column" interaction discoverable on first launch.
+  - col 1: bookmark bar (id=`1`).
+  - col 2: other bookmarks (id=`2`) + 5 special folders (apps / top / recent / closed / devices), in that order.
+  - The `show*` settings still gate visibility — `showBar=0` leaves col 1 as another empty placeholder, `showOther=0` / `showXxx=0` drop the matching folder from its column.
+- **Bookmark bar (id=`1`) is default-expanded on first sight.** On every page load, if any column contains `'1'` AND no `open.bar.1` entry exists in `chrome.storage.local`, the bar is expanded. This covers BOTH fresh installs AND users upgrading from 1.2.1 (where the bar's open-state was persisted under the wrong key `open.col.1`, so the new `open.bar.1` read sees `undefined`). Implementation: `markFoldersExpandedOnce(['1'])` one-shot override (consumed on first render — handles `rememberOpen=0`) + `setLocal('open.bar.1', true)` (persists across refreshes). Once the user manually toggles the bar (open OR closed), `open.bar.1` gets written and the gate skips the auto-expand on every subsequent page load. Mirrors the import flow in `src/newtab/settings-panel.ts:2633-2638`. Other folders (id=`2`, specials) are NOT auto-expanded.
+- **Empty column placeholder now shows a 2-line hint** instead of a single line. The main row (`column.empty` MessageKey) is unchanged; the new `column.emptyHint` MessageKey renders a dimmer second line with the "drag from bookmark bar" + "one column can hold many" onboarding info. Styled by `.column--empty .column-empty-hint` in `styles/newtab.css` — 0.9em font size, 35% text opacity, `pointer-events: none` (right-click still reaches the column's context menu), `overflow-wrap: break-word` (long hint wraps inside narrow columns without overflowing the dashed border).
+
+### Internal
+- `src/features/drag-drop/layout-ops.ts` `verifyColumns()` default branch rewritten to construct the 3-column layout; `loadLayout()` checks for the absence of `open.bar.1` and calls `markFoldersExpandedOnce(['1'])` + `setLocal('open.bar.1', true)` in that case. New import: `markFoldersExpandedOnce` from `../bookmarks/folder` (no import cycle — `folder.ts` and its deps do not import from `layout-ops`).
+- `src/features/bookmarks/column.ts` `renderEmptyColumnPlaceholder()` now appends a `<p class="column-empty-hint">` sibling of the `<a class="folder folder--empty">` inside the same `<li>`.
+- `styles/newtab.css` — new `.column--empty .column-empty-hint` rule.
+- `src/lib/i18n/types.ts` — `MessageKey` union gains `'column.emptyHint'`. All 37 catalog files (`src/lib/i18n/catalog/*.ts`) get the new key. `as const satisfies LocaleMessages` enforces this at compile time.
+- Version synced in `src/lib/version.ts`, `manifest.json`, `package.json` (1.2.1 → 1.2.2).
+
+### Bundle
+- newtab gzipped: negligible delta. 1 new i18n key × 37 locales ≈ 0.5KB; ~20 lines of CSS/JS. Well under the 30KB budget.
+
 ## [1.2.1] - 2026-07-06
 
 ### Changed

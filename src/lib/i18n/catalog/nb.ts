@@ -192,6 +192,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Tom',
   'column.empty': 'Slipp en mappe her',
+  'column.emptyHint': 'Dra mapper hit fra bokmerkelinjen. Én kolonne kan romme flere.',
   // Context menu
   'contextMenu.openAllInFolder': 'Åpne alle lenker i mappen',
   'contextMenu.openAsGroup': 'Åpne i fanegruppe',

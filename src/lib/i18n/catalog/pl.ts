@@ -192,6 +192,7 @@ const messages = {
   // Folder-level
   'folder.empty': 'Puste',
   'column.empty': 'Upuść folder tutaj',
+  'column.emptyHint': 'Przeciągnij tu foldery z paska zakładek. Jedna kolumna może pomieścić wiele.',
   // Context menu
   'contextMenu.openAllInFolder': 'Otwórz wszystkie linki w folderze',
   'contextMenu.openAsGroup': 'Otwórz w grupie kart',
