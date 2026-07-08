@@ -269,7 +269,7 @@ export async function removeRow(xPos: number, yPos: number): Promise<void> {
   const removedId = removed[0];
   debug.log('layout', 'removeRow', { xPos, yPos, removed: removedId });
 
-  if (columns[xPos]!.length === 0 && columns.length > 1) {
+  if (columns[xPos]!.length === 0 && columns.length > 1 && xPos !== 0) {
     columns.splice(xPos, 1);
   }
 

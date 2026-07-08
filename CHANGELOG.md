@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.3] - 2026-07-08
+
+### Fixed
+- **Drag from col 1 to col 2 no longer deletes col 0.** The "remove empty columns" cleanup loops in `addColumn` (line 196-205), `addRow` (line 239-250), and `removeRow` (line 272-274) previously swept col 0 (the intentional fresh-install "drop a folder here" placeholder) when their iteration landed on the empty col 0 slot, even though no drop target was col 0. Each loop now carries the same `x !== 0` exemption that `verifyColumns` already had. The user can now drag a folder from the bookmark bar to a different column without losing the empty placeholder.
+
 ## [1.2.2] - 2026-07-08
 
 ### Changed
@@ -16,8 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Bookmark bar (id=`1`) is default-expanded on first sight.** On every page load, if any column contains `'1'` AND no `open.bar.1` entry exists in `chrome.storage.local`, the bar is expanded. This covers BOTH fresh installs AND users upgrading from 1.2.1 (where the bar's open-state was persisted under the wrong key `open.col.1`, so the new `open.bar.1` read sees `undefined`). Implementation: `markFoldersExpandedOnce(['1'])` one-shot override (consumed on first render — handles `rememberOpen=0`) + `setLocal('open.bar.1', true)` (persists across refreshes). Once the user manually toggles the bar (open OR closed), `open.bar.1` gets written and the gate skips the auto-expand on every subsequent page load. Mirrors the import flow in `src/newtab/settings-panel.ts:2633-2638`. Other folders (id=`2`, specials) are NOT auto-expanded.
 - **Empty column placeholder now shows a 2-line hint** instead of a single line. The main row (`column.empty` MessageKey) is unchanged; the new `column.emptyHint` MessageKey renders a dimmer second line with the "drag from bookmark bar" + "one column can hold many" onboarding info. Styled by `.column--empty .column-empty-hint` in `styles/newtab.css` — 0.9em font size, 35% text opacity, `pointer-events: none` (right-click still reaches the column's context menu), `overflow-wrap: break-word` (long hint wraps inside narrow columns without overflowing the dashed border).
 
+### Fixed
+- **Drag from col 1 to col 2 no longer deletes col 0.** The "remove empty columns" cleanup loops in `addColumn` (line 196-205), `addRow` (line 239-250), and `removeRow` (line 272-274) previously swept col 0 (the intentional fresh-install "drop a folder here" placeholder) when its iteration landed on the empty col 0 slot, even though no drop target was col 0. Added the same `x !== 0` exemption that `verifyColumns` already carries. The user can now drag a folder from the bookmark bar to a different column without losing the empty placeholder.
+
 ### Internal
 - `src/features/drag-drop/layout-ops.ts` `verifyColumns()` default branch rewritten to construct the 3-column layout; `loadLayout()` checks for the absence of `open.bar.1` and calls `markFoldersExpandedOnce(['1'])` + `setLocal('open.bar.1', true)` in that case. New import: `markFoldersExpandedOnce` from `../bookmarks/folder` (no import cycle — `folder.ts` and its deps do not import from `layout-ops`).
+- `src/features/drag-drop/layout-ops.ts` — `addColumn` / `addRow` / `removeRow` "remove empty columns" loops now carry the same `x !== 0` exemption as `verifyColumns`.
 - `src/features/bookmarks/column.ts` `renderEmptyColumnPlaceholder()` now appends a `<p class="column-empty-hint">` sibling of the `<a class="folder folder--empty">` inside the same `<li>`.
 - `styles/newtab.css` — new `.column--empty .column-empty-hint` rule.
 - `src/lib/i18n/types.ts` — `MessageKey` union gains `'column.emptyHint'`. All 37 catalog files (`src/lib/i18n/catalog/*.ts`) get the new key. `as const satisfies LocaleMessages` enforces this at compile time.

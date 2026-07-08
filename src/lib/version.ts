@@ -455,4 +455,17 @@
 //          No Settings schema change, no new permission, no new
 //          chrome.* API call. Bundle delta: ~0.5KB new i18n +
 //          ~20 lines CSS/JS (negligible).
-export const VERSION = '1.2.2';
+// v1.2.3: hotfix — drag from col 1 to col 2 no longer deletes
+//          the intentional col 0 empty placeholder. The
+//          "remove empty columns" cleanup loops in `addColumn`
+//          (line 196-205), `addRow` (line 239-250), and
+//          `removeRow` (line 272-274) previously swept col 0
+//          (the v1.2.2 fresh-install "drop a folder here"
+//          placeholder) when their iteration landed on the
+//          empty col 0 slot, even though no drop target was
+//          col 0. Each loop now carries the same `x !== 0`
+//          exemption that `verifyColumns` already had. The
+//          user can now drag a folder out of the bookmark bar
+//          into another column without losing the empty
+//          placeholder.
+export const VERSION = '1.2.3';
