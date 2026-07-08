@@ -236,8 +236,14 @@ export async function addRow(id: string, xPos: number, yPos?: number): Promise<v
         yPos--;
       }
     }
-    // Remove empty columns (keep at least 1)
-    if (columns[x]!.length === 0 && columns.length > 1) {
+    // Remove empty columns. v1.2.3: keep col 0 — the intentional
+    // fresh-install "drop a folder here" placeholder. v1.2.2's
+    // verifyColumns fix added this exemption but missed the same
+    // loop here in addRow — dragging a folder into the empty col 0
+    // tripped the cleanup, deleted col 0, decremented xPos to -1,
+    // and crashed on `columns[xPos].splice(...)`. Without this
+    // guard, every drag whose target is the empty col 0 fails.
+    if (columns[x]!.length === 0 && columns.length > 1 && x !== 0) {
       columns.splice(x, 1);
       x--;
       if (xPos > x) {

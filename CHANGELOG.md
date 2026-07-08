@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] - 2026-07-08
+
+### Fixed
+- **Dragging a folder into the empty col 0 no longer crashes.** v1.2.3 added `x !== 0` to `addColumn` and `removeRow` but missed the same cleanup loop in `addRow`. When the user dropped a folder into the fresh-install col 0 placeholder, the loop's `if (columns[x].length === 0 && columns.length > 1)` branch (without `x !== 0`) deleted col 0, decremented `xPos` to -1, and the final `columns[xPos].splice(...)` threw `Cannot read properties of undefined (reading 'splice')`. Adding `x !== 0` to `addRow` matches the other two mutations. Reproduced by minified `dist/assets/layout-ops-*.js` containing the un-guarded `length===0` condition.
+
 ## [1.2.3] - 2026-07-08
 
 ### Fixed

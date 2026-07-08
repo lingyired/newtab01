@@ -455,17 +455,16 @@
 //          No Settings schema change, no new permission, no new
 //          chrome.* API call. Bundle delta: ~0.5KB new i18n +
 //          ~20 lines CSS/JS (negligible).
-// v1.2.3: hotfix — drag from col 1 to col 2 no longer deletes
-//          the intentional col 0 empty placeholder. The
-//          "remove empty columns" cleanup loops in `addColumn`
-//          (line 196-205), `addRow` (line 239-250), and
-//          `removeRow` (line 272-274) previously swept col 0
-//          (the v1.2.2 fresh-install "drop a folder here"
-//          placeholder) when their iteration landed on the
-//          empty col 0 slot, even though no drop target was
-//          col 0. Each loop now carries the same `x !== 0`
-//          exemption that `verifyColumns` already had. The
-//          user can now drag a folder out of the bookmark bar
-//          into another column without losing the empty
-//          placeholder.
-export const VERSION = '1.2.3';
+// v1.2.4: hotfix — drag a folder into the empty col 0 no longer
+//          crashes with "Cannot read properties of undefined
+//          (reading 'splice')". v1.2.3's `x !== 0` exemption
+//          reached `addColumn` and `removeRow` but missed the
+//          same cleanup loop in `addRow`. The unprotected
+//          `if (columns[x].length === 0 && columns.length > 1)`
+//          branch deleted col 0 on drop, decremented xPos to
+//          -1, and `columns[-1].splice(...)` crashed. Now
+//          guarded by `x !== 0` to match the other two
+//          mutations. Reproduced by minified
+//          `dist/assets/layout-ops-*.js` carrying the
+//          un-guarded `length===0` condition.
+export const VERSION = '1.2.4';
