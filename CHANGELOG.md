@@ -5,6 +5,23 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-07-09
+
+### Summary
+Minor release consolidating the v1.2.6 → v1.2.10 empty-column compatibility series. The v1.2.2 default 3-col layout (col 0 = empty placeholder, col 1 = bookmark bar, col 2 = other + specials) opened a class of empty-column edge cases that took 5 iterations to fully resolve across the whole mutation surface — drag, swap, undo, and refresh all had to agree on what "an empty column" means. v1.3.0 marks the first release where empty columns are stable first-class layout state end-to-end. Detailed per-patch notes for the work consolidated in this release are preserved in the v1.2.6 → v1.2.10 entries below.
+
+### Fixed (consolidated from v1.2.6 → v1.2.10)
+- **Drag-drop into / past the empty col 0 placeholder is correct and crash-free.** v1.2.3 → v1.2.5 added the `x !== 0` exemption to `verifyColumns` / `addColumn` / `addRow` / `removeRow` cleanup loops so the placeholder survives legitimate cross-column drops, and fixed the column-shift bug that pushed newly-dropped cols to the end of the row.
+- **"Remove column" on the col 0 placeholder is a no-op.** v1.2.6: `removeColumn(0)` returns early — removing the placeholder silently broke the v1.2.2 default layout promise and shifted every other column down by one.
+- **"Move column left/right" on the bookmark bar keeps all three columns.** v1.2.6 routed the move through `swapColumns(index, index ± 1)` (a true swap) so the empty col could move past the bookmark bar without being eaten by `verifyColumns`. Drag-drop column-structure drops still use `addColumn` (unaffected).
+- **Persisted empty columns survive a page refresh.** v1.2.8 split `verifyColumns` into two — the full version (still used by `saveLayout` / drag-drop mutations) keeps the empty-column cleanup, the new lightweight `verifyLayoutPreservingEmpties` (used by `loadLayout` only) skips it. v1.2.7 only fixed the in-memory swap, but on the next `loadLayout()` the stored `[['1'], [], ['2', ...]]` still went through `verifyColumns` and the vacated col 1 got swept → 2 cols on every refresh.
+- **"Move column right" on the empty col 0 placeholder is no longer a silent no-op.** v1.2.9 routed it through `swapColumns(index, index + 1)` too, symmetric with the v1.2.6 left-move fix. Previously `addColumn(ids, index + 1)`'s empty-ids early return made the empty-col case invisible to the user.
+- **Undo no longer eats a swap's vacated column.** v1.2.10 factored the `swapColumns` persist+rebuild pattern into a new `persistAndRenderColumns()` helper and routed undo through it — previously undo went through `saveLayout()` → `verifyColumns()` and any popped snapshot containing a non-col-0 empty col got half-reverted (the swap itself reverted, the placeholder was gone).
+
+### New internal helper
+- `verifyLayoutPreservingEmpties()` — light variant of `verifyColumns` for `loadLayout`. Same fresh-install branch + missing-root check + coords rebuild, no empty-column sweep.
+- `persistAndRenderColumns()` — bypass-`verifyColumns` persist+rebuild+re-render flow shared by `swapColumns` and the undo path. Coordinates rebuild + `setLocal(LAYOUT_KEY, columns)` + `renderColumns()`, with the missing-root check intentionally skipped (a swap / undo can't add or remove root ids).
+
 ## [1.2.10] - 2026-07-09
 
 ### Fixed

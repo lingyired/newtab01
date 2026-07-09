@@ -534,4 +534,40 @@
 //          `saveLayout` because they never produce user-driven
 //          empties (their in-function cleanup loops handle stale
 //          ones). Only the swap / undo paths need the bypass.
-export const VERSION = '1.2.10';
+// v1.3.0: minor release consolidating the v1.2.6 → v1.2.10
+//          empty-column compatibility work. The v1.2.2 default
+//          3-col layout (col 0 = empty placeholder, col 1 =
+//          bookmark bar, col 2 = other + specials) opened a
+//          class of empty-column edge cases that took 5
+//          iterations to fully resolve:
+//            - v1.2.3 → v1.2.5: drag-drop empty-column
+//              compatibility (keep col 0, correct insert
+//              position, no crashes on drop into col 0).
+//            - v1.2.6: column context menu "Move left/right"
+//              on empty cols (addColumn's empty-ids early
+//              return, removeColumn(0) refusal, withUndo's
+//              isLayoutUnchanged check).
+//            - v1.2.7: in-memory swap helper (bypass
+//              verifyColumns) so "Move left" on the bookmark
+//              bar keeps all 3 cols.
+//            - v1.2.8: load-time verifyColumns split
+//              (`verifyLayoutPreservingEmpties`) so the
+//              persisted empty col survives a page refresh.
+//            - v1.2.9: "Move column right" routed through
+//              swapColumns too (symmetric with the v1.2.6
+//              left-move fix), so col 0 "Move right" is no
+//              longer a silent no-op.
+//            - v1.2.10: undo bypasses verifyColumns too
+//              (`persistAndRenderColumns` helper), so popping
+//              a snapshot that contains a non-col-0 empty col
+//              no longer sweeps it.
+//          Net effect of 1.3.0: empty columns are now
+//          first-class layout state across the whole mutation
+//          surface — drag, swap, undo, refresh — instead of
+//          being silently swept by any one of them. Bumped
+//          minor because the fix series resolved a real UX
+//          regression (the v1.2.2 col 0 placeholder was
+//          effectively unusable in v1.2.5) and represents a
+//          stable contract for empty-column handling that
+//          downstream changes can build on.
+export const VERSION = '1.3.0';
