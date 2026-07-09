@@ -473,4 +473,26 @@
 //          directly. The missing-root check inside
 //          verifyColumns is intentionally skipped because a
 //          swap never changes the set of root ids present.
-export const VERSION = '1.2.7';
+// v1.2.8: hotfix — persisted empty columns survive a page
+//          refresh. v1.2.7 fixed the in-memory swap, but on
+//          the next `loadLayout()` the stored layout (e.g.
+//          `[['1'], [], ['2', ...]]` from a "Move left" on the
+//          bookmark bar) still went through `verifyColumns()`,
+//          whose empty-column sweep deleted the vacated col 1
+//          → 2 cols on every refresh. Fix: split `verifyColumns`
+//          in two. The full version (still used by `saveLayout`
+//          and the drag-drop mutation path) keeps the empty-
+//          column cleanup because a drop that empties a column
+//          is a stale artefact that should be swept. The new
+//          lightweight `verifyLayoutPreservingEmpties` (used
+//          by `loadLayout` only) keeps the fresh-install
+//          branch + missing-root check + coords rebuild, but
+//          skips the empty-column sweep — so user-driven
+//          empties (e.g. the swap's vacated col) round-trip
+//          through storage unchanged. The drag-drop path is
+//          unaffected: `addColumn` / `addRow` / `removeRow`
+//          keep their in-function cleanup loops, and only
+//          legitimate drag-emitted empties get swept there
+//          (the v1.2.3-v1.2.6 `x !== 0` exemption and
+//          `addColumn` empty-ids early-return are unchanged).
+export const VERSION = '1.2.8';

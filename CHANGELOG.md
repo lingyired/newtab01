@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.8] - 2026-07-09
+
+### Fixed
+- **Persisted empty columns survive a page refresh.** v1.2.7 made "Move column left" on the bookmark bar keep all three columns *in memory*, but on the next `loadLayout()` the stored layout (e.g. `[['1'], [], ['2', ...]]`) still went through `verifyColumns()`, whose empty-column sweep deleted the vacated col 1 → 2 cols on every refresh — the user saw 3 cols, refreshed, and got 2. Fix: split `verifyColumns` into two. The full version (still used by `saveLayout` / `addColumn` / `addRow` / `removeRow` and the drag-drop mutation path) keeps the empty-column cleanup, because a drop that empties a column is a stale artefact that *should* be swept. The new lightweight `verifyLayoutPreservingEmpties` (used by `loadLayout` only) keeps the fresh-install branch + the missing-root check + the coords rebuild, but skips the empty-column sweep — so user-driven empties (e.g. the swap's vacated col) round-trip through storage unchanged. The drag-drop path is unaffected: `addColumn` / `addRow` / `removeRow` keep their in-function cleanup loops, and only legitimate drag-emitted empties get swept there. The v1.2.3-v1.2.6 `x !== 0` exemption and `addColumn` empty-ids early-return are unchanged.
+
 ## [1.2.7] - 2026-07-08
 
 ### Fixed

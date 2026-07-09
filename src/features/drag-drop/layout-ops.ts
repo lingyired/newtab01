@@ -65,7 +65,19 @@ export async function loadLayout(): Promise<void> {
     columns = [];
   }
 
-  verifyColumns();
+  // v1.2.8: call the empty-preserving variant of verifyColumns.
+  // The full `verifyColumns` sweeps non-col-0 empty columns — which
+  // is correct for drag-drop mutations (an empty col is a stale
+  // artefact) but wrong for the load path. The v1.2.6 context-menu
+  // `swapColumns` deliberately bypasses `verifyColumns` and writes
+  // a layout like `[['1'], [], ['2', ...]]` straight to storage;
+  // a naive load would call the full `verifyColumns` and delete
+  // that vacated col 1 on every page refresh, regressing the
+  // v1.2.2/v1.2.3 empty-column compatibility. The lightweight
+  // variant below does the missing-root check + coords rebuild
+  // (the two pieces a swap can never invalidate) and leaves the
+  // user-driven empty columns alone.
+  verifyLayoutPreservingEmpties();
 
   // v1.2.2: on first sight of a layout that contains the bookmark
   //  bar (col 1+), default-expand it so the user can see its
@@ -110,7 +122,16 @@ export async function saveLayout(): Promise<void> {
   await renderColumns();
 }
 
-/** Verify and fix column layout — ensure root folders are included */
+/** Verify and fix column layout — ensure root folders are included.
+ *  v1.2.8: also sweeps non-col-0 empty columns (preserves col 0 as
+ *  the v1.2.2 fresh-install placeholder). This sweep is correct
+ *  for drag-drop mutations: the `addColumn` / `addRow` /
+ *  `removeRow` cleanup loops already use the same `x !== 0`
+ *  exemption, so all four sites agree on "an empty col is stale
+ *  except for col 0". The load path (`loadLayout`) does NOT use
+ *  this function — it calls `verifyLayoutPreservingEmpties` —
+ *  because user-driven empties (e.g. v1.2.6's `swapColumns`
+ *  leaving a vacated col 1) must survive a page refresh. */
 export function verifyColumns(): void {
   // v1.2.2: 3-column fresh-install layout.
   //   col 0: empty placeholder (teaches the user "drop folders here")
@@ -176,6 +197,75 @@ export function verifyColumns(): void {
     if (col.length === 0 && columns.length > 1 && x !== 0) {
       columns.splice(x, 1);
       x--;
+    }
+  }
+}
+
+/** Verify and fix column layout on load — same as verifyColumns
+ *  but preserves user-driven empty columns. v1.2.8 split:
+ *  drag-drop mutations (`saveLayout`) still use the full
+ *  `verifyColumns` because a drop that empties a column always
+ *  produces a stale col that should be swept; the load path
+ *  (`loadLayout`) uses this variant because the persisted
+ *  layout may legitimately contain a user-driven empty col
+ *  (e.g. the v1.2.6 `swapColumns` "Move left" on the bookmark
+ *  bar leaves col 1 empty by design — the bookmark bar
+ *  swaps into col 0's slot and col 1 becomes the new
+ *  "drop a folder here" placeholder). A full verifyColumns
+ *  on every load would delete that col on every refresh.
+ *  The two pieces of `verifyColumns` we still need here are
+ *  the fresh-install branch (no stored layout → build the
+ *  v1.2.2 3-col default) and the missing-root check
+ *  (a load may run before the user has finished dragging
+ *  all root ids into the board, though `rootIds` is normally
+ *  set in `main.ts` BEFORE `loadLayout` runs — still
+ *  defensive). The empty-column cleanup loop is the part
+ *  that was hurting us and is intentionally omitted. */
+export function verifyLayoutPreservingEmpties(): void {
+  // v1.2.2: 3-column fresh-install layout. Same shape as the
+  // branch inside `verifyColumns` — only fires when storage
+  // returned no layout (new install or user reset).
+  if (columns.length === 0) {
+    columns.push([]);                                                // col 0: empty (drop target)
+    columns.push(['1'].filter((id) => isSpecialVisible(id)));        // col 1: bookmark bar
+    const thirdCol = ['2', ...SPECIAL_IDS].filter((id) => isSpecialVisible(id));
+    columns.push(thirdCol);                                          // col 2: other + specials
+  }
+
+  // Find missing root items
+  const missing = rootIds.slice();
+  for (let x = 0; x < columns.length; x++) {
+    const col = columns[x];
+    if (!col) continue;
+    for (let y = 0; y < col.length; y++) {
+      const id = col[y];
+      if (id === undefined) continue;
+      const idx = missing.indexOf(id);
+      if (idx > -1) {
+        missing.splice(idx, 1);
+      }
+    }
+  }
+
+  // Add missing root items to first column
+  const firstCol = columns[0]!;
+  for (const id of missing) {
+    if (isSpecialVisible(id)) {
+      firstCol.push(id);
+    }
+  }
+
+  // Rebuild coordinate map — same as verifyColumns.
+  // Intentionally NOT sweeping empty columns here (see
+  // function doc comment for the v1.2.8 rationale).
+  coords = {};
+  for (let x = 0; x < columns.length; x++) {
+    const col = columns[x];
+    if (!col) continue;
+    for (let y = 0; y < col.length; y++) {
+      const id = col[y];
+      if (id === undefined) continue;
+      coords[id] = { x, y };
     }
   }
 }
