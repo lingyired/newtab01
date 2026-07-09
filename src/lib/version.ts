@@ -491,8 +491,25 @@
 //          empties (e.g. the swap's vacated col) round-trip
 //          through storage unchanged. The drag-drop path is
 //          unaffected: `addColumn` / `addRow` / `removeRow`
-//          keep their in-function cleanup loops, and only
-//          legitimate drag-emitted empties get swept there
-//          (the v1.2.3-v1.2.6 `x !== 0` exemption and
+//          keep their in-function cleanup loops, and only legitimate drag-emitted
+//          empties get swept there (the v1.2.3-v1.2.6 `x !== 0` exemption and
 //          `addColumn` empty-ids early-return are unchanged).
-export const VERSION = '1.2.8';
+// v1.2.9: hotfix — "Move column right" on the v1.2.2 col 0 empty
+//          placeholder now actually does something. v1.2.6 routed
+//          "Move column left" through `swapColumns` (a true swap)
+//          so the empty col could move past the bookmark bar
+//          without being eaten by `verifyColumns` — but "Move
+//          column right" still used `addColumn(ids, index + 1)`,
+//          and v1.2.6's `addColumn` empty-ids early return turned
+//          that into a no-op for the empty col. Net: the
+//          bookmark bar "Move left" worked (swap ↔ col 0), but
+//          the col 0 "Move right" was silent — the user could
+//          see "Move right" on the menu, click it, and nothing
+//          changed. Fix: route "Move column right" through
+//          `swapColumns(index, index + 1)` too, symmetric with
+//          the v1.2.6 left-move fix. For non-empty cols both
+//          approaches give the same end state (verified by
+//          tracing the 3- and 4-col default layouts through
+//          both paths), so this is a no-op for the working case
+//          and an actual fix for the empty col case.
+export const VERSION = '1.2.9';

@@ -352,12 +352,21 @@ export function getColumnMenuItems(index: number): (MenuItem | null)[] {
       items.push({
         label: t('contextMenu.moveColumnRight'),
         action: () => withUndo(() => {
-          // addColumn removes the ids from their current column first,
-          // so the target splice index is in the post-removal array.
-          // "One step right" = (original index) + 1 in that new array.
-          // (Previously used index + 2, which overshoots — the column
-          // always jumped to the rightmost position.)
-          void addColumn(ids, index + 1);
+          // v1.2.8.1: swap with the next column instead of
+          //  `addColumn(ids, index + 1)`. Symmetric with the
+          //  v1.2.6 "Move column left" fix. For non-empty cols
+          //  both approaches give the same end state (e.g.
+          //  `[[], ['1'], [X], ['2', ...]]` moving col 2 right
+          //  → `[[], ['1'], ['2', ...], [X]]`), but for the
+          //  v1.2.2 col 0 empty placeholder the addColumn path
+          //  short-circuits to a no-op (v1.2.6 empty-ids early
+          //  return in addColumn) so "Move right" on the empty
+          //  col silently did nothing. swapColumns gives a true
+          //  swap in both cases, and bypasses verifyColumns
+          //  (just like the v1.2.6/v1.2.7 left-move fix) so
+          //  the vacated col is preserved instead of being
+          //  swept on the next saveLayout.
+          void swapColumns(index, index + 1);
         }),
       });
     }

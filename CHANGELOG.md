@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.9] - 2026-07-09
+
+### Fixed
+- **"Move column right" on the empty col 0 placeholder now actually moves the column.** v1.2.6 routed "Move column left" through `swapColumns(index - 1, index)` (a true swap) so the v1.2.2 col 0 empty placeholder could move past the bookmark bar without being eaten by `verifyColumns` — but "Move column right" was still using `addColumn(ids, index + 1)`, and v1.2.6's `addColumn` empty-ids early return turned that into a no-op for the empty col. The bookmark bar "Move left" worked (swap ↔ col 0), but col 0 "Move right" was silent — the user could see the menu item, click it, and nothing changed. Fix: route "Move column right" through `swapColumns(index, index + 1)` too, symmetric with the v1.2.6 left-move fix. For non-empty cols both approaches give the same end state (verified by tracing the 3- and 4-col default layouts through both paths), so this is a no-op for the working case and a real fix for the empty col case. The vacated col is preserved exactly like the v1.2.7/v1.2.8 left-move fix (swapColumns bypasses verifyColumns).
+
 ## [1.2.8] - 2026-07-09
 
 ### Fixed
