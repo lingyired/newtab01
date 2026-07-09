@@ -4,7 +4,7 @@
 // map, then re-renders the board.
 
 import { popSnapshot, getHistoryLength, subscribe } from '../features/drag-drop/history';
-import { setColumns, saveLayout } from '../features/drag-drop/layout-ops';
+import { setColumns, persistAndRenderColumns } from '../features/drag-drop/layout-ops';
 import { setMovedOutCache } from '../features/bookmarks/moved-out';
 import { setLocal } from '../lib/storage';
 import * as debug from '../lib/debug';
@@ -102,7 +102,28 @@ export function renderUndoButton(topbar: HTMLElement): void {
   updateVisibility();
 }
 
-/** Restore the most recent snapshot, if any. Re-renders the board. */
+/** Restore the most recent snapshot, if any. Re-renders the board.
+ *  v1.2.10: bypass `saveLayout` / `verifyColumns` (use
+ *  `persistAndRenderColumns` instead). Previously this called
+ *  `saveLayout()` after `setColumns(snapshot.columns)`, but
+ *  `saveLayout` runs the full `verifyColumns` which sweeps
+ *  any non-col-0 empty column. The snapshot itself can
+ *  legitimately contain a non-col-0 empty col — most
+ *  commonly, a v1.2.6/v1.2.7/v1.2.9 `swapColumns` that left
+ *  a col vacated (e.g. `[['1'], [], ['2', ...]]` after
+ *  "Move left" on the bookmark bar). Restoring that snapshot
+ *  through the full `verifyColumns` deleted the empty col,
+ *  collapsing 3 → 2 cols and making the undo a half-revert
+ *  (the bookmark bar moved back, but the col 0 placeholder
+ *  was gone). Use the same bypass-verifyColumns flow
+ *  `swapColumns` uses — the only pieces of `saveLayout` an
+ *  undo actually needs are coords rebuild + persistence +
+ *  re-render, which is exactly what `persistAndRenderColumns`
+ *  does. The drag-drop path (`addColumn` / `addRow` /
+ *  `removeRow`) still goes through `saveLayout` because those
+ *  mutations never produce user-driven empty cols (the
+ *  in-function cleanup loops handle stale empties) — only
+ *  the swap / undo paths need the bypass. */
 async function onUndoClick(): Promise<void> {
   const snapshot = popSnapshot();
   if (!snapshot) {
@@ -116,12 +137,14 @@ async function onUndoClick(): Promise<void> {
   });
 
   // Replace columns in-place (the layout-ops module-level ref) and
-  // persist. saveLayout calls verifyColumns (rebuilds coords, drops
-  // empty columns), then setLocal, then renderColumns to repaint.
+  // persist. v1.2.10: use the bypass-verifyColumns helper instead of
+  // saveLayout — the snapshot may contain a user-driven non-col-0
+  // empty column (e.g. a prior swap's vacated col), and the full
+  // verifyColumns would sweep it.
   setColumns(snapshot.columns);
   setMovedOutCache(snapshot.movedOut);
   await setLocal(MOVED_OUT_KEY, snapshot.movedOut);
-  await saveLayout();
+  await persistAndRenderColumns();
 }
 
 /** Toggle visibility + update badge text based on current stack length.

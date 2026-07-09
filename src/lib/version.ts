@@ -512,4 +512,26 @@
 //          tracing the 3- and 4-col default layouts through
 //          both paths), so this is a no-op for the working case
 //          and an actual fix for the empty col case.
-export const VERSION = '1.2.9';
+// v1.2.10: hotfix — undo no longer eats a swap's vacated column.
+//          v1.2.7/v1.2.9 made the swap itself preserve the
+//          user-driven non-col-0 empty column (bypass
+//          `verifyColumns` in `swapColumns`), but the undo path
+//          in `undo-button.ts` still went through `saveLayout()`
+//          → `verifyColumns()` after `setColumns(snapshot.columns)`.
+//          A snapshot taken right before a swap is
+//          `[[], ['1'], ['2', ...]]` (the v1.2.2 default) and
+//          restores fine through verifyColumns — but a snapshot
+//          that IS the swap result (e.g. popped after a second
+//          swap undoes the first), or any user-initiated state
+//          with a non-col-0 empty col, gets the empty col swept
+//          on restore. Net: user does "Move left" on bookmark
+//          bar → 3 cols (one empty) → undo → 2 cols (empty
+//          vanished), the undo is a half-revert. Fix: factor the
+//          `swapColumns` persist+rebuild pattern into a new
+//          `persistAndRenderColumns()` helper and route undo
+//          through it. The drag-drop path (`addColumn` / `addRow`
+//          / `removeRow`) is unaffected — those still go through
+//          `saveLayout` because they never produce user-driven
+//          empties (their in-function cleanup loops handle stale
+//          ones). Only the swap / undo paths need the bypass.
+export const VERSION = '1.2.10';

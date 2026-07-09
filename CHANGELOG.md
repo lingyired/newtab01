@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.10] - 2026-07-09
+
+### Fixed
+- **Undo no longer eats a swap's vacated column.** v1.2.7/v1.2.9 made the swap itself preserve the user-driven non-col-0 empty column (bypass `verifyColumns` in `swapColumns`), but the undo path in `undo-button.ts` still went through `saveLayout()` → `verifyColumns()` after `setColumns(snapshot.columns)`. A snapshot taken right before a swap is `[[], ['1'], ['2', ...]]` (the v1.2.2 default) and restores fine through verifyColumns — but a snapshot that IS the swap result (e.g. popped after a second swap that "un-swapped" the first), or any user-initiated state with a non-col-0 empty col, gets the empty col swept on restore. Net: user does "Move left" on bookmark bar → 3 cols (one empty) → undo → 2 cols (empty vanished), the undo is a half-revert (the swap itself gets reverted but the col 0 placeholder is gone). Fix: factor the `swapColumns` persist+rebuild pattern into a new `persistAndRenderColumns()` helper and route undo through it. The drag-drop path (`addColumn` / `addRow` / `removeRow`) is unaffected — those still go through `saveLayout` because they never produce user-driven empties (their in-function cleanup loops handle stale ones). Only the swap / undo paths need the bypass.
+
 ## [1.2.9] - 2026-07-09
 
 ### Fixed

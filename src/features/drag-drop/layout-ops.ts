@@ -439,7 +439,16 @@ export async function removeRow(xPos: number, yPos: number): Promise<void> {
  *  of `verifyColumns` we need) and persist + re-render
  *  directly. The `missing root` check inside `verifyColumns`
  *  is intentionally skipped — a swap never changes the set of
- *  root ids present, so there's nothing to repair. */
+ *  root ids present, so there's nothing to repair.
+ *
+ *  v1.2.10: the in-place persist+rebuild pattern is now
+ *  factored out into `persistAndRenderColumns()` so the undo
+ *  path (which restores a snapshot that may itself be a
+ *  swap result, i.e. may contain a non-col-0 empty column)
+ *  can use the same bypass-verifyColumns flow. The undo path
+ *  previously went through `saveLayout()` → `verifyColumns()`
+ *  → empty-column sweep, which deleted a non-col-0 empty col
+ *  that the swap had just produced — undo erased the swap. */
 export async function swapColumns(a: number, b: number): Promise<void> {
   if (a < 0 || b < 0 || a >= columns.length || b >= columns.length) {
     debug.warn('layout', 'swapColumns: out of bounds', { a, b, len: columns.length });
@@ -450,8 +459,35 @@ export async function swapColumns(a: number, b: number): Promise<void> {
   columns[a] = columns[b]!;
   columns[b] = temp;
   debug.log('layout', 'swapColumns', { a, b, after: columns.map(c => [...c]) });
-  // Rebuild the coords map (verifyColumns' other responsibility
-  // is the missing-root check, which a swap can't trigger).
+  await persistAndRenderColumns();
+}
+
+/** Persist the current `columns` + re-render — bypassing
+ *  `verifyColumns`. Used by code paths that produce
+ *  user-driven non-col-0 empty columns (v1.2.6 `swapColumns`,
+ *  v1.2.10 undo) and need those empties to survive both the
+ *  in-memory write AND the next `loadLayout()` (which uses
+ *  `verifyLayoutPreservingEmpties` for the same reason).
+ *
+ *  Performs three things — exactly the three pieces of
+ *  `saveLayout` / `verifyColumns` that DON'T touch empty-column
+ *  cleanup:
+ *    1. Rebuild the `coords` map from the current `columns`.
+ *       This is the only piece of `verifyColumns` the swap /
+ *       undo paths need: a swap can't add/remove root ids, and
+ *       an undo restores a snapshot that was itself valid at
+ *       capture time (the empty-col cleanup was just the bug).
+ *    2. `setLocal(LAYOUT_KEY, columns)` — persist the new
+ *       layout. `loadLayout` (next page load) will then read
+ *       it and run `verifyLayoutPreservingEmpties`, which
+ *       leaves the empty col alone.
+ *    3. `renderColumns()` — repaint the board.
+ *
+ *  Intentionally does NOT call the missing-root check: a
+ *  swap / undo can't change which root ids are present (they
+ *  only rearrange), so the sweep would be a no-op anyway. The
+ *  cost of skipping it is one fewer loop over `rootIds`. */
+export async function persistAndRenderColumns(): Promise<void> {
   coords = {};
   for (let x = 0; x < columns.length; x++) {
     const col = columns[x]!;
