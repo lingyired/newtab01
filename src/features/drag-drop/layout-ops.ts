@@ -193,8 +193,20 @@ export async function addColumn(ids: string[], index?: number): Promise<void> {
         y--;
       }
     }
-    // Remove empty columns
-    if (columns[x]!.length === 0 && columns.length > 1) {
+    // Remove empty columns. v1.2.4: keep col 0 — the intentional
+    // fresh-install "drop a folder here" placeholder. The v1.2.2
+    // `verifyColumns` fix and the v1.2.3 `removeRow` fix both
+    // carried this exemption, but the same cleanup loop in
+    // `addColumn` (and `addRow` until v1.2.4) was missed. Without
+    // this guard, a column-structure drop that lands between two
+    // non-col-0 columns swept col 0 away — the user saw 3 cols
+    // with the empty placeholder gone AND the new col pushed to
+    // the end of the row. Repro: drag a bookmark-bar folder
+    // between col 1 (bookmark bar) and col 2 (specials) under the
+    // v1.2.2 default 3-col layout; observed `[['1'], ['2', ...],
+    // [folderX]]` instead of the expected `[[], ['1'], [folderX],
+    // ['2', ...]]`.
+    if (columns[x]!.length === 0 && columns.length > 1 && x !== 0) {
       columns.splice(x, 1);
       x--;
     }

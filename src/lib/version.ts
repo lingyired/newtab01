@@ -455,16 +455,17 @@
 //          No Settings schema change, no new permission, no new
 //          chrome.* API call. Bundle delta: ~0.5KB new i18n +
 //          ~20 lines CSS/JS (negligible).
-// v1.2.4: hotfix — drag a folder into the empty col 0 no longer
-//          crashes with "Cannot read properties of undefined
-//          (reading 'splice')". v1.2.3's `x !== 0` exemption
-//          reached `addColumn` and `removeRow` but missed the
-//          same cleanup loop in `addRow`. The unprotected
-//          `if (columns[x].length === 0 && columns.length > 1)`
-//          branch deleted col 0 on drop, decremented xPos to
-//          -1, and `columns[-1].splice(...)` crashed. Now
-//          guarded by `x !== 0` to match the other two
-//          mutations. Reproduced by minified
-//          `dist/assets/layout-ops-*.js` carrying the
-//          un-guarded `length===0` condition.
-export const VERSION = '1.2.4';
+// v1.2.5: hotfix — column-structure drop between two non-col-0
+//          columns no longer deletes col 0 nor pushes the new
+//          col to the end. v1.2.3 carried the `x !== 0`
+//          exemption to `removeRow` (the only site it actually
+//          patched despite the commit message claiming "all
+//          three mutations"), v1.2.4 carried it to `addRow`,
+//          and v1.2.5 finishes the job for `addColumn`. The
+//          last leftover was the cleanup loop right before
+//          `splice(Math.min(insertIndex, columns.length), 0,
+//          column)` — without the exemption, dragging a folder
+//          between col 1 and col 2 in the v1.2.2 default 3-col
+//          layout yielded `[['1'], ['2', ...], [folderX]]`
+//          instead of `[[], ['1'], [folderX], ['2', ...]]`.
+export const VERSION = '1.2.5';

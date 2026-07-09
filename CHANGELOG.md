@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.5] - 2026-07-08
+
+### Fixed
+- **Column-structure drop between two non-col-0 columns no longer deletes col 0 nor pushes the new column to the end.** v1.2.3 + v1.2.4 carried the `x !== 0` exemption to `removeRow` and `addRow` but missed `addColumn` — the v1.2.3 commit message lied about "all three mutations". Repro on the v1.2.2 fresh-install 3-col layout (`[[], ['1', folderA], ['2', specials]]`): drag `folderA` from col 1 to the gap between col 1 and col 2. The `addColumn(['folderA'], 2)` cleanup loop ran without `x !== 0`, deleted col 0, and `splice(2, 0, [folderA])` on the now-2-col array appended — observed `[['1'], ['2', ...], [folderA]]` instead of the expected `[[], ['1'], [folderA], ['2', ...]]`. The `x !== 0` guard now also covers `addColumn`'s cleanup, matching the other three sites (`verifyColumns` / `addRow` / `removeRow`).
+
 ## [1.2.4] - 2026-07-08
 
 ### Fixed
