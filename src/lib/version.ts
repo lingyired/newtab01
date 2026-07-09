@@ -455,27 +455,22 @@
 //          No Settings schema change, no new permission, no new
 //          chrome.* API call. Bundle delta: ~0.5KB new i18n +
 //          ~20 lines CSS/JS (negligible).
-// v1.2.6: hotfix — empty-column compatibility for the column
-//          context menu.
-//          1. `addColumn` no-ops on empty `ids` (the only legit
-//             caller is context-menu "Move column left/right"
-//             on the v1.2.2 col 0 placeholder, which would
-//             otherwise insert a phantom empty column).
-//          2. `withUndo` (in context-menu.ts) checks
-//             `isSnapshotEqual` before pushing a snapshot, so
-//             the no-op #1 also doesn't tick up the undo badge.
-//          3. `removeColumn(0)` no-ops with a debug warning so
-//             the col 0 onboarding placeholder can't be
-//             silently destroyed via the context menu (which
-//             would break the v1.2.2 default layout promise
-//             and the `columns[1]?.includes('1')` gate in
-//             `loadLayout`).
-//          4. "Move column left" on a single-id col 1
-//             collapses 3 → 2 cols under the v1.2.2 default —
-//             `addColumn(ids, index - 1)` removes the ids
-//             from the source first, leaving the source empty,
-//             and then `verifyColumns` deletes that empty
-//             source. New `swapColumns(a, b)` helper in
-//             layout-ops.ts does an in-place swap instead,
-//             preserving all three columns.
-export const VERSION = '1.2.6';
+// v1.2.7: hotfix — `swapColumns` now actually keeps all three
+//          columns on a "Move column left". The v1.2.6 helper
+//          routed the move through `swapColumns(a, b)` but the
+//          helper still called `saveLayout()` afterwards, which
+//          fires `verifyColumns()`. `verifyColumns` has its own
+//          empty-column cleanup that, just like the original
+//          `addColumn` cleanup, deletes any non-col-0 empty
+//          column. So the swap produced `[['1'], [], ['2',
+//          ...]]` (3 cols ✓), then `verifyColumns` saw col 1 =
+//          `[]` and removed it, ending at `[['1'], ['2', ...]]`
+//          (2 cols ✗) — the original "空列消失" bug, just
+//          relocated. v1.2.7 bypasses `saveLayout` /
+//          `verifyColumns` in `swapColumns`: in-place swap +
+//          manual `coords` rebuild (the only verifyColumns
+//          step a swap needs) + `setLocal` + `renderColumns`
+//          directly. The missing-root check inside
+//          verifyColumns is intentionally skipped because a
+//          swap never changes the set of root ids present.
+export const VERSION = '1.2.7';

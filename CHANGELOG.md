@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.7] - 2026-07-08
+
+### Fixed
+- **"Move column left" on a single-id col 1 ACTUALLY keeps all three columns.** The v1.2.6 fix routed through `swapColumns(a, b)`, but the helper still called `saveLayout()` which fires `verifyColumns()`. `verifyColumns` has its own empty-column cleanup that — exactly like the original `addColumn` cleanup — deletes any non-col-0 empty column. The swap produced `[['1'], [], ['2', ...]]` (3 cols ✓), then `verifyColumns` saw col 1 = `[]` and silently removed it, ending up at `[['1'], ['2', ...]]` (2 cols ✗) — the original "空列消失" bug, just relocated. v1.2.7 bypasses `saveLayout` / `verifyColumns` in `swapColumns`: it does an in-place swap, manually rebuilds the `coords` map (the only `verifyColumns` step a swap needs), and persists + re-renders directly. The vacated col is now the v1.2.2 onboarding placeholder equivalent — sits where col 0 used to be and prompts the user to drop a folder there. The `missing root` check inside `verifyColumns` is intentionally skipped because a swap never changes the set of root ids present.
+
 ## [1.2.6] - 2026-07-08
 
 ### Fixed

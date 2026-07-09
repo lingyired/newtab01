@@ -335,19 +335,43 @@ export async function removeRow(xPos: number, yPos: number): Promise<void> {
  *  three columns, with col 0 still empty and the moved column
  *  taking the previous slot. Drag-drop column-structure drops
  *  still use `addColumn` — those are "create a new column at
- *  X", not "swap with X", and are unaffected. */
+ *  X", not "swap with X", and are unaffected.
+ *
+ *  v1.2.6.1: bypass `saveLayout` / `verifyColumns`. The first
+ *  iteration just did `await saveLayout()` after the swap, but
+ *  `verifyColumns`'s empty-column cleanup unconditionally
+ *  removes any non-col-0 empty column — including the one we
+ *  just vacated — collapsing 3 → 2 cols and bringing back the
+ *  original "空列消失" bug. The vacated col is now the
+ *  v1.2.2 onboarding placeholder equivalent (it sits where
+ *  col 0 used to be and prompts the user to drop a folder
+ *  there). Rebuild the `coords` map in-place (the only piece
+ *  of `verifyColumns` we need) and persist + re-render
+ *  directly. The `missing root` check inside `verifyColumns`
+ *  is intentionally skipped — a swap never changes the set of
+ *  root ids present, so there's nothing to repair. */
 export async function swapColumns(a: number, b: number): Promise<void> {
   if (a < 0 || b < 0 || a >= columns.length || b >= columns.length) {
     debug.warn('layout', 'swapColumns: out of bounds', { a, b, len: columns.length });
     return;
   }
   if (a === b) return;
-  const colsSnapshot = columns.map((c) => [...c]);
   const temp = columns[a]!;
   columns[a] = columns[b]!;
   columns[b] = temp;
-  debug.log('layout', 'swapColumns', { a, b, before: colsSnapshot, after: columns.map(c => [...c]) });
-  await saveLayout();
+  debug.log('layout', 'swapColumns', { a, b, after: columns.map(c => [...c]) });
+  // Rebuild the coords map (verifyColumns' other responsibility
+  // is the missing-root check, which a swap can't trigger).
+  coords = {};
+  for (let x = 0; x < columns.length; x++) {
+    const col = columns[x]!;
+    for (let y = 0; y < col.length; y++) {
+      const id = col[y]!;
+      coords[id] = { x, y };
+    }
+  }
+  await setLocal(LAYOUT_KEY, columns);
+  await renderColumns();
 }
 
 async function restoreMovedOutForRemovedId(id: string | undefined): Promise<void> {
