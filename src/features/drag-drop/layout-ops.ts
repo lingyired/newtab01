@@ -180,8 +180,23 @@ export function verifyColumns(): void {
   }
 }
 
-/** Add a new column at the given index with the given IDs */
+/** Add a new column at the given index with the given IDs.
+ *  v1.2.6: empty `ids` is a no-op. The only legitimate empty-id
+ *  caller is the context-menu "Move column left/right" on an
+ *  empty column (v1.2.2 onboarding placeholder) — moving an
+ *  empty column would just insert a new empty column somewhere,
+ *  which is invisible to the user but still produced a
+ *  `withUndo` history step. Returning here means no
+ *  `setLocal` / `saveLayout` / `recordMovedOutForIds` side
+ *  effects, so the empty-column move becomes a true no-op.
+ *  The matching `withUndo` change in context-menu.ts adds an
+ *  `isLayoutUnchanged` check so a no-op mutation also skips
+ *  the undo snapshot. */
 export async function addColumn(ids: string[], index?: number): Promise<void> {
+  if (ids.length === 0) {
+    debug.log('layout', 'addColumn: skipped, empty ids (no-op)');
+    return;
+  }
   const column = ids.slice();
   debug.log('layout', 'addColumn:start', { ids, index, before: columns.map(c => [...c]) });
 
@@ -221,8 +236,23 @@ export async function addColumn(ids: string[], index?: number): Promise<void> {
   await saveLayout();
 }
 
-/** Remove a column at the given index */
+/** Remove a column at the given index.
+ *  v1.2.6: refuse `index === 0` so the v1.2.2 fresh-install
+ *  col 0 placeholder cannot be removed via the column context
+ *  menu. The empty col 0 is the intentional onboarding hint
+ *  "drop a folder here" — removing it would silently break
+ *  the v1.2.2 default layout promise AND shift all other
+ *  columns down by one (which then breaks the bookmark bar
+ *  auto-expand gate `columns[1]?.includes('1')` in
+ *  `loadLayout`). Previously `removeColumn(0)` would just
+ *  `splice(0, 1)` and the empty placeholder vanished, leaving
+ *  the user without an obvious way to bring it back short of
+ *  a "reset layout" action. */
 export async function removeColumn(index: number): Promise<void> {
+  if (index === 0) {
+    debug.warn('layout', 'removeColumn: refused, col 0 is the intentional placeholder', { index });
+    return;
+  }
   if (columns.length <= 1) {
     debug.warn('layout', 'removeColumn: refused, only 1 column left', { index });
     return;
@@ -292,6 +322,31 @@ export async function removeRow(xPos: number, yPos: number): Promise<void> {
   }
 
   await restoreMovedOutForRemovedId(removedId);
+  await saveLayout();
+}
+
+/** Swap two columns in place. v1.2.6: helper for the context-menu
+ *  "Move column left" item. `addColumn` can't do a true swap
+ *  because it removes ids from the source first, leaving the
+ *  source empty, and then `verifyColumns` deletes that empty
+ *  source — net effect on the v1.2.2 default 3-col layout: a
+ *  single-id col 1 moving left collapses 3 → 2 cols and the
+ *  empty col 0 placeholder vanishes. A direct swap keeps all
+ *  three columns, with col 0 still empty and the moved column
+ *  taking the previous slot. Drag-drop column-structure drops
+ *  still use `addColumn` — those are "create a new column at
+ *  X", not "swap with X", and are unaffected. */
+export async function swapColumns(a: number, b: number): Promise<void> {
+  if (a < 0 || b < 0 || a >= columns.length || b >= columns.length) {
+    debug.warn('layout', 'swapColumns: out of bounds', { a, b, len: columns.length });
+    return;
+  }
+  if (a === b) return;
+  const colsSnapshot = columns.map((c) => [...c]);
+  const temp = columns[a]!;
+  columns[a] = columns[b]!;
+  columns[b] = temp;
+  debug.log('layout', 'swapColumns', { a, b, before: colsSnapshot, after: columns.map(c => [...c]) });
   await saveLayout();
 }
 

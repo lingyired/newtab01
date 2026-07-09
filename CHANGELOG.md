@@ -5,6 +5,13 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.6] - 2026-07-08
+
+### Fixed
+- **Empty-column context menu items no longer create phantom columns and no longer record phantom history steps.** `addColumn` now returns early when `ids.length === 0`, so right-clicking the v1.2.2 col 0 placeholder and choosing "Move column left/right" is a true no-op (no extra empty column, no `setLocal` / `saveLayout` / `recordMovedOutForIds` side effects). `withUndo` (in `context-menu.ts`) now compares the pre-mutation snapshot against the post-mutation layout via `isSnapshotEqual` and skips the snapshot push on equality, so a no-op action also doesn't tick up the undo badge.
+- **"Remove column" on the col 0 placeholder is a no-op.** `removeColumn(0)` now returns early with a debug warning. Previously the empty col 0 vanished silently, breaking the v1.2.2 default layout promise and shifting every other column down by one (which then broke the bookmark bar auto-expand gate `columns[1]?.includes('1')` in `loadLayout`).
+- **"Move column left" on a single-id col 1 keeps all three columns.** Previously used `addColumn(ids, index - 1)`, which removes the ids from the source first, leaving the source empty, and then `verifyColumns` deletes that empty source — net effect: a single-id col 1 moving left into the empty col 0 collapsed 3 → 2 cols and the col 0 placeholder vanished (observed `[['1'], ['2', ...]]` instead of the expected swap `[[], ['1'], ['2', ...]]`). Now uses a new `swapColumns(a, b)` helper in `layout-ops.ts` that does an in-place column swap. Drag-drop column-structure drops still use `addColumn` — those are "create a new column at X", not "swap with X", and are unaffected.
+
 ## [1.2.5] - 2026-07-08
 
 ### Fixed

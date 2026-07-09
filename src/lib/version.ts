@@ -455,17 +455,27 @@
 //          No Settings schema change, no new permission, no new
 //          chrome.* API call. Bundle delta: ~0.5KB new i18n +
 //          ~20 lines CSS/JS (negligible).
-// v1.2.5: hotfix — column-structure drop between two non-col-0
-//          columns no longer deletes col 0 nor pushes the new
-//          col to the end. v1.2.3 carried the `x !== 0`
-//          exemption to `removeRow` (the only site it actually
-//          patched despite the commit message claiming "all
-//          three mutations"), v1.2.4 carried it to `addRow`,
-//          and v1.2.5 finishes the job for `addColumn`. The
-//          last leftover was the cleanup loop right before
-//          `splice(Math.min(insertIndex, columns.length), 0,
-//          column)` — without the exemption, dragging a folder
-//          between col 1 and col 2 in the v1.2.2 default 3-col
-//          layout yielded `[['1'], ['2', ...], [folderX]]`
-//          instead of `[[], ['1'], [folderX], ['2', ...]]`.
-export const VERSION = '1.2.5';
+// v1.2.6: hotfix — empty-column compatibility for the column
+//          context menu.
+//          1. `addColumn` no-ops on empty `ids` (the only legit
+//             caller is context-menu "Move column left/right"
+//             on the v1.2.2 col 0 placeholder, which would
+//             otherwise insert a phantom empty column).
+//          2. `withUndo` (in context-menu.ts) checks
+//             `isSnapshotEqual` before pushing a snapshot, so
+//             the no-op #1 also doesn't tick up the undo badge.
+//          3. `removeColumn(0)` no-ops with a debug warning so
+//             the col 0 onboarding placeholder can't be
+//             silently destroyed via the context menu (which
+//             would break the v1.2.2 default layout promise
+//             and the `columns[1]?.includes('1')` gate in
+//             `loadLayout`).
+//          4. "Move column left" on a single-id col 1
+//             collapses 3 → 2 cols under the v1.2.2 default —
+//             `addColumn(ids, index - 1)` removes the ids
+//             from the source first, leaving the source empty,
+//             and then `verifyColumns` deletes that empty
+//             source. New `swapColumns(a, b)` helper in
+//             layout-ops.ts does an in-place swap instead,
+//             preserving all three columns.
+export const VERSION = '1.2.6';

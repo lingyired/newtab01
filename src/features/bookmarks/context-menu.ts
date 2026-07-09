@@ -6,14 +6,15 @@ import type { MenuItem } from './types';
 // commented-out slot so re-enabling those items only requires removing
 // the /* */ blocks — no extra import edits needed.
 // import { getCoords, addRow, addColumn, removeRow, removeColumn, getColumns } from '../drag-drop/layout-ops';
-import { getCoords, addColumn, removeRow, removeColumn, getColumns } from '../drag-drop/layout-ops';
-import { captureSnapshot, pushSnapshot } from '../drag-drop/history';
+import { getCoords, addColumn, removeRow, removeColumn, getColumns, swapColumns } from '../drag-drop/layout-ops';
+import { captureSnapshot, pushSnapshot, isSnapshotEqual } from '../drag-drop/history';
 import { openAllLinks } from './folder-actions-handler';
 import { createTab } from '../../lib/chrome/bookmarks';
 import { getSetting, updateSetting } from '../../lib/storage/settings';
 import { t } from '../../lib/i18n';
 import { SHOW_KEY_MAP } from './special-folders';
 import { renderColumns } from './board';
+import { getMovedOut } from './moved-out';
 
 /** Currently active menu element, if any */
 let activeMenu: HTMLUListElement | null = null;
@@ -33,10 +34,27 @@ function openInternalPage(path: string): void {
  * Captures a pre-mutation snapshot, awaits the mutation, then pushes the
  * snapshot onto the history stack so a single undo click restores the prior
  * column layout and moved-out visibility.
+ *
+ * v1.2.6: skip the push when the layout is structurally identical
+ * to the snapshot. The v1.2.2 col 0 placeholder opened up a
+ * class of "noop" actions: "Move column left/right" on an empty
+ * column now short-circuits inside `addColumn` (returns without
+ * calling `setLocal` / `saveLayout` / `recordMovedOutForIds`),
+ * but `withUndo` was still pushing a snapshot for it. Pushing
+ * an empty-mutation snapshot makes the undo badge tick up while
+ * pressing undo does nothing — misleading. Compare against the
+ * snapshot and bail on equality. The `getMovedOut` round-trip
+ * is the same as the drag-drop handler's
+ * `isLayoutUnchanged` (history.ts:296) — it lives here instead
+ * of in history.ts to keep the local coupling tight, and
+ * because this is the only other caller of the pattern.
  */
 async function withUndo(action: () => Promise<void> | void): Promise<void> {
   const snapshot = await captureSnapshot();
   await action();
+  if (isSnapshotEqual(snapshot, getColumns(), await getMovedOut())) {
+    return;
+  }
   pushSnapshot(snapshot);
 }
 
@@ -310,7 +328,23 @@ export function getColumnMenuItems(index: number): (MenuItem | null)[] {
       items.push({
         label: t('contextMenu.moveColumnLeft'),
         action: () => withUndo(() => {
-          void addColumn(ids, index - 1);
+          // v1.2.6: swap with the previous column instead of
+          //  `addColumn(ids, index - 1)`. addColumn can't do a
+          //  true swap — it removes ids from the source column
+          //  first, which makes the source column empty, then
+          //  `verifyColumns` deletes that empty source. Net
+          //  effect on the v1.2.2 default 3-col layout
+          //  (`[[], ['1'], ['2', ...]]`): moving col 1 left
+          //  collapses 3 → 2 cols and the empty col 0
+          //  onboarding placeholder vanishes (observed
+          //  `[['1'], ['2', ...]]` instead of the expected
+          //  `[[], ['1'], ['2', ...]]` swap). A direct swap
+          //  keeps all 3 cols, with col 0 still empty and
+          //  the moved column taking the previous slot. Drag-
+          //  drop column-structure drops still use
+          //  `addColumn` — those are "create a new column at
+          //  X" not "swap with X" and are unaffected.
+          void swapColumns(index - 1, index);
         }),
       });
     }
