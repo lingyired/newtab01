@@ -534,6 +534,24 @@
 //          `saveLayout` because they never produce user-driven
 //          empties (their in-function cleanup loops handle stale
 //          ones). Only the swap / undo paths need the bypass.
+// v1.3.2: search-result click parity with ordinary bookmark links.
+//          Mouse left-click now honours the user's "打开链接方式"
+//          setting (newtab: 0=current tab / 1=foreground / 2=background)
+//          instead of always opening in the foreground. Middle-click
+//          and Ctrl/Cmd+left-click always open in a new background
+//          tab, matching the native `<a target="_blank">` modifier-
+//          click affordance that ordinary bookmark links already
+//          provide (see link.ts and folder-actions-handler.ts →
+//          resolveNewtabMode). Implementation: a local copy of
+//          resolveNewtabMode in search-results.ts (mirrors the
+//          folder-actions-handler one); openItem now takes a mode
+//          arg and routes mode 0 through updateTab, mode 1/2 through
+//          createTab with openerTabId; a new auxclick handler on
+//          each result item covers middle-click (non-<a> elements
+//          deliver middle-click as auxclick, not click); a mousedown
+//          guard suppresses the browser's middle-click auto-scroll
+//          affordance. Keyboard Enter is left at foreground (mode 1)
+//          — the user only asked for click parity. Issue #17.
 // v1.3.1: fix(search) — clicking a search result with the mouse now
 //          opens the URL, instead of silently closing the panel.
 //          Root cause: the click handler on each result item only
@@ -579,4 +597,4 @@
 //          effectively unusable in v1.2.5) and represents a
 //          stable contract for empty-column handling that
 //          downstream changes can build on.
-export const VERSION = '1.3.1';
+export const VERSION = '1.3.2';
