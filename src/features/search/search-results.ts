@@ -2,8 +2,33 @@
 // positioned below the search input. The container is created externally.
 
 import type { SearchItem } from './search-engine';
-import { createTab } from '../../lib/chrome/bookmarks';
+import { createTab, getCurrentTab, updateTab } from '../../lib/chrome/bookmarks';
+import { getSetting } from '../../lib/storage/settings';
 import { t } from '../../lib/i18n';
+
+/** `Settings.newtab` value type. 0 = current tab, 1 = new foreground, 2 = new background. */
+type NewtabMode = 0 | 1 | 2;
+
+/** Resolve the newtab mode for a search result click, honouring modifier
+ *  clicks (middle-click, Ctrl/Cmd-click) which always open in the
+ *  background. Mirrors `resolveNewtabMode` in folder-actions-handler.ts
+ *  so that search-result clicks behave the same as ordinary bookmark
+ *  link clicks under the user's "打开链接方式" setting. */
+function resolveNewtabMode(event: MouseEvent): NewtabMode {
+  if (event.button === 1) {
+    // Middle-click always opens in the background, regardless of the
+    // user's link newtab setting. Matches ordinary bookmark links.
+    return 2;
+  }
+  if (event.ctrlKey || event.metaKey) {
+    // Ctrl/Cmd + left click → background new tab. Matches the native
+    // modifier-click affordance of `<a target="_blank">` links.
+    return 2;
+  }
+  const raw = Number(getSetting('newtab') ?? 2);
+  if (raw === 0 || raw === 1) return raw;
+  return 2;
+}
 
 let container: HTMLElement | null = null;
 let listEl: HTMLElement | null = null;
@@ -207,8 +232,30 @@ function createItemElement(item: SearchItem, index: number): HTMLElement {
     updateActiveItem();
   });
 
+  // Middle-click on a non-<a> element triggers the browser's
+  // auto-scroll affordance by default; suppress it so the auxclick
+  // handler below is the only thing that runs for button===1.
+  el.addEventListener('mousedown', (e) => {
+    if (e.button === 1) e.preventDefault();
+  });
+
   el.addEventListener('click', (e) => {
     e.stopPropagation();
+    // Resolve the newtab mode from the mouse event so search-result
+    // clicks honour the same "打开链接方式" setting + modifier-click
+    // rules (middle → background, Ctrl/Cmd → background) as ordinary
+    // bookmark links. See issue #17.
+    void openItem(item, resolveNewtabMode(e));
+    onSelectCallback?.(item);
+  });
+
+  // Middle-click is delivered as `auxclick` (not `click`) on
+  // non-<a> elements. Mirror the link.ts pattern: button===1 only.
+  el.addEventListener('auxclick', (e) => {
+    if (e.button !== 1) return;
+    e.preventDefault();
+    e.stopPropagation();
+    void openItem(item, 2);
     onSelectCallback?.(item);
   });
 
@@ -231,8 +278,23 @@ function updateActiveItem(): void {
   }
 }
 
-function openItem(item: SearchItem): void {
-  void createTab(item.url, true);
+/** Open a search result in the tab mode resolved by `resolveNewtabMode`.
+ *  - mode 0 (current tab): replace the current tab's URL.
+ *  - mode 1 (foreground): create a new active tab.
+ *  - mode 2 (background): create a new inactive tab.
+ *
+ *  Mirrors `openUrlsInNewtabMode` in folder-actions-handler.ts (single-
+ *  URL case). The opener-tab id is passed so the new tab opens next to
+ *  the current one, matching ordinary bookmark link behaviour. */
+async function openItem(item: SearchItem, mode: NewtabMode): Promise<void> {
+  const tab = await getCurrentTab();
+  if (mode === 0) {
+    if (tab?.id !== undefined) {
+      await updateTab(tab.id, item.url);
+    }
+    return;
+  }
+  await createTab(item.url, mode === 1, tab?.id);
 }
 
 /** Set the callback for when a result is clicked (or Enter is pressed). */
@@ -297,7 +359,12 @@ export function handleKeyNavigation(event: KeyboardEvent): boolean {
     case 'Enter': {
       event.preventDefault();
       if (selectedIndex >= 0 && currentItems[selectedIndex]) {
-        openItem(currentItems[selectedIndex]!);
+        // Enter on a selected result opens in the foreground, matching
+        // the pre-fix #17 behaviour. Mouse clicks honour the user's
+        // "打开链接方式" setting via resolveNewtabMode; keyboard Enter
+        // is left untouched because the user only asked for click
+        // parity with ordinary links.
+        void openItem(currentItems[selectedIndex]!, 1);
       } else {
         return false;
       }

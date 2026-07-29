@@ -5,6 +5,16 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.2] - 2026-07-29
+
+### Fixed
+- **Search-result clicks now honour the "打开链接方式" setting and modifier-click rules, matching ordinary bookmark links.** Left-click opens in the user's configured tab mode (current / foreground / background) instead of always-foreground. Middle-click and Ctrl/Cmd+left-click always open in a new background tab, mirroring the native `<a target="_blank">` modifier-click affordance. Implementation: a local `resolveNewtabMode` in `search-results.ts` (mirrors the one in `folder-actions-handler.ts`); `openItem` now takes a mode arg and routes mode 0 through `updateTab`, mode 1/2 through `createTab` with `openerTabId`; a new `auxclick` handler on each result item covers middle-click (non-`<a>` elements deliver middle-click as `auxclick`, not `click`); a `mousedown` guard suppresses the browser's middle-click auto-scroll affordance. Keyboard Enter is left at foreground — the user only asked for click parity. Follow-up to [#17](https://github.com/lingyired/newtab01/issues/17).
+
+## [1.3.1] - 2026-07-29
+
+### Fixed
+- **Clicking a search result with the mouse now opens the URL.** Previously clicking a result silently closed the search panel without navigating — the user had to press ↓ then Enter to actually jump to a bookmark. Root cause: the result item's click handler only invoked `onSelectCallback`, which `search-main.ts` wires to `closeAll` (a panel-cleanup function that never opens the URL). The Enter-key path bypassed the callback and called `openItem` directly, which is why ↓+Enter worked. Fix: call `openItem(item)` in the click handler before `onSelectCallback`, so a mouse click behaves like Enter (open the URL) followed by close (clean up the panel). Fixes [#17](https://github.com/lingyired/newtab01/issues/17).
+
 ## [1.3.0] - 2026-07-09
 
 ### Summary
