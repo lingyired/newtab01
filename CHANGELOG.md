@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.1] - 2026-07-29
+
+### Fixed
+- **Clicking a search result with the mouse now opens the URL.** Previously clicking a result silently closed the search panel without navigating — the user had to press ↓ then Enter to actually jump to a bookmark. Root cause: the result item's click handler only invoked `onSelectCallback`, which `search-main.ts` wires to `closeAll` (a panel-cleanup function that never opens the URL). The Enter-key path bypassed the callback and called `openItem` directly, which is why ↓+Enter worked. Fix: call `openItem(item)` in the click handler before `onSelectCallback`, so a mouse click behaves like Enter (open the URL) followed by close (clean up the panel). Fixes [#17](https://github.com/lingyired/newtab01/issues/17).
+
 ## [1.3.0] - 2026-07-09
 
 ### Summary

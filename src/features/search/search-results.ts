@@ -209,6 +209,12 @@ function createItemElement(item: SearchItem, index: number): HTMLElement {
 
   el.addEventListener('click', (e) => {
     e.stopPropagation();
+    // Open the URL directly, mirroring the Enter-key path in
+    // handleKeyNavigation (which calls openItem itself). The
+    // onSelectCallback set by search-main.ts only closes the panel
+    // (closeAll), so without this call the click would silently hide
+    // the results without navigating. See issue #17.
+    openItem(item);
     onSelectCallback?.(item);
   });
 

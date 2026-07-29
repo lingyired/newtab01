@@ -534,6 +534,15 @@
 //          `saveLayout` because they never produce user-driven
 //          empties (their in-function cleanup loops handle stale
 //          ones). Only the swap / undo paths need the bypass.
+// v1.3.1: fix(search) — clicking a search result with the mouse now
+//          opens the URL, instead of silently closing the panel.
+//          Root cause: the click handler on each result item only
+//          invoked onSelectCallback (which search-main.ts wires to
+//          closeAll — a panel-cleanup function that never opens the
+//          URL), while the Enter-key path bypassed the callback and
+//          called openItem directly. Fix: call openItem(item) in the
+//          click handler before invoking onSelectCallback, so click
+//          behaves like Enter (open) + close. Issue #17.
 // v1.3.0: minor release consolidating the v1.2.6 → v1.2.10
 //          empty-column compatibility work. The v1.2.2 default
 //          3-col layout (col 0 = empty placeholder, col 1 =
@@ -570,4 +579,4 @@
 //          effectively unusable in v1.2.5) and represents a
 //          stable contract for empty-column handling that
 //          downstream changes can build on.
-export const VERSION = '1.3.0';
+export const VERSION = '1.3.1';
