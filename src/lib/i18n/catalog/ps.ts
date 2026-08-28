@@ -253,5 +253,9 @@ export const ps: LocaleBundle = {
     'about.repoLink': 'github.com/lingyired/newtab01',
     'about.moreExtensionsTitle': 'د دې لیکوال نور',
     'about.extension.noLazyload': 'No LazyLoad — د عکس سست پورته کول بند کړئ',
+  'about.homepageIntro': 'کورپاڼه: {link}',
+  'about.homepageLink': 'lingai.net/newtab01',
+  'about.extension.fund01': 'Fund01',
+  'about.extension.fund01Desc': 'Desktop fund NAV estimation tool with real-time intraday estimates and grouping.',
   } as const satisfies LocaleMessages,
 };

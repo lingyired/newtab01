@@ -5,6 +5,11 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.3] - 2026-08-28
+
+### Fixed
+- **Topbar light/dark toggle now re-syncs text and link colors.** The 3-state appearance toggle previously only applied the theme palette after a darkMode change, leaving stored fontColor/link-color variables on the previous variant. Now reuses the settings panel's `saveThemeChange` path to re-sample the 5 palette colors from the newly-rendered variant and stamp them back, matching the panel's dark-mode toggle behavior.
+
 ## [1.3.2] - 2026-07-29
 
 ### Fixed

@@ -11,8 +11,10 @@
 // small group of styled text. No thick borders, no decorative
 // gradients, no card mosaics.
 
-import { t } from '../lib/i18n';
+import { t, getLocale } from '../lib/i18n';
 import { VERSION } from '../lib/version';
+import noLazyloadIcon from '../../lingyired/nolazyload.png';
+import fund01Icon from '../../lingyired/fund01.png';
 
 /** Hard-coded external URLs. These never go through `t()` because
  *  URLs are not localizable text — translating a URL would break
@@ -21,22 +23,38 @@ import { VERSION } from '../lib/version';
 const AUTHOR_GITHUB_URL = 'https://github.com/lingyired';
 const REPO_URL = 'https://github.com/lingyired/newtab01';
 const TWEAKCN_COMMUNITY_URL = 'https://tweakcn.com/community';
+const HOMEPAGE_URL = 'https://lingai.net/newtab01/';
 
-/** Other Chrome extensions by the same author, shown in the
- *  "More from this author" section. Order matters — the list
- *  renders top-to-bottom in declaration order. To add another
- *  extension: drop a new `{ url, nameKey }` row here and add
- *  the matching MessageKey to types.ts + all 10 catalogs (tsc
- *  will catch missing entries). The URL is a hard-coded constant
- *  because URLs are not localizable; only the displayed extension
- *  name goes through `t()`. */
-const OTHER_EXTENSIONS: ReadonlyArray<{
+/** A row in the "More from this author" list. `iconUrl` is a
+ *  bundled PNG from the repo's `lingyired/` dir, keyed by the
+ *  extension's slug (fund01 / nolazyload — match on filename).
+ *  The visible name + optional one-line description go through
+ *  `t()`. `zhCNOnly` rows are hidden unless the active locale is
+ *  Simplified Chinese — fund01's site and copy are Chinese-only,
+ *  so we don't surface a dead link to users in other languages.
+ *  To add another extension: drop a `{ url, iconUrl, nameKey }`
+ *  row here and add the matching MessageKey to types.ts + all 37
+ *  catalogs (tsc will catch missing entries). */
+type OtherExtension = {
   url: string;
-  nameKey: 'about.extension.noLazyload';
-}> = [
+  iconUrl: string;
+  nameKey: 'about.extension.noLazyload' | 'about.extension.fund01';
+  descKey?: 'about.extension.fund01Desc';
+  zhCNOnly?: boolean;
+};
+
+const OTHER_EXTENSIONS: ReadonlyArray<OtherExtension> = [
   {
     url: 'https://chromewebstore.google.com/detail/no-lazyload-disable-image/gdaoomgmekonglmdeaoengblkjeopall',
+    iconUrl: noLazyloadIcon,
     nameKey: 'about.extension.noLazyload',
+  },
+  {
+    url: 'https://lingai.net/fund01/',
+    iconUrl: fund01Icon,
+    nameKey: 'about.extension.fund01',
+    descKey: 'about.extension.fund01Desc',
+    zhCNOnly: true,
   },
 ];
 
@@ -54,11 +72,14 @@ const BUILT_WITH_TOOLS = 'MiniMax M3 + TRAE Work';
  *  pages to https URLs (see link.ts:48), so we use the same
  *  `window.open(url, '_blank', 'noopener,noreferrer')` pattern that
  *  the custom-themes tweakcn link uses. */
-function makeExternalLink(href: string, label: string): HTMLAnchorElement {
+function makeExternalLink(href: string, label: string, className = 'sp-link'): HTMLAnchorElement {
   const a = document.createElement('a');
   a.href = href;
-  a.className = 'sp-link';
-  a.textContent = label;
+  a.className = className;
+  // Invariant: a plain-<label> link always sets text; the icon-row
+  // link passes '' because its children (<img> + <span>) carry the
+  // content instead.
+  if (label) a.textContent = label;
   a.addEventListener('click', (e) => {
     e.preventDefault();
     window.open(href, '_blank', 'noopener,noreferrer');
@@ -193,10 +214,36 @@ function buildRepoSection(): HTMLElement {
   return p;
 }
 
+/** Render the "Homepage: lingai.net/newtab01" paragraph with an
+ *  inline link to the project's product page. Mirrors
+ *  buildRepoSection against the `about.homepageLink` token. */
+function buildHomepageSection(): HTMLElement {
+  const p = document.createElement('p');
+  p.className = 'sp-about-paragraph';
+  const labelKey = t('about.homepageLink');
+  const template = t('about.homepageIntro', { link: labelKey });
+  const idx = template.indexOf(labelKey);
+  if (idx >= 0) {
+    p.appendChild(document.createTextNode(template.slice(0, idx)));
+    p.appendChild(makeExternalLink(HOMEPAGE_URL, labelKey));
+    p.appendChild(document.createTextNode(template.slice(idx + labelKey.length)));
+  } else {
+    p.appendChild(document.createTextNode(template));
+    p.appendChild(makeExternalLink(HOMEPAGE_URL, labelKey));
+  }
+  return p;
+}
+
 /** Render the "More from this author" section: a list of links
- *  to the author's other Chrome Web Store extensions. The list
- *  source-of-truth is the `OTHER_EXTENSIONS` constant above —
- *  adding a new entry there automatically picks up here. */
+ *  to the author's other extensions. The list source-of-truth is
+ *  the `OTHER_EXTENSIONS` constant above — adding a new entry
+ *  there automatically picks up here. Each row is a full-width
+ *  clickable link showing the extension's icon + name (and, when
+ *  present, a one-line description). Rows marked `zhCNOnly` are
+ *  skipped unless the active locale is Simplified Chinese; we read
+ *  `getLocale()` at render time so switching the language in place
+ *  (via `refreshSettingsPanelLocale`) both hides fund01 and reveals
+ *  it correctly. */
 function buildMoreExtensionsSection(): HTMLElement {
   const wrap = document.createElement('div');
   wrap.className = 'sp-about-section';
@@ -208,12 +255,38 @@ function buildMoreExtensionsSection(): HTMLElement {
 
   const list = document.createElement('ul');
   list.className = 'sp-about-extensions';
+
+  const locale = getLocale();
   for (const ext of OTHER_EXTENSIONS) {
+    if (ext.zhCNOnly && locale !== 'zh-CN') continue;
+
     const li = document.createElement('li');
-    // `t()` is invoked at render time so a language switch
-    // refreshes the displayed name in place (same as the
-    // feature list above).
-    const a = makeExternalLink(ext.url, t(ext.nameKey));
+    li.className = 'sp-about-ext-item';
+
+    const a = makeExternalLink(ext.url, '', 'sp-about-ext-link');
+
+    const img = document.createElement('img');
+    img.className = 'sp-about-ext-icon';
+    img.src = ext.iconUrl;
+    img.alt = '';
+
+    const body = document.createElement('span');
+    body.className = 'sp-about-ext-body';
+
+    const name = document.createElement('span');
+    name.className = 'sp-about-ext-name';
+    name.textContent = t(ext.nameKey);
+    body.appendChild(name);
+
+    if (ext.descKey) {
+      const desc = document.createElement('span');
+      desc.className = 'sp-about-ext-desc';
+      desc.textContent = t(ext.descKey);
+      body.appendChild(desc);
+    }
+
+    a.appendChild(img);
+    a.appendChild(body);
     li.appendChild(a);
     list.appendChild(li);
   }
@@ -246,12 +319,17 @@ export function renderAboutTab(): HTMLElement {
 
   container.appendChild(buildDivider());
 
-  // Section 4 — open source repo.
+  // Section 4 — project homepage (product page).
+  container.appendChild(buildHomepageSection());
+
+  container.appendChild(buildDivider());
+
+  // Section 5 — open source repo.
   container.appendChild(buildRepoSection());
 
   container.appendChild(buildDivider());
 
-  // Section 5 — other extensions by the same author. Sits at the
+  // Section 6 — other extensions by the same author. Sits at the
   // bottom because it's the "after you're done reading about this
   // project" footer of the page.
   container.appendChild(buildMoreExtensionsSection());

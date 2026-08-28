@@ -433,8 +433,12 @@ export type MessageKey =
   | 'about.themesLink'
   | 'about.repoIntro'
   | 'about.repoLink'
+  | 'about.homepageIntro'
+  | 'about.homepageLink'
   | 'about.moreExtensionsTitle'
-  | 'about.extension.noLazyload';
+  | 'about.extension.noLazyload'
+  | 'about.extension.fund01'
+  | 'about.extension.fund01Desc';
 
 export type LocaleMessages = Record<MessageKey, string>;
 

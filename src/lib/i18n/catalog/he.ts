@@ -253,5 +253,9 @@ export const he: LocaleBundle = {
     'about.repoLink': 'github.com/lingyired/newtab01',
     'about.moreExtensionsTitle': 'עוד מאת מחבר זה',
     'about.extension.noLazyload': 'No LazyLoad — השבת טעינה עצלה של תמונות',
+    'about.homepageIntro': 'דף הבית: {link}',
+    'about.homepageLink': 'lingai.net/newtab01',
+    'about.extension.fund01': 'Fund01',
+    'about.extension.fund01Desc': 'Desktop fund NAV estimation tool with real-time intraday estimates and grouping.',
   } as const satisfies LocaleMessages,
 };

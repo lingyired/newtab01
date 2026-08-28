@@ -249,7 +249,11 @@ const messages = {
   'about.repoIntro': '开源项目地址：{link}',
   'about.repoLink': 'github.com/lingyired/newtab01',
   'about.moreExtensionsTitle': '作者的其他扩展',
+  'about.homepageIntro': '项目主页：{link}',
+  'about.homepageLink': 'lingai.net/newtab01',
   'about.extension.noLazyload': 'No lazyload 禁用图片懒加载',
+  'about.extension.fund01': 'Fund01',
+  'about.extension.fund01Desc': '桌面端最好的基金净值估算工具，支持盘中实时估算和分组',
 } as const satisfies LocaleMessages;
 
 export const zhCN: LocaleBundle = {

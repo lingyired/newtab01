@@ -1973,38 +1973,67 @@ a.folder.folder--empty:hover {
   background: var(--primary);
 }
 
-/* "More from this author" extension list (v1.0.3). Same flat
- * list pattern as .sp-about-features but NO bullet — the link
- * text itself is the visual content. Slightly tighter gap and
- * larger font than the features list because the link text
- * IS the item, not a meta-description. RTL-aware via plain
- * flex (no inset-inline-start needed). */
+/* "More from this author" extension list (v1.0.3+). Each row is a
+ * full-width clickable link: a small icon, the extension name, and
+ * an optional one-line description underneath. Rows get a subtle
+ * hover background (--muted) so the whole entry reads as one
+ * tappable unit — friendlier than a bare text link for a list of
+ * products — while the strong typography hierarchy (bold name over
+ * muted description) keeps it within the project's quiet style.
+ * Icons are 24px, rounded, aligned inline-start and centered. */
 .sp-about-extensions {
   margin: 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 4px;
 }
-.sp-about-extensions li {
-  font-size: 1.2rem;
-  line-height: 1.5;
+.sp-about-ext-item {
+  font-size: 1rem;
+  line-height: 1.4;
 }
-.sp-about-extensions a {
-  color: var(--primary);
+.sp-about-ext-link {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 10px;
+  border-radius: calc(var(--radius, 8px) - 2px);
+  color: inherit;
   text-decoration: none;
-  font-weight: 500;
-  transition: opacity 0.1s;
+  transition: background-color 0.1s;
 }
-.sp-about-extensions a:hover {
-  text-decoration: underline;
-  opacity: 0.85;
+.sp-about-ext-link:hover {
+  background: var(--muted);
 }
-.sp-about-extensions a:focus-visible {
+.sp-about-ext-link:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
-  border-radius: 2px;
+  border-radius: calc(var(--radius, 8px) - 2px);
+}
+.sp-about-ext-icon {
+  width: 24px;
+  height: 24px;
+  flex: none;
+  border-radius: 5px;
+}
+.sp-about-ext-body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.sp-about-ext-name {
+  color: var(--foreground);
+  font-weight: 500;
+  font-size: 1.05rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sp-about-ext-desc {
+  color: var(--muted-foreground);
+  font-size: 0.95rem;
 }
 
 .sp-about-paragraph {

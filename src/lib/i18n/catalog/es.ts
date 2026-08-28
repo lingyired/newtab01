@@ -245,6 +245,10 @@ const messages = {
   'about.repoLink': 'github.com/lingyired/newtab01',
   'about.moreExtensionsTitle': 'Más de este autor',
   'about.extension.noLazyload': 'No LazyLoad — Desactivar carga diferida de imágenes',
+  'about.homepageIntro': 'Página principal: {link}',
+  'about.homepageLink': 'lingai.net/newtab01',
+  'about.extension.fund01': 'Fund01',
+  'about.extension.fund01Desc': 'Desktop fund NAV estimation tool with real-time intraday estimates and grouping.',
 } as const satisfies LocaleMessages;
 
 export const es: LocaleBundle = {

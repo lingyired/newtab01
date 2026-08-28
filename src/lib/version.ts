@@ -597,4 +597,4 @@
 //          effectively unusable in v1.2.5) and represents a
 //          stable contract for empty-column handling that
 //          downstream changes can build on.
-export const VERSION = '1.3.2';
+export const VERSION = '1.3.3';
