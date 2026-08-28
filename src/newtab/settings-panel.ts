@@ -1277,7 +1277,7 @@ function saveSetting(key: keyof Settings, scope: InputScope = 'global'): void {
  * `applyTheme` writes the resolved palette to inline style and those
  * values are guaranteed to be in sync by the time control returns.
  */
-async function saveThemeChange(theme: string): Promise<void> {
+export async function saveThemeChange(theme: string): Promise<void> {
   const before = getSetting('theme');
   applyTheme(theme);
   if (typeof document === 'undefined') return;

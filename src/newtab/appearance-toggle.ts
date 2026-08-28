@@ -6,7 +6,7 @@
 // the single source for "which data-theme value gets written to <html>".
 
 import { getSetting, updateSetting } from '../lib/storage/settings';
-import { applyTheme } from '../features/themes/switcher';
+import { saveThemeChange } from './settings-panel';
 import { t } from '../lib/i18n';
 
 type DarkMode = 'system' | 'light' | 'dark';
@@ -75,12 +75,16 @@ export function updateAppearanceToggleStrings(): void {
 
 function handleClick(value: DarkMode): void {
   if (String(getSetting('darkMode')) === value) return;
+  // Mirrors the settings panel's 暗色模式 select path (settings-panel.ts
+  // saveSetting → key === 'darkMode'): after writing darkMode, re-run
+  // saveThemeChange(theme) so the 5 palette colors (incl. fontColor /
+  // link color) are re-sampled from the newly-rendered variant and
+  // stamped back into global settings. Just calling applyTheme(theme)
+  // here flips <html data-theme> + palette but leaves the stored
+  // fontColor / link-color variables on the old mode, so the link and
+  // folder title text would NOT follow the switch.
   void updateSetting('darkMode', value).then(() => {
-    // Re-resolve data-theme: resolveTheme() in switcher.ts reads
-    // darkMode + hasDarkVariant cache, writes <html data-theme>.
-    // No-op if the resolved data-theme didn't change (e.g. user
-    // re-selected system while OS already dark).
-    void applyTheme(String(getSetting('theme')));
+    void saveThemeChange(String(getSetting('theme')));
   });
 }
 
