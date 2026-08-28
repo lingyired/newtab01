@@ -83,6 +83,12 @@ export default defineConfig({
     fixupDistManifest(),
   ],
   build: {
+    // Extension pages run in a special world; Vite's auto-injected
+    // `<link rel="modulepreload">` for dynamic-import chunks trips
+    // Chrome's "cross-world extension resource mismatch" warning.
+    // Disabling modulepreload is the standard remedy for CRX builds
+    // (chunks still load on demand via import()).
+    modulePreload: false,
     rollupOptions: {
       input: {
         newtab: 'newtab.html',
