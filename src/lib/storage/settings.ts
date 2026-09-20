@@ -127,9 +127,18 @@ export function replaceSettings(next: Settings): void {
 /**
  * Persist a partial update: patch the in-memory cache and write the full
  * settings object to chrome.storage.sync in a single set() call. Settings
- * not included in `partial` are preserved. Use this when a single
- * user-visible action (e.g. picking a theme) should atomically update
- * several related keys (theme + the 5 palette colors).
+ * not included in `partial` are preserved. The in-memory cache is patched
+ * *before* the storage write, so a caller that awaits this can immediately
+ * read the new values back through `getSetting()`.
+ *
+ * Use this when a single user-visible action should atomically update
+ * several related keys (e.g. `saveThemeChange` persisting `theme` plus the
+ * `darkMode` it was resolved against).
+ *
+ * Note: `chrome.storage.onChanged` does not fire when `set()` writes an
+ * object identical to the stored one. Callers that need a guaranteed
+ * follow-up (e.g. re-applying the palette) must do it themselves rather
+ * than rely on the storage listener.
  */
 export async function updateSettings(partial: Partial<Settings>): Promise<void> {
   Object.assign(currentSettings, partial);

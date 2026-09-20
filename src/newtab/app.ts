@@ -11,6 +11,7 @@ import { getBookmarkTree } from '../lib/chrome/bookmarks';
 import { initDebug, log, group, groupEnd } from '../lib/debug';
 import { applySettingsToDOM, installSettingsChangeListener } from '../features/settings/apply';
 import { applyTheme } from '../features/themes/switcher';
+import { clearThemeStampedPalette } from '../features/themes/palette-stamp-migration';
 import { applyCustomThemes } from '../features/themes/custom-themes';
 import { parseSplitParams, renderSplitView } from '../features/split/split-view';
 import { t } from '../lib/i18n';
@@ -57,16 +58,39 @@ export async function initApp(): Promise<void> {
     applyTheme(String(getSetting('theme')));
     log('init', 'theme applied', { theme: getSetting('theme') });
 
+    // 1a-ter. v1.3.4 (issue #19): drop palette values that older builds
+    // stamped into the global color fields on every theme switch. Until
+    // v1.3.3 those fields held a snapshot of one rendered variant, which
+    // froze link / folder-title text at that variant while the background
+    // kept following the theme. The probe needs `data-theme` to be set
+    // (hence "after applyTheme") and the DOM to be small (hence "during
+    // the loading state"). `updateSettings` fires storage.onChanged,
+    // which re-applies everything — but that round-trip is async, so we
+    // re-run applySettingsToDOM explicitly below rather than risk a
+    // flash of the stale palette.
+    if (await clearThemeStampedPalette()) {
+      log('init', 'cleared theme-stamped palette; re-applying');
+    }
+
     // 1a-bis. When darkMode is 'system', follow the OS's color-scheme
     // preference. The OS may flip at runtime (e.g. macOS auto switches
     // at sunset); re-apply the theme on each change so the rendered
     // data-theme attribute follows. Forced 'light' / 'dark' values are
     // unaffected by OS changes (the early return below).
+    //
+    // v1.3.4 (issue #19): the palette re-application is NOT optional here.
+    // `applyTheme` only rewrites the four `--newtab-*` variables it
+    // derives itself; the link / folder-title color lives in
+    // `--newtab-link-color`, which is written by `applySettingsToDOM` from
+    // the *resolved* palette (per-theme per-mode overrides included).
+    // Without it, a `darkMode: 'system'` OS flip changed the background
+    // but left link text on the previous variant — the reported bug.
     if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
       const mql = window.matchMedia('(prefers-color-scheme: dark)');
       mql.addEventListener('change', () => {
         if (getSetting('darkMode') === 'system') {
           applyTheme(String(getSetting('theme')));
+          applySettingsToDOM();
           log('init', 'theme re-applied (OS color-scheme changed)', {
             systemPrefersDark: mql.matches,
           });

@@ -18,7 +18,7 @@ import {
 import { detectInputFormat, parseCssTheme } from '../features/themes/css-import';
 import { detectTweakcnUrl, toTweakcnJsonUrl } from '../features/themes/url-import';
 import { sendMessage } from '../lib/chrome/messages';
-import { applySettingChange } from '../features/settings/apply';
+import { applySettingChange, applySettingsToDOM } from '../features/settings/apply';
 import { getBookmarks } from '../lib/chrome/bookmarks';
 import { SHOW_KEY_MAP } from '../features/bookmarks/special-folders';
 import * as debug from '../lib/debug';
@@ -442,23 +442,31 @@ const COLOR_INPUT_KEYS: ReadonlyArray<keyof Settings> = [
 
 /**
  * Mirror of `COLOR_KEYS` in features/settings/apply.ts. Maps each
- * palette Settings key to the `--newtab-*` CSS variable that actually
- * carries its color on screen. Used by `resolveColorForInput` to fall
- * back to the *rendered* color when storage is empty (the default
- * state for the 5 palette fields). Keep in sync with apply.ts —
- * both maps describe "which setting writes to which CSS var".
+ * palette Settings key to the CSS color *expression* whose rendered
+ * value the picker should show when storage is empty (the default state
+ * for the palette fields). Keep in sync with apply.ts — both maps
+ * describe "which setting owns which CSS variable".
+ *
+ * v1.3.4 (issue #19): these used to be bare variable names read with
+ * `getComputedStyle().getPropertyValue(name)`, which only works for
+ * variables that are actually declared somewhere. `--newtab-link-bg-color`
+ * is not — it exists only as an inline override — so that picker fell
+ * through to `#000000`. They are now full expressions resolved through
+ * `resolveCssColor()`, so a picker can point at a whole cascade chain and
+ * show what really renders.
  */
 const COLOR_INPUT_CSS_VAR: Partial<Record<keyof Settings, string>> = {
-  backgroundColor: '--newtab-bg',
-  fontColor: '--newtab-text',
-  linkBgColor: '--newtab-link-bg-color',
-  highlightColor: '--newtab-highlight',
-  highlightFontColor: '--newtab-highlight-text',
+  backgroundColor: 'var(--newtab-bg)',
+  fontColor: 'var(--newtab-text)',
+  // Same cascade chain as newtab.css `#main a { background-color: ... }`.
+  linkBgColor:
+    'var(--newtab-link-bg-color, var(--newtab-link-bg, var(--card, var(--newtab-bg))))',
+  highlightColor: 'var(--newtab-highlight)',
+  highlightFontColor: 'var(--newtab-highlight-text)',
   // v0.2.100: shadowColor was aliased to --newtab-highlight; now
-  // decoupled. The picker reads --newtab-shadow (which falls back
-  // to --newtab-highlight when unset, so a fresh install still
-  // shows the accent glow). Keep in sync with apply.ts COLOR_KEYS.
-  shadowColor: '--newtab-shadow',
+  // decoupled. `--newtab-shadow` chains back to --newtab-highlight when
+  // unset (globals.css), so a fresh install still shows the accent glow.
+  shadowColor: 'var(--newtab-shadow)',
 };
 
 /**
@@ -481,12 +489,16 @@ const COLOR_INPUT_CSS_VAR: Partial<Record<keyof Settings, string>> = {
 function resolveColorForInput(key: keyof Settings, stored: string): string {
   const resolved = resolveCssColor(stored);
   if (resolved) return resolved;
-  const cssVar = COLOR_INPUT_CSS_VAR[key];
-  if (cssVar && typeof document !== 'undefined') {
-    const rendered = getComputedStyle(document.documentElement)
-      .getPropertyValue(cssVar)
-      .trim();
-    if (rendered) return resolveCssColor(rendered);
+  const expression = COLOR_INPUT_CSS_VAR[key];
+  if (expression && typeof document !== 'undefined') {
+    // v1.3.4: the mapped value is a CSS color *expression* (possibly a
+    // whole `var()` cascade chain), not a bare variable name — resolve
+    // it against `<html>`'s custom properties. `resolveCssColor` expands
+    // var()/color-mix() through the cascade before rasterising, so this
+    // returns a real `#rrggbb` for chains that no single variable
+    // carries (e.g. linkBgColor).
+    const rendered = resolveCssColor(expression);
+    if (rendered) return rendered;
   }
   return '#000000';
 }
@@ -1227,22 +1239,25 @@ function saveSetting(key: keyof Settings, scope: InputScope = 'global'): void {
     return;
   }
 
-  // Theme changes are special: a single user action must atomically
-  // persist the new theme id plus the five palette colors that the theme
-  // just stamped onto the inline `<html>` styles. Persisting only `theme`
-  // would leave the five colors in storage pointing at the previous
-  // theme, so the next page load (or any other tab receiving the
-  // onChanged event) would re-apply the wrong palette.
+  // Theme changes are special: the theme id and the darkMode it was
+  // resolved against must land together so <html data-theme> and the
+  // persisted preference never disagree. `saveThemeChange` handles both
+  // in one `updateSettings` call.
+  //
+  // v1.3.4 (issue #19): this used to also stamp the five rendered palette
+  // colors into the global fields, to keep them "in sync" with the theme.
+  // They never should have been derived from the theme in the first place
+  // — see the `saveThemeChange` doc comment.
   if (key === 'theme') {
     void saveThemeChange(String(value));
     return;
   }
 
-  // Dark mode changes are similar: the rendered variant flipped (light
-  // <-> dark) but the base theme id didn't change, so the 5 color
-  // overrides in storage are stale — they were captured at the old
-  // variant. Update darkMode first, then re-apply the theme so saveThemeChange
-  // re-reads the 5 colors from the newly-applied variant selector.
+  // Dark mode changes take the same path: the rendered variant flips
+  // (light <-> dark) but the base theme id doesn't, so `<html data-theme>`
+  // has to be recomputed. Write darkMode first, then hand off to
+  // `saveThemeChange` so the two fields are persisted together and the
+  // theme is re-applied against the new mode.
   if (key === 'darkMode') {
     void updateSetting('darkMode', value as Settings['darkMode']).then(() => {
       void saveThemeChange(String(getSetting('theme')));
@@ -1270,43 +1285,48 @@ function saveSetting(key: keyof Settings, scope: InputScope = 'global'): void {
 }
 
 /**
- * Persist a theme switch: apply the theme's palette to the inline
- * `<html>` styles, read those values back from the DOM, and write the
- * whole `{theme, 5 colors}` bundle to chrome.storage in a single
- * `setSync` call. We read from the DOM (not from `getSetting`) because
- * `applyTheme` writes the resolved palette to inline style and those
- * values are guaranteed to be in sync by the time control returns.
+ * Persist a theme switch: apply the theme (which sets `<html data-theme>`
+ * and re-derives the palette) and write the two fields the user actually
+ * picked.
+ *
+ * v1.3.4 (issue #19): this used to ALSO sample the five palette colors off
+ * `<html>`'s inline style and persist them into the global
+ * `backgroundColor` / `fontColor` / `linkBgColor` / `highlightColor` /
+ * `highlightFontColor` / `shadowColor` fields. That was a category error —
+ * those fields hold *user* choices and are mode-independent, while the
+ * sampled values are theme-rendered and describe exactly one variant. With
+ * `darkMode: 'system'` the snapshot could only ever represent one of the
+ * two variants, so link / folder-title text (`--newtab-link-color`, written
+ * by `applySettingsToDOM` from the resolved `fontColor`) stayed pinned to
+ * whatever variant happened to be active at save time, while the page
+ * background kept following the theme.
+ *
+ * Nothing needs to be written back: `styles/globals.css` derives
+ * `--newtab-bg` / `--newtab-text` / `--newtab-highlight` /
+ * `--newtab-highlight-text` from the active theme's shadcn variables, and
+ * every theme application re-derives them. Leftover stamps from older
+ * builds are removed once by `clearThemeStampedPalette()`
+ * (features/themes/palette-stamp-migration.ts).
  */
 export async function saveThemeChange(theme: string): Promise<void> {
   const before = getSetting('theme');
   applyTheme(theme);
-  if (typeof document === 'undefined') return;
-  const root = document.documentElement;
-  // Resolve the values via the browser before reading them back. After
-  // `applyTheme` writes resolved hex/rgb() to inline style, this is a
-  // pass-through; but if anyone in the chain ever writes a `var()` or
-  // `color-mix()` expression here, this layer normalizes it to a string
-  // the <input type="color"> (and chrome.storage) will accept.
-  const readVar = (name: string): string =>
-    resolveCssColor(root.style.getPropertyValue(name).trim());
-  const bundle: Partial<Settings> = {
+  await updateSettings({
     theme,
-    // v0.2.75: dark mode is a separate setting. Persisted together with
-    // the theme + 5-color bundle so a single user action (theme switch
-    // OR dark mode toggle) writes a coherent snapshot. The 5 colors are
-    // captured from the actually-rendered variant (light or dark) inside
-    // applyTheme()'s `resolved` selector, so they always match what the
-    // user sees after the switch.
+    // v0.2.75: dark mode is a separate setting. `applyTheme` above already
+    // resolved it, so read it back rather than trusting a caller-supplied
+    // copy.
     darkMode: (String(getSetting('darkMode') ?? 'system') as 'system' | 'light' | 'dark'),
-    backgroundColor: readVar('--newtab-bg'),
-    fontColor: readVar('--newtab-text'),
-    linkBgColor: readVar('--newtab-link-bg-color'),
-    highlightColor: readVar('--newtab-highlight'),
-    highlightFontColor: readVar('--newtab-highlight-text'),
-    shadowColor: readVar('--newtab-highlight'),
-  };
-  await updateSettings(bundle);
-  debug.log('settings-panel', 'saveThemeChange', { from: before, to: theme, bundle });
+  });
+  // `applyTheme` promotes the four derived variables to inline style so a
+  // later `applyUserColorOverride` has a known target. `applySettingsToDOM`
+  // removes the ones the user hasn't actually set, which is the state we
+  // want to leave behind. The storage listener can't be relied on for this:
+  // `chrome.storage.onChanged` doesn't fire when `set()` writes an object
+  // identical to the stored one (re-selecting the active theme does exactly
+  // that), and without this call those inline values would linger.
+  applySettingsToDOM();
+  debug.log('settings-panel', 'saveThemeChange', { from: before, to: theme });
 }
 
 function createNumberInput(
