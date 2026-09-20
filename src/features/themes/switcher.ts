@@ -201,11 +201,12 @@ export async function listAllThemesWithLabels(
  *
  * `applyTheme` deliberately does NOT mutate `currentSettings`. The five
  * legacy color fields belong to the user's stored choices; overwriting
- * them with theme defaults on every switch would discard the user's
- * per-color overrides. The settings-panel path persists a fresh
- * `{theme, 5 colors}` bundle on user action (see `saveThemeChange`),
- * and `applyUserColorOverride` writes the user's choices on top of the
- * theme baseline at startup and on every other settings change.
+ * them with theme-derived values would discard the user's per-color
+ * overrides. The settings-panel path persists only `{theme, darkMode}`
+ * on user action (see `saveThemeChange` — v1.3.4 dropped the old
+ * palette-sampling bundle; issue #19), and `applyUserColorOverride`
+ * writes the user's choices on top of the theme baseline at startup and
+ * on every other settings change.
  *
  * As of v0.2.75 the `theme` argument is a BASE id (no `-dark` suffix);
  * the actual `data-theme` attribute is computed by `resolveTheme()` from
@@ -306,6 +307,18 @@ export function resolveCssColor(cssValue: string): string {
   if (/^rgba?\(/i.test(v)) return v;
   if (typeof document === 'undefined') return v;
 
+  // v1.3.4: `var()` / `color-mix()` are legal CSS colors, but they need
+  // the cascade to evaluate — and the canvas fillStyle setter *silently
+  // ignores* them (it keeps its previous value), so rasterising one
+  // directly would return black instead of the color the page paints.
+  // Expand through a probe element first; the result may still be a CSS
+  // Color 4 function, which is exactly what the canvas path below is
+  // built to normalize.
+  //
+  // Callers rely on this to resolve whole cascade chains, e.g.
+  // settings-panel.ts's `COLOR_INPUT_CSS_VAR.linkBgColor`.
+  const expanded = needsCascadeResolution(v) ? expandViaCascade(v) : v;
+
   // Primary path: canvas pixel rendering. The HTML Living Standard
   // mandates CanvasRenderingContext2D accepts any legal CSS color
   // value in the fillStyle setter (oklch / lab / color() / hsl /
@@ -346,7 +359,7 @@ export function resolveCssColor(cssValue: string): string {
     canvas.height = 1;
     const ctx = canvas.getContext('2d');
     if (ctx) {
-      ctx.fillStyle = v;
+      ctx.fillStyle = expanded;
       ctx.fillRect(0, 0, 1, 1);
       const data = ctx.getImageData(0, 0, 1, 1).data;
       // `noUncheckedIndexedAccess: true` makes data[i] typed as
@@ -363,16 +376,38 @@ export function resolveCssColor(cssValue: string): string {
   }
 
   // Fallback: getComputedStyle on a detached span. Canvas doesn't
-  // accept `var(--foo)` or `color-mix(...)` — these are valid CSS
-  // colors that need the cascade-resolved form. The browser does
-  // the resolution in computed style.
+  // accept `var(--foo)` or `color-mix(...)` — those were already
+  // expanded above — but it can still reject a value whose serialized
+  // computed form it doesn't parse. The browser does the resolution in
+  // computed style.
   const probe = document.createElement('span');
-  probe.style.color = v;
+  probe.style.color = expanded;
   probe.style.display = 'none';
   document.body.appendChild(probe);
   const computed = getComputedStyle(probe).color;
   document.body.removeChild(probe);
-  return computed || v;
+  return computed || expanded;
+}
+
+/** True when a color expression can only be evaluated against the
+ *  cascade (`var()` references, `color-mix()`). */
+function needsCascadeResolution(value: string): boolean {
+  return /var\(|color-mix\(/i.test(value);
+}
+
+/** Expand a `var()` / `color-mix()` expression by letting the browser
+ *  resolve it on a probe element appended to `<body>` (so the `<html>`
+ *  custom properties are in scope). Returns the input unchanged when
+ *  there is no body to probe against or the value doesn't resolve. */
+function expandViaCascade(value: string): string {
+  if (!document.body) return value;
+  const probe = document.createElement('span');
+  probe.style.color = value;
+  probe.style.display = 'none';
+  document.body.appendChild(probe);
+  const computed = getComputedStyle(probe).color;
+  document.body.removeChild(probe);
+  return computed || value;
 }
 
 /**

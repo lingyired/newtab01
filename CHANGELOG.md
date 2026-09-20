@@ -5,6 +5,16 @@ All notable changes to newtab01 are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.4] - 2026-09-20
+
+### Fixed
+- **`darkMode: 'system'` now follows the OS for link / folder-title colors, not just the background.** Reported as [#19](https://github.com/lingyired/newtab01/issues/19): flipping the OS appearance changed the page background but left bookmark and folder-title text on the previous variant. Root cause: `saveThemeChange()` sampled the five rendered palette colors off `<html>`'s inline style and persisted them into the *global* `backgroundColor` / `fontColor` / `linkBgColor` / `highlightColor` / `highlightFontColor` / `shadowColor` fields on every theme switch or darkMode toggle. Those fields hold user choices and are deliberately mode-independent, so a single snapshot could only ever describe one of the two variants. `--newtab-link-color` (written by `applySettingsToDOM` from the resolved `fontColor`) therefore kept re-asserting the stale snapshot, while `--newtab-bg` — one of the four variables `applyTheme` re-derives on every call — happened to follow. Reproduced on v1.3.3: `--newtab-bg` `#e8ebed → #1a1a1a` (followed) while the link color stayed at `rgb(51, 51, 51)`.
+  - `saveThemeChange()` now persists only `{theme, darkMode}`. The palette is derived by `styles/globals.css` from the active theme and re-resolved on every theme application, so nothing needs to be written back.
+  - The newtab OS `matchMedia` listener now re-runs `applySettingsToDOM()` after `applyTheme()`, so the per-theme per-mode overrides are re-resolved against the new mode too. (`applyTheme` alone only rewrites the four variables it derives itself.)
+  - New one-shot migration `features/themes/palette-stamp-migration.ts` clears stamps left behind by older builds: it re-renders both candidate variants of the active base theme (stashing the inline palette variables first, since inline style would otherwise shadow the probe) and clears the five global fields when they match a variant's rendered palette exactly. Clearing a value that the theme would render anyway is visually a no-op, so a false positive is harmless by construction. Skipped entirely when the user has a per-theme per-mode override in play.
+- **Appearance tab "link background" picker no longer shows black.** The picker's fallback read the bare variable `--newtab-link-bg-color`, which is never declared in CSS (it only exists as an inline override), so the input fell through to `#000000` even though link cards render in the theme's `--card`. The fallback is now a resolved CSS expression (`resolveCssColor()` expands `var()` / `color-mix()` through the cascade before rasterising), so the picker shows what actually paints.
+- **`saveThemeChange()` now re-runs `applySettingsToDOM()` before returning.** `applyTheme()` promotes the four derived variables to inline style; when the storage write is a no-op (`chrome.storage.onChanged` doesn't fire for an identical object — re-selecting the active theme does that), the listener never cleaned them up.
+
 ## [1.3.3] - 2026-08-28
 
 ### Fixed

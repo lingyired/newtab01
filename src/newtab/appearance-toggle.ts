@@ -77,12 +77,15 @@ function handleClick(value: DarkMode): void {
   if (String(getSetting('darkMode')) === value) return;
   // Mirrors the settings panel's 暗色模式 select path (settings-panel.ts
   // saveSetting → key === 'darkMode'): after writing darkMode, re-run
-  // saveThemeChange(theme) so the 5 palette colors (incl. fontColor /
-  // link color) are re-sampled from the newly-rendered variant and
-  // stamped back into global settings. Just calling applyTheme(theme)
-  // here flips <html data-theme> + palette but leaves the stored
-  // fontColor / link-color variables on the old mode, so the link and
-  // folder title text would NOT follow the switch.
+  // saveThemeChange(theme) so the theme is re-applied against the new mode.
+  // `<html data-theme>` flips between `<base>` and `<base>-dark`, and the
+  // palette that `applyTheme` + `applySettingsToDOM` derive follows it.
+  //
+  // v1.3.4 (issue #19): this used to exist because the *previous* variant's
+  // palette had been stamped into global settings, so merely calling
+  // applyTheme() left link / folder-title text on the old mode. The stamp
+  // is gone (see saveThemeChange), so the re-apply is now about keeping the
+  // two persisted fields coherent rather than repairing a frozen snapshot.
   void updateSetting('darkMode', value).then(() => {
     void saveThemeChange(String(getSetting('theme')));
   });
